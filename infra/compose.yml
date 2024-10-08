@@ -1,0 +1,85 @@
+services:
+  
+  football_db:
+    container_name: football-db
+    image: postgres:latest
+    environment:
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DB=futeboxd-football
+      - PGPORT=5433
+    ports:
+      - 5433
+    volumes:
+      - ../services/football/database/init-database:/docker-entrypoint-initdb.d
+  
+  football:
+    container_name: "football"
+    build: 
+      context: ../
+      dockerfile: football.dockerfile
+    env_file:
+      - ../services/football/.env
+    ports:
+      - 8081
+    depends_on:
+      - football_db
+  
+  reviews_db:
+    container_name: reviews_db
+    image: postgres:latest
+    environment:
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DB=futeboxd-reviews
+    ports:
+      - 5432
+    volumes:
+      - ../services/reviews/database/init-database:/docker-entrypoint-initdb.d
+  
+  reviews:
+    container_name: reviews
+    build: 
+      context: ../
+      dockerfile: reviews.dockerfile
+      
+    env_file:
+      - ../services/reviews/.env
+    ports:
+      - 8080
+    depends_on:
+      - reviews_db
+
+  users_db:
+    container_name: "users-db"
+    image: postgres:latest
+    environment:
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DB=futeboxd-users
+      - PGPORT=5434
+    ports:
+      - 5434
+    volumes:
+      - ../services/users/database/init-database:/docker-entrypoint-initdb.d
+  
+  users:
+    container_name: users-service
+    build: 
+      context: ../
+      dockerfile: users.dockerfile
+    env_file:
+      - ../services/users/.env
+    ports:
+      - 8082
+    depends_on:
+      - users_db
+    
+
+  server:
+    container_name: nginx-server
+    build: 
+      context: .
+      dockerfile: nginx.dockerfile
+    ports:
+      - 80:80
+    depends_on:
+      - reviews
+      - football

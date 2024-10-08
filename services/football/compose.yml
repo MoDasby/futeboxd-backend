@@ -1,0 +1,18 @@
+services:
+  football_db:
+    container_name: "football-db"
+    image: postgres:latest
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - PGPORT=${DB_PORT}
+    ports:
+      - ${DB_PORT}:${DB_PORT}
+    volumes:
+      - ./database/init-database:/docker-entrypoint-initdb.d
+ # football:
+  #  build: .
+   # ports:
+    #  - 8081:8081
+    #depends_on:
+     # - football_db
