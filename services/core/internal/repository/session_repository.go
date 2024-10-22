@@ -1,0 +1,72 @@
+package repository
+
+import (
+	"database/sql"
+	"errors"
+	"time"
+
+	errorsTypes "github.com/modasby/futeboxd-api/pkg/errors"
+	"github.com/modasby/futeboxd-api/services/core/internal/domain"
+)
+
+type SessionRepository struct {
+	db *sql.DB
+}
+
+func NewSessionRepository(db *sql.DB) domain.SessionRepository {
+	return &SessionRepository{db: db}
+}
+
+func (repo *SessionRepository) FindOneByToken(token string) (*domain.Session, error) {
+	query := `
+		SELECT s.token, s.user_id, s.expires_at, s.created_at
+		FROM sessions s
+		WHERE s.token = $1
+	`
+
+	row := repo.db.QueryRow(query, token)
+
+	var sessionToken, userID sql.NullString
+	var expiresAt, createdAt time.Time
+
+	if err := row.Scan(&sessionToken, &userID, &expiresAt, &createdAt); err != nil {
+		if errors.Is(sql.ErrNoRows, err) {
+			return nil, errorsTypes.NewHTTPErr(
+				"sessão inválida",
+				401,
+				"REPOSITORY:SESSION:FIND_ONE_BY_TOKEN:NOT_FOUND",
+			)
+		}
+
+		return nil, err
+	}
+
+	session := domain.NewSession(
+		sessionToken.String,
+		userID.String,
+		expiresAt,
+	)
+	session.CreatedAt = createdAt
+
+	return session, nil
+}
+
+func (repo *SessionRepository) AddSession(session *domain.Session) (*domain.Session, error) {
+	query := `
+		INSERT INTO sessions (expires_at, token, user_id)
+		VALUES ($1, $2, $3)
+		RETURNING expires_at, created_at, token, user_id
+	`
+
+	row := repo.db.QueryRow(query, session.ExpiresAt, session.Token, session.UserID)
+
+	if err := row.Scan(&session.ExpiresAt, &session.CreatedAt, &session.Token, &session.UserID); err != nil {
+		return nil, err
+	}
+
+	return session, nil
+}
+
+func (repo *SessionRepository) DeleteSession(id string) error {
+	return nil
+}

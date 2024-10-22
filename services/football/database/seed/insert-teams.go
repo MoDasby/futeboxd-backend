@@ -19,7 +19,7 @@ var leagues = []string{
 	"uefa.euroq", "conmebol.america",
 }
 
-func main() {
+func InsertTeams() {
 	err := godotenv.Load("../../.env")
 	if err != nil {
 		panic(err)

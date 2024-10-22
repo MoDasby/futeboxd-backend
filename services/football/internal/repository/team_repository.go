@@ -2,7 +2,6 @@ package repository
 
 import (
 	"database/sql"
-	"log"
 	"strings"
 
 	"github.com/modasby/futeboxd-api/pkg/errors"
@@ -43,8 +42,7 @@ func (repo *teamRepository) FindTeamById(ID string) (*domain.Team, error) {
 
 	if err := row.Scan(&teamID, &teamName, &teamAbbreviation, &teamColor, &teamLogo); err != nil {
 		if err == sql.ErrNoRows {
-			log.Println(err)
-			return nil, errors.NewErrNotFound("time não encontrado")
+			return nil, errors.NewHTTPErr("time não encontrado", 404, "REPOSITORY:TEAM:FIND_BY_ID:NOT_FOUND")
 		}
 		return nil, err
 	}

@@ -1,14 +1,12 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 
-	"github.com/joho/godotenv"
-	_ "github.com/lib/pq"
+	"github.com/modasby/futeboxd-api/services/football/database"
 	"github.com/modasby/futeboxd-api/services/football/internal/handler"
 	"github.com/modasby/futeboxd-api/services/football/internal/repository"
 	"github.com/modasby/futeboxd-api/services/football/internal/service"
@@ -16,26 +14,7 @@ import (
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	connStr := fmt.Sprintf(
-		"user=%s dbname=%s password=%s host=%s sslmode=disable port=5433",
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_NAME"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_HOST"),
-	)
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err := db.Ping(); err != nil {
-		panic(err)
-	}
+	db := database.InitDatabase()
 
 	espnService := service.NewEspnService()
 

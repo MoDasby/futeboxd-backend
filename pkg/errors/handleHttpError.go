@@ -8,16 +8,30 @@ import (
 
 type responseBody struct {
 	Msg  string `json:"message"`
-	Code int32  `json:"code"`
+	Code int    `json:"code"`
 }
 
 func HandleHttpError(w http.ResponseWriter, err error) {
 
-	log.Printf("ERROR: %s", err.Error())
+	log.Println(err.Error())
 
-	body := responseBody{Msg: err.Error()}
+	if e, ok := err.(*HTTPErr); ok {
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(e.Code)
 
-	switch err.(type) {
+		body := responseBody{
+			Msg:  e.Msg,
+			Code: e.Code,
+		}
+
+		json.NewEncoder(w).Encode(body)
+
+		return
+	}
+
+	w.WriteHeader(500)
+
+	/* switch err.(type) {
 	case *ErrNotFound:
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
@@ -36,7 +50,19 @@ func HandleHttpError(w http.ResponseWriter, err error) {
 		body.Code = http.StatusUnauthorized
 
 		json.NewEncoder(w).Encode(body)
+	case *ErrForbidden:
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		body.Code = http.StatusForbidden
+
+		json.NewEncoder(w).Encode(body)
+	case *ErrInternalServer:
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		body.Code = http.StatusInternalServerError
+
+		json.NewEncoder(w).Encode(body)
 	default:
 		w.WriteHeader(500)
-	}
+	} */
 }

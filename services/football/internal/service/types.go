@@ -164,4 +164,15 @@ type EspnEventSummary struct {
 			} `json:"position"`
 		} `json:"roster"`
 	} `json:"rosters"`
+	KeyEvents []struct {
+		Type struct {
+			ID   string `json:"id"`
+			Text string `json:"text"`
+		} `json:"type"`
+		Text  string `json:"text"`
+		Clock struct {
+			Value        float64 `json:"value"`
+			DisplayValue string  `json:"displayValue"`
+		} `json:"clock"`
+	} `json:"keyEvents"`
 }

@@ -9,7 +9,7 @@ import (
 
 type ScheduleOutputDTO struct {
 	RequestedSeason string         `json:"requestedSeason"`
-	Events          []domain.Match `json:"events"`
+	Matches         []domain.Match `json:"matches"`
 }
 
 type GetTeamScheduleUseCase struct {
@@ -20,7 +20,7 @@ func NewGetTeamScheduleUseCase(espnService service.EspnService) *GetTeamSchedule
 	return &GetTeamScheduleUseCase{espnService: espnService}
 }
 
-func (uc *GetTeamScheduleUseCase) Execute(league string, team string, season string) (*ScheduleOutputDTO, error) {
+func (uc *GetTeamScheduleUseCase) Execute(league, team, season string) (*ScheduleOutputDTO, error) {
 
 	espnSchedule, err := uc.espnService.GetTeamSchedule(league, team, season)
 	if err != nil {
@@ -30,12 +30,13 @@ func (uc *GetTeamScheduleUseCase) Execute(league string, team string, season str
 	var schedule ScheduleOutputDTO
 
 	schedule.RequestedSeason = espnSchedule.Season.DisplayName
-	schedule.Events = make([]domain.Match, 0)
+	schedule.Matches = make([]domain.Match, 0)
 
 	for _, espnEvent := range espnSchedule.Events {
 		venue := domain.NewVenue(espnEvent.Competitions[0].Venue.FullName, espnEvent.Competitions[0].Venue.Address.City)
 
-		var competitors []*domain.Competitor
+		var homeCompetitor domain.Competitor
+		var awayCompetitor domain.Competitor
 
 		for _, espnCompetitor := range espnEvent.Competitions[0].Competitors {
 			logo := ""
@@ -53,10 +54,16 @@ func (uc *GetTeamScheduleUseCase) Execute(league string, team string, season str
 
 			competitor := domain.NewCompetitor(
 				espnCompetitor.HomeAway, espnCompetitor.Winner, int32(espnCompetitor.Score.Value),
-				team, nil,
+				*team, nil,
 			)
 
-			competitors = append(competitors, competitor)
+			if competitor.HomeAway == "home" {
+				homeCompetitor = *competitor
+			}
+
+			if competitor.HomeAway == "away" {
+				awayCompetitor = *competitor
+			}
 		}
 
 		eventID, _ := strconv.ParseInt(espnEvent.Id, 10, 64)
@@ -68,11 +75,11 @@ func (uc *GetTeamScheduleUseCase) Execute(league string, team string, season str
 		}
 
 		newMatch := domain.NewMatch(
-			eventID, *venue, 0, espnEvent.Date, note,
-			competitors, espnEvent.Competitions[0].Status.Type.Completed, espnEvent.Competitions[0].Status.Type.Name,
-			espnEvent.SeasonType.Name,
+			eventID, *venue, espnEvent.Date, note,
+			homeCompetitor, awayCompetitor, espnEvent.Competitions[0].Status.Type.Completed, espnEvent.Competitions[0].Status.Type.Name,
+			espnEvent.SeasonType.Name, nil,
 		)
-		schedule.Events = append(schedule.Events, *newMatch)
+		schedule.Matches = append(schedule.Matches, *newMatch)
 	}
 
 	return &schedule, nil

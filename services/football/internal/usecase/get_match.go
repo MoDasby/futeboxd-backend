@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"log"
 	"strconv"
 
 	"github.com/modasby/futeboxd-api/pkg/errors"
@@ -25,7 +24,7 @@ func (uc *GetMatchUseCase) Execute(id string) (*domain.Match, error) {
 	existingEvent, err := uc.matchRepository.FindMatchByID(id)
 	if err != nil {
 		// se a partida não for encontrada não retorna um erro
-		if _, ok := err.(*errors.ErrNotFound); !ok {
+		if e, _ := err.(*errors.HTTPErr); e.Code != 404 {
 			return nil, err
 		}
 	}
@@ -41,7 +40,8 @@ func (uc *GetMatchUseCase) Execute(id string) (*domain.Match, error) {
 
 	venue := domain.NewVenue(espnEvent.GameInfo.Venue.FullName, espnEvent.GameInfo.Venue.Address.City)
 
-	var competitors []*domain.Competitor
+	var homeCompetitor domain.Competitor
+	var awayCompetitor domain.Competitor
 
 	for index, espnCompetitor := range espnEvent.Header.Competitions[0].Competitors {
 		logo := ""
@@ -64,19 +64,25 @@ func (uc *GetMatchUseCase) Execute(id string) (*domain.Match, error) {
 
 		espnRoster := espnEvent.Rosters[index].Roster
 
-		roster := make([]*domain.Roster, 0)
+		roster := make([]domain.Roster, 0)
 
 		for _, r := range espnRoster {
 			newRoster := domain.NewRoster(r.Starter, r.Athlete.ID, r.Athlete.LastName, r.Athlete.FullName, r.Athlete.DisplayName, r.Athlete.HeadShot.Href, r.Athlete.HeadShot.Alt, r.Position.DisplayName, r.Position.Abbreviation, r.SubbedIn, r.SubbedOut)
-			roster = append(roster, newRoster)
+			roster = append(roster, *newRoster)
 		}
 
 		competitor := domain.NewCompetitor(
 			espnCompetitor.HomeAway, espnCompetitor.Winner, int32(score),
-			team, roster,
+			*team, roster,
 		)
 
-		competitors = append(competitors, competitor)
+		if competitor.HomeAway == "home" {
+			homeCompetitor = *competitor
+		}
+
+		if competitor.HomeAway == "away" {
+			awayCompetitor = *competitor
+		}
 	}
 
 	matchID, _ := strconv.ParseInt(espnEvent.Header.ID, 10, 64)
@@ -87,16 +93,27 @@ func (uc *GetMatchUseCase) Execute(id string) (*domain.Match, error) {
 		note = espnEvent.Header.Competitions[0].Notes[0].Headline
 	}
 
+	var events []domain.Event
+
+	for _, keyEvent := range espnEvent.KeyEvents {
+
+		events = append(events, *domain.NewEvent(
+			keyEvent.Type.ID,
+			keyEvent.Type.Text,
+			keyEvent.Text,
+			keyEvent.Clock.Value,
+			keyEvent.Clock.DisplayValue,
+		))
+	}
+
 	match := domain.NewMatch(
-		matchID, *venue, 0, espnEvent.Header.Competitions[0].Date,
-		note, competitors, espnEvent.Header.Competitions[0].Status.Type.Completed,
+		matchID, *venue, espnEvent.Header.Competitions[0].Date,
+		note, homeCompetitor, awayCompetitor, espnEvent.Header.Competitions[0].Status.Type.Completed,
 		espnEvent.Header.Competitions[0].Status.Type.Name,
-		espnEvent.Header.Season.Name,
+		espnEvent.Header.Season.Name, events,
 	)
 
-	if err := uc.matchRepository.AddMatch(match); err != nil {
-		log.Print(err)
-	}
+	uc.matchRepository.AddMatch(match)
 
 	return match, nil
 }

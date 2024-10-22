@@ -1,0 +1,18 @@
+services:
+  football:
+    container_name: football-service
+    build: 
+      context: .
+      dockerfile: services/football/dockerfile
+  
+  reviews:
+    container_name: reviews-service
+    build: 
+      context: .
+      dockerfile: services/reviews/dockerfile
+
+  users:
+    container_name: users-service
+    build: 
+      context: .
+      dockerfile: services/users/dockerfile

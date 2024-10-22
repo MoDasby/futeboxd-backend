@@ -1,0 +1,28 @@
+FROM golang:1.22.5 AS builder
+
+WORKDIR /app
+
+COPY services/football/go.mod services/football/go.sum ./
+COPY pkg/ ../pkg/
+
+RUN go mod download
+
+COPY services/football/ .
+
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o api ./cmd/football/main.go
+
+FROM alpine:latest AS runner
+
+WORKDIR /root/
+
+RUN apk update && apk add postgresql-client
+
+COPY --from=builder /app/api ./api
+COPY services/football/.env.example .env
+COPY services/football/entrypoint.sh ./
+COPY services/football/wait-to-db-ready.sh ./
+
+RUN chmod +x ./entrypoint.sh
+RUN chmod +x ./wait-to-db-ready.sh
+
+CMD [ "sh", "entrypoint.sh" ]
