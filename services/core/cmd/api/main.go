@@ -21,11 +21,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer db.Close()
 
 	reviewRepository := repository.NewReviewRepository(db)
 	userRepository := repository.NewUserRepository(db)
 	sessionRepository := repository.NewSessionRepository(db)
 	followersRepo := repository.NewFollowersRepository(db)
+	commentsRepo := repository.NewCommentsRepository(db)
 
 	footballClient := football.NewClient("http://localhost:80/football")
 
@@ -35,10 +37,11 @@ func main() {
 	listReviewsUseCase := reviewsUsecases.NewListReviewsUseCase(reviewRepository, userRepository)
 	listFeedUsecase := reviewsUsecases.NewListFeedUsecase(reviewRepository, userRepository)
 	deleteReviewsUseCase := reviewsUsecases.NewDeleteReviewUseCase(reviewRepository)
+	createCommentUsecase := reviewsUsecases.NewCreateCommentUsecase(commentsRepo, userRepository)
+	listCommentsUsecase := reviewsUsecases.NewGetCommentsUsecase(commentsRepo)
 
 	createUserUseCase := usersUsecases.NewCreateUserUseCase(userRepository, footballClient)
 	findByProfile := usersUsecases.NewFindProfile(userRepository, footballClient, followStatsQueryService)
-	findBatchUsecase := usersUsecases.NewFindUserBatchUseCase(userRepository)
 	editUserUsecase := usersUsecases.NewEditUserUseCase(userRepository)
 	loginUsecase := usersUsecases.NewLoginUseCase(sessionRepository, userRepository)
 	followUserUsecase := usersUsecases.NewFollowUserUseCase(followersRepo, userRepository)
@@ -49,11 +52,12 @@ func main() {
 		listReviewsUseCase,
 		listFeedUsecase,
 		deleteReviewsUseCase,
+		createCommentUsecase,
+		listCommentsUsecase,
 	)
 	userHandler := handler.NewUserHandler(
 		createUserUseCase,
 		findByProfile,
-		findBatchUsecase,
 		editUserUsecase,
 		loginUsecase,
 		followUserUsecase,

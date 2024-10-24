@@ -1,6 +1,10 @@
 package usecase
 
-import "github.com/modasby/futeboxd-api/services/core/internal/domain"
+import (
+	"github.com/modasby/futeboxd-api/pkg/pagination"
+	"github.com/modasby/futeboxd-api/services/core/internal/domain"
+	"github.com/modasby/futeboxd-api/services/core/internal/dto"
+)
 
 type GetCommentsUsecase struct {
 	commentsRepository domain.CommentsRepository
@@ -14,4 +18,27 @@ func NewGetCommentsUsecase(
 	}
 }
 
-func (uc GetCommentsUsecase) Execute()
+func (uc *GetCommentsUsecase) Execute(reviewID int64, page *pagination.Page) ([]dto.Comment, error) {
+	comments, err := uc.commentsRepository.ListByReview(reviewID, page)
+	if err != nil {
+		return nil, err
+	}
+
+	output := make([]dto.Comment, 0)
+
+	for _, comment := range comments {
+		comment := dto.Comment{
+			ID: comment.ID,
+			Author: dto.UserDTO{
+				ID:       comment.Author.ID,
+				Username: comment.Author.Username,
+			},
+			Content:   comment.Content,
+			CreatedAt: comment.CreatedAt,
+		}
+
+		output = append(output, comment)
+	}
+
+	return output, nil
+}
