@@ -12,32 +12,29 @@ import (
 )
 
 type UserHandler struct {
-	createUserUseCase    *usecase.CreateUserUseCase
-	findProfile          *usecase.FindProfile
-	findUserBatchUseCase *usecase.FindUserBatchUseCase
-	editUserUseCase      *usecase.EditUserUseCase
-	loginUsecase         *usecase.LoginUseCase
-	followUsecase        *usecase.FollowUserUseCase
-	unfollowUsecase      *usecase.UnfollowUserUseCase
+	createUserUseCase *usecase.CreateUserUseCase
+	findProfile       *usecase.FindProfile
+	editUserUseCase   *usecase.EditUserUseCase
+	loginUsecase      *usecase.LoginUseCase
+	followUsecase     *usecase.FollowUserUseCase
+	unfollowUsecase   *usecase.UnfollowUserUseCase
 }
 
 func NewUserHandler(
 	createUserUseCase *usecase.CreateUserUseCase,
 	findProfile *usecase.FindProfile,
-	findUserBatchUseCase *usecase.FindUserBatchUseCase,
 	editUserUseCase *usecase.EditUserUseCase,
 	loginUsecase *usecase.LoginUseCase,
 	followUsecase *usecase.FollowUserUseCase,
 	unfollowUsecase *usecase.UnfollowUserUseCase,
 ) *UserHandler {
 	return &UserHandler{
-		createUserUseCase:    createUserUseCase,
-		findProfile:          findProfile,
-		findUserBatchUseCase: findUserBatchUseCase,
-		editUserUseCase:      editUserUseCase,
-		loginUsecase:         loginUsecase,
-		followUsecase:        followUsecase,
-		unfollowUsecase:      unfollowUsecase,
+		createUserUseCase: createUserUseCase,
+		findProfile:       findProfile,
+		editUserUseCase:   editUserUseCase,
+		loginUsecase:      loginUsecase,
+		followUsecase:     followUsecase,
+		unfollowUsecase:   unfollowUsecase,
 	}
 }
 

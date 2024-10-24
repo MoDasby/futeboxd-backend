@@ -18,7 +18,7 @@ func NewReviewRepository(db *sql.DB) domain.ReviewRepository {
 	return &reviewRepository{db: db}
 }
 
-func (repo *reviewRepository) AddReview(review *domain.Review) error {
+func (repo *reviewRepository) Create(review *domain.Review) error {
 	query := `
 		INSERT INTO reviews (user_id, rate, description, match_id, home_team_id, away_team_id)
 		VALUES ($1, $2, $3, $4, $5, $6)
@@ -37,7 +37,7 @@ func (repo *reviewRepository) AddReview(review *domain.Review) error {
 	return err
 }
 
-func (repo *reviewRepository) DeleteReview(reviewID int64) error {
+func (repo *reviewRepository) Delete(reviewID int64) error {
 	query := `
 		DELETE FROM reviews WHERE id = $1
 	`
@@ -49,7 +49,7 @@ func (repo *reviewRepository) DeleteReview(reviewID int64) error {
 	return nil
 }
 
-func (repo *reviewRepository) FindReviewByID(reviewID int64) (*domain.Review, error) {
+func (repo *reviewRepository) FindOneByID(reviewID int64) (*domain.Review, error) {
 	query := `
 		SELECT r.id as reviewID, r.rate, r.description, r.match_id, r.created_at, u.id, u.username, u.favorite_team
 		FROM reviews r
@@ -157,7 +157,7 @@ func (repo *reviewRepository) ListFeed(requesterID, strategy string, pageSize, p
 	return reviews, nil
 }
 
-func (repo *reviewRepository) ListReviews(pageSize, pageIndex int, userID, team, match string) ([]domain.Review, error) {
+func (repo *reviewRepository) ListAll(pageSize, pageIndex int, userID, team, match string) ([]domain.Review, error) {
 
 	whereBuilder := utils.NewWhereBuilder()
 

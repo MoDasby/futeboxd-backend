@@ -51,7 +51,7 @@ func (uc ListReviewsUseCase) Execute(
 		userID = user.ID
 	}
 
-	reviews, err := uc.reviewRepository.ListReviews(page.Size, page.Index, userID, team, match)
+	reviews, err := uc.reviewRepository.ListAll(page.Size, page.Index, userID, team, match)
 	if err != nil {
 		return nil, err
 	}

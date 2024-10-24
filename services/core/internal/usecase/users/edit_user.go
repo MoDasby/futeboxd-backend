@@ -28,7 +28,7 @@ func (uc *EditUserUseCase) Execute(input EditUserInputDTO) error {
 
 	user.ID = input.UserID
 
-	if err := uc.userRepository.EditUser(user); err != nil {
+	if err := uc.userRepository.Update(user); err != nil {
 		return err
 	}
 

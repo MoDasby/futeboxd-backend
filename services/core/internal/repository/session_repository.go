@@ -51,7 +51,7 @@ func (repo *SessionRepository) FindOneByToken(token string) (*domain.Session, er
 	return session, nil
 }
 
-func (repo *SessionRepository) AddSession(session *domain.Session) (*domain.Session, error) {
+func (repo *SessionRepository) Create(session *domain.Session) (*domain.Session, error) {
 	query := `
 		INSERT INTO sessions (expires_at, token, user_id)
 		VALUES ($1, $2, $3)
@@ -67,6 +67,6 @@ func (repo *SessionRepository) AddSession(session *domain.Session) (*domain.Sess
 	return session, nil
 }
 
-func (repo *SessionRepository) DeleteSession(id string) error {
+func (repo *SessionRepository) Delete(id string) error {
 	return nil
 }

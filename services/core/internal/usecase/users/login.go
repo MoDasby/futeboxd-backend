@@ -55,7 +55,7 @@ func (uc *LoginUseCase) Execute(input *LoginInput) (*LoginOutput, error) {
 
 	session := domain.NewSession(token, user.ID, expiresAt)
 
-	newSession, err := uc.sessionRepository.AddSession(session)
+	newSession, err := uc.sessionRepository.Create(session)
 	if err != nil {
 		return nil, err
 	}

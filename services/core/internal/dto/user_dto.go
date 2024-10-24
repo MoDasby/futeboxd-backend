@@ -6,7 +6,7 @@ type UserDTO struct {
 	ID           string         `json:"id"`
 	Username     string         `json:"username"`
 	Email        string         `json:"email,omitempty"`
-	FavoriteTeam *football.Team `json:"favorite_team"`
+	FavoriteTeam *football.Team `json:"favorite_team,omitempty"`
 }
 
 type UserInputDTO struct {

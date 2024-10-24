@@ -1,26 +1,27 @@
 package domain
 
+import "github.com/modasby/futeboxd-api/pkg/pagination"
+
 type SessionRepository interface {
 	FindOneByToken(token string) (*Session, error)
-	AddSession(session *Session) (*Session, error)
-	DeleteSession(id string) error
+	Create(session *Session) (*Session, error)
+	Delete(id string) error
 }
 
 type ReviewRepository interface {
-	AddReview(review *Review) error
-	DeleteReview(reviewID int64) error
+	Create(review *Review) error
+	Delete(reviewID int64) error
 	ListFeed(requesterID, strategy string, pageSize, pageIndex int) ([]Review, error)
-	ListReviews(pageSize, pageIndex int, userID, team, match string) ([]Review, error)
-	FindReviewByID(reviewID int64) (*Review, error)
+	ListAll(pageSize, pageIndex int, userID, team, match string) ([]Review, error)
+	FindOneByID(reviewID int64) (*Review, error)
 }
 
 type UserRepository interface {
 	FindOneByCredential(credential string) (*User, error)
-	AddUser(user *User) (*User, error)
+	Create(user *User) (*User, error)
 	Exists(username, email string) (bool, error)
 	FindOneByIdOrUsername(username string) (*User, error)
-	FindBatchByID(ids []string) ([]User, error)
-	EditUser(user *User) error
+	Update(user *User) error
 }
 
 type FollowersRepository interface {
@@ -30,7 +31,7 @@ type FollowersRepository interface {
 }
 
 type CommentsRepository interface {
-	Create(comment Comment) (Comment, error)
+	Create(comment *Comment) error
 	Delete(commentID int64) error
-	GetByReview(reviewID int64) ([]Comment, error)
+	ListByReview(reviewID int64, page *pagination.Page) ([]Comment, error)
 }

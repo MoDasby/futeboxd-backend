@@ -50,7 +50,7 @@ func (uc *CreateUserUseCase) Execute(input dto.UserInputDTO) (*dto.UserDTO, erro
 		}
 	}
 
-	res, err := uc.userRepository.AddUser(user)
+	res, err := uc.userRepository.Create(user)
 	if err != nil {
 		return nil, err
 	}

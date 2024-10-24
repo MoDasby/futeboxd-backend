@@ -46,7 +46,7 @@ func (uc *CreateReviewUseCase) Execute(input CreateReviewInputDTO) error {
 		return err
 	}
 
-	err = uc.reviewRepository.AddReview(review)
+	err = uc.reviewRepository.Create(review)
 	if err != nil {
 		return err
 	}

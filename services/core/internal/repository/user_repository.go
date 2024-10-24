@@ -54,7 +54,7 @@ func (r *userRepository) FindBatchByID(ids []string) ([]domain.User, error) {
 	return users, nil
 }
 
-func (r *userRepository) EditUser(user *domain.User) error {
+func (r *userRepository) Update(user *domain.User) error {
 	query := `
 		UPDATE users
 		SET username = $1, email = $2, favorite_team = $3
@@ -131,7 +131,7 @@ func (r *userRepository) FindOneByCredential(credential string) (*domain.User, e
 	return user, nil
 }
 
-func (r *userRepository) AddUser(user *domain.User) (*domain.User, error) {
+func (r *userRepository) Create(user *domain.User) (*domain.User, error) {
 	query := `
 		INSERT INTO users(username, email, password, favorite_team)
 		VALUES ($1, $2, $3, $4)
