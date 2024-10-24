@@ -41,14 +41,14 @@ func (repo *SessionRepository) FindOneByToken(token string) (*domain.Session, er
 		return nil, err
 	}
 
-	session := domain.NewSession(
-		sessionToken.String,
-		userID.String,
-		expiresAt,
-	)
-	session.CreatedAt = createdAt
+	session := domain.Session{
+		Token:     sessionToken.String,
+		UserID:    userID.String,
+		ExpiresAt: expiresAt,
+		CreatedAt: createdAt,
+	}
 
-	return session, nil
+	return &session, nil
 }
 
 func (repo *SessionRepository) Create(session *domain.Session) (*domain.Session, error) {
