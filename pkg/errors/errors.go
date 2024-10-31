@@ -1,22 +1,28 @@
 package errors
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/google/uuid"
+)
 
 type HTTPErr struct {
-	Msg     string
-	Code    int
-	Context string
+	Msg       string
+	Code      int
+	Context   string
+	ErrorCode string
 }
 
 func (err HTTPErr) Error() string {
-	return fmt.Sprintf("Error: %s, HttpCode: %d, Context: %s\n", err.Msg, err.Code, err.Context)
+	return fmt.Sprintf("Error: %s, HttpCode: %d, Context: %s, ErrorCode: %s\n", err.Msg, err.Code, err.Context, err.ErrorCode)
 }
 
 func NewHTTPErr(msg string, code int, context string) *HTTPErr {
 	return &HTTPErr{
-		Msg:     msg,
-		Code:    code,
-		Context: context,
+		Msg:       msg,
+		Code:      code,
+		Context:   context,
+		ErrorCode: uuid.NewString(),
 	}
 }
 

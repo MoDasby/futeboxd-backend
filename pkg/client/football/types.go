@@ -4,13 +4,7 @@ type Competitor struct {
 	HomeAway string `json:"homeAway"`
 	Winner   bool   `json:"winner"`
 	Score    int32  `json:"score"`
-	Team     *struct {
-		ID           int64  `json:"id"`
-		Name         string `json:"name"`
-		Abbreviation string `json:"abbreviation"`
-		Color        string `json:"color"`
-		Logo         string `json:"logo"`
-	} `json:"team"`
+	Team     *Team  `json:"team"`
 }
 
 type Match struct {

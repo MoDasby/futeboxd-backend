@@ -18,8 +18,8 @@ func NewGetCommentsUsecase(
 	}
 }
 
-func (uc *GetCommentsUsecase) Execute(reviewID int64, page *pagination.Page) ([]dto.Comment, error) {
-	comments, err := uc.commentsRepository.ListByReview(reviewID, page)
+func (uc *GetCommentsUsecase) Execute(requesterID string, reviewID int64, page *pagination.Page) ([]dto.Comment, error) {
+	comments, err := uc.commentsRepository.ListByReview(requesterID, reviewID, page)
 	if err != nil {
 		return nil, err
 	}
@@ -34,6 +34,8 @@ func (uc *GetCommentsUsecase) Execute(reviewID int64, page *pagination.Page) ([]
 				Username: comment.Author.Username,
 			},
 			Content:   comment.Content,
+			LikeCount: comment.LikeCount,
+			IsLiked:   comment.IsLiked,
 			CreatedAt: comment.CreatedAt,
 		}
 

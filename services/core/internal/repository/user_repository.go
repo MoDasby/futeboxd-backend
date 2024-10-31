@@ -57,11 +57,11 @@ func (r *userRepository) FindBatchByID(ids []string) ([]domain.User, error) {
 func (r *userRepository) Update(user *domain.User) error {
 	query := `
 		UPDATE users
-		SET username = $1, email = $2, favorite_team = $3
-		WHERE id = $4
+		SET username = $1, email = $2, password = $3, favorite_team = $4
+		WHERE id = $5
 	`
 
-	if _, err := r.db.Exec(query, user.Username, user.Email, user.FavoriteTeamID, user.ID); err != nil {
+	if _, err := r.db.Exec(query, user.Username, user.Email, user.Password, user.FavoriteTeamID, user.ID); err != nil {
 		return err
 	}
 
@@ -70,7 +70,7 @@ func (r *userRepository) Update(user *domain.User) error {
 
 func (r *userRepository) FindOneByIdOrUsername(identificator string) (*domain.User, error) {
 	query := `
-		SELECT u.id::text, u.username, u.email, u.favorite_team FROM users u
+		SELECT u.id::text, u.username, u.email, u.password, u.favorite_team FROM users u
 		WHERE LOWER(u.username) = LOWER($1) OR u.id::text = $1
 	`
 
@@ -78,10 +78,10 @@ func (r *userRepository) FindOneByIdOrUsername(identificator string) (*domain.Us
 
 	var user *domain.User
 
-	var userId, username, email sql.NullString
+	var userId, username, email, password sql.NullString
 	var favoriteTeamID sql.NullInt64
 
-	if err := rows.Scan(&userId, &username, &email, &favoriteTeamID); err != nil {
+	if err := rows.Scan(&userId, &username, &email, &password, &favoriteTeamID); err != nil {
 		if errors.Is(sql.ErrNoRows, err) {
 			return nil, errorsTypes.NewHTTPErr(
 				"usuário não encontrado",
@@ -97,6 +97,7 @@ func (r *userRepository) FindOneByIdOrUsername(identificator string) (*domain.Us
 		ID:             userId.String,
 		Username:       username.String,
 		Email:          email.String,
+		Password:       password.String,
 		FavoriteTeamID: favoriteTeamID.Int64,
 	}
 
@@ -154,7 +155,7 @@ func (r *userRepository) Exists(username, email string) (bool, error) {
 
 	row := r.db.QueryRow(query, username, email)
 
-	var exists *sql.NullBool
+	var exists sql.NullBool
 
 	if err := row.Scan(&exists); err != nil {
 

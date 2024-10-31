@@ -14,6 +14,8 @@ type Review struct {
 	MatchID     int64
 	HomeTeamID  int64
 	AwayTeamID  int64
+	Likes       int
+	IsLiked     bool
 	CreatedAt   time.Time
 }
 
@@ -44,7 +46,7 @@ func NewReview(
 func (r *Review) Validate() error {
 	if r.Rate < 0 || r.Rate > 5 {
 		return errors.NewHTTPErr(
-			"avaliação inválida",
+			"a nota deve estar no intervalo entre 0 e 5",
 			400,
 			"DOMAIN:REVIEW:INVALID_RATE",
 		)

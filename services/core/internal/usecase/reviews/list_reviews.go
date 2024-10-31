@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/modasby/futeboxd-api/pkg/pagination"
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
@@ -24,21 +23,13 @@ func NewListReviewsUseCase(
 	}
 }
 
-type ReviewOutputDTO struct {
-	ID          int         `json:"id"`
-	Author      dto.UserDTO `json:"author"`
-	Rate        int         `json:"rate"`
-	Description string      `json:"description"`
-	Match       string      `json:"match"`
-	CreatedAt   time.Time   `json:"created_at"`
-}
-
 func (uc ListReviewsUseCase) Execute(
+	requesterID,
 	username,
 	team,
 	match string,
-	page pagination.Page,
-) ([]ReviewOutputDTO, error) {
+	page *pagination.Page,
+) ([]dto.ReviewDTO, error) {
 
 	userID := ""
 
@@ -51,15 +42,15 @@ func (uc ListReviewsUseCase) Execute(
 		userID = user.ID
 	}
 
-	reviews, err := uc.reviewRepository.ListAll(page.Size, page.Index, userID, team, match)
+	reviews, err := uc.reviewRepository.ListAll(requesterID, userID, team, match, page)
 	if err != nil {
 		return nil, err
 	}
 
-	output := make([]ReviewOutputDTO, 0)
+	output := make([]dto.ReviewDTO, 0)
 
 	for _, review := range reviews {
-		output = append(output, ReviewOutputDTO{
+		output = append(output, dto.ReviewDTO{
 			ID: review.ID,
 			Author: dto.UserDTO{
 				ID:       review.Author.ID,
@@ -68,6 +59,8 @@ func (uc ListReviewsUseCase) Execute(
 			Rate:        review.Rate,
 			Description: review.Description,
 			Match:       fmt.Sprintf("http://localhost:80/football/%d", review.MatchID),
+			Likes:       review.Likes,
+			IsLiked:     review.IsLiked,
 			CreatedAt:   review.CreatedAt,
 		})
 	}

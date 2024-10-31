@@ -12,45 +12,94 @@ import (
 )
 
 type UserHandler struct {
-	createUserUseCase *usecase.CreateUserUseCase
-	findProfile       *usecase.FindProfile
-	editUserUseCase   *usecase.EditUserUseCase
-	loginUsecase      *usecase.LoginUseCase
-	followUsecase     *usecase.FollowUserUseCase
-	unfollowUsecase   *usecase.UnfollowUserUseCase
+	createUserUseCase     *usecase.CreateUserUseCase
+	findProfileUsecase    *usecase.FindProfileUsecase
+	editUserUseCase       *usecase.EditUserUseCase
+	loginUsecase          *usecase.LoginUseCase
+	logoutUsecase         *usecase.LogoutUsecase
+	updatePasswordUsecase *usecase.UpdatePasswordUsecase
+	toggleFollowUsecase   *usecase.ToggleFollowUsecase
 }
 
 func NewUserHandler(
 	createUserUseCase *usecase.CreateUserUseCase,
-	findProfile *usecase.FindProfile,
+	findProfileUsecase *usecase.FindProfileUsecase,
 	editUserUseCase *usecase.EditUserUseCase,
 	loginUsecase *usecase.LoginUseCase,
-	followUsecase *usecase.FollowUserUseCase,
-	unfollowUsecase *usecase.UnfollowUserUseCase,
+	logoutUsecase *usecase.LogoutUsecase,
+	updatePasswordUsecase *usecase.UpdatePasswordUsecase,
+	toggleFollowUsecase *usecase.ToggleFollowUsecase,
 ) *UserHandler {
 	return &UserHandler{
-		createUserUseCase: createUserUseCase,
-		findProfile:       findProfile,
-		editUserUseCase:   editUserUseCase,
-		loginUsecase:      loginUsecase,
-		followUsecase:     followUsecase,
-		unfollowUsecase:   unfollowUsecase,
+		createUserUseCase:     createUserUseCase,
+		findProfileUsecase:    findProfileUsecase,
+		editUserUseCase:       editUserUseCase,
+		loginUsecase:          loginUsecase,
+		logoutUsecase:         logoutUsecase,
+		updatePasswordUsecase: updatePasswordUsecase,
+		toggleFollowUsecase:   toggleFollowUsecase,
 	}
 }
 
 func (h *UserHandler) RegisterRoutes(r *http.ServeMux, injectUser middleware.Middleware) {
-	r.HandleFunc("/users/login", h.login)
-	r.HandleFunc("/users", injectUser(h.getCurrentUser))
+	r.HandleFunc("POST /users/login", h.login)
+	r.HandleFunc("POST /users/logout", injectUser(h.logout, false))
+	r.HandleFunc("GET /users", injectUser(h.getCurrentUser, false))
 	r.HandleFunc("POST /users", h.createUser)
-	r.HandleFunc("PUT /users", injectUser(h.editUser))
-	r.HandleFunc("/profiles/{username}", injectUser(h.findByUsername))
-	r.HandleFunc("POST /profiles/{username}/follow", injectUser(h.followUser))
-	r.HandleFunc("DELETE /profiles/{username}/follow", injectUser(h.unfollowUser))
+	r.HandleFunc("PATCH /users", injectUser(h.editUser, false))
+	r.HandleFunc("PUT /users/password", injectUser(h.updatePassword, false))
+	r.HandleFunc("GET /profiles/{username}", injectUser(h.findByUsername, true))
+	r.HandleFunc("POST /profiles/{username}/follow", injectUser(h.toggleFollow, false))
 }
 
-func (h *UserHandler) unfollowUser(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) updatePassword(w http.ResponseWriter, r *http.Request) {
 	user, ok := r.Context().Value(middleware.UserKey).(*domain.User)
-	if !ok || user == nil || user.Username == "anonymous" {
+	if !ok || user == nil {
+		httpErr := errors.NewHTTPErr("ocorreu um erro de autenticação, tente logar novamente", 401, "HANDLER:AUTHENTICATE_USER:INVALID_USER")
+		errors.HandleHttpError(w, httpErr)
+
+		return
+	}
+
+	var input usecase.UpdatePasswordInputDTO
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		err = errors.NewHTTPErr(
+			"corpo de requisição inválido",
+			400,
+			"HANDLER:UPDATE_PASSWORD:INVALID_BODY",
+		)
+	}
+
+	input.User = user
+
+	if err := h.updatePasswordUsecase.Execute(input); err != nil {
+		errors.HandleHttpError(w, err)
+
+		return
+	}
+}
+
+func (h *UserHandler) logout(w http.ResponseWriter, r *http.Request) {
+	session, ok := r.Context().Value(middleware.SessionKey).(*domain.Session)
+	if !ok {
+		httpErr := errors.NewHTTPErr("ocorreu um erro de autenticação, tente logar novamente", 401, "HANDLER:AUTHENTICATE_USER:INVALID_USER")
+		errors.HandleHttpError(w, httpErr)
+
+		return
+	}
+
+	if err := h.logoutUsecase.Execute(session); err != nil {
+		errors.HandleHttpError(w, err)
+
+		return
+	}
+
+}
+
+func (h *UserHandler) toggleFollow(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value(middleware.UserKey).(*domain.User)
+	if !ok || user == nil {
 		httpErr := errors.NewHTTPErr("ocorreu um erro de autenticação, tente logar novamente", 401, "HANDLER:AUTHENTICATE_USER:INVALID_USER")
 		errors.HandleHttpError(w, httpErr)
 
@@ -59,30 +108,15 @@ func (h *UserHandler) unfollowUser(w http.ResponseWriter, r *http.Request) {
 
 	followingUsername := r.PathValue("username")
 
-	if err := h.unfollowUsecase.Execute(user.ID, followingUsername); err != nil {
+	output, err := h.toggleFollowUsecase.Execute(user.ID, followingUsername)
+	if err != nil {
 		errors.HandleHttpError(w, err)
 
 		return
 	}
 
-}
-
-func (h *UserHandler) followUser(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value(middleware.UserKey).(*domain.User)
-	if !ok || user == nil || user.Username == "anonymous" {
-		httpErr := errors.NewHTTPErr("ocorreu um erro de autenticação, tente logar novamente", 401, "HANDLER:AUTHENTICATE_USER:INVALID_USER")
-		errors.HandleHttpError(w, httpErr)
-
-		return
-	}
-
-	followingUsername := r.PathValue("username")
-
-	if err := h.followUsecase.Execute(user.ID, followingUsername); err != nil {
-		errors.HandleHttpError(w, err)
-
-		return
-	}
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(output)
 }
 
 func (h *UserHandler) login(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +137,7 @@ func (h *UserHandler) login(w http.ResponseWriter, r *http.Request) {
 
 func (h *UserHandler) getCurrentUser(w http.ResponseWriter, r *http.Request) {
 	user, ok := r.Context().Value(middleware.UserKey).(*domain.User)
-	if !ok || user == nil || user.Username == "anonymous" {
+	if !ok || user == nil {
 		httpErr := errors.NewHTTPErr("ocorreu um erro de autenticação, tente logar novamente", 401, "HANDLER:AUTHENTICATE_USER:INVALID_USER")
 		errors.HandleHttpError(w, httpErr)
 
@@ -148,8 +182,8 @@ func (h *UserHandler) createUser(w http.ResponseWriter, r *http.Request) {
 
 func (h *UserHandler) editUser(w http.ResponseWriter, r *http.Request) {
 	user, ok := r.Context().Value(middleware.UserKey).(*domain.User)
-	if !ok || user == nil || user.Username == "anonymous" {
-		httpErr := errors.NewHTTPErr("ocorreu um erro de autenticação, tente logar novamente", 401, "HANDLER:USER:EDIT:INVALID_SESSION")
+	if !ok || user == nil {
+		httpErr := errors.NewHTTPErr("ocorreu um erro de autenticação, tente logar novamente", 401, "HANDLER:AUTHENTICATE_USER:INVALID_USER")
 		errors.HandleHttpError(w, httpErr)
 
 		return
@@ -186,7 +220,7 @@ func (h *UserHandler) findByUsername(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	output, err := h.findProfile.Execute(requester, username)
+	output, err := h.findProfileUsecase.Execute(requester, username)
 	if err != nil {
 		errors.HandleHttpError(w, err)
 

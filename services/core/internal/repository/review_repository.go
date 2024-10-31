@@ -3,9 +3,9 @@ package repository
 import (
 	"database/sql"
 	"fmt"
-	"log"
 
 	"github.com/modasby/futeboxd-api/pkg/errors"
+	"github.com/modasby/futeboxd-api/pkg/pagination"
 	"github.com/modasby/futeboxd-api/pkg/utils"
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
 )
@@ -49,15 +49,20 @@ func (repo *reviewRepository) Delete(reviewID int64) error {
 	return nil
 }
 
-func (repo *reviewRepository) FindOneByID(reviewID int64) (*domain.Review, error) {
+func (repo *reviewRepository) FindOneByID(requesterID string, reviewID int64) (*domain.Review, error) {
 	query := `
-		SELECT r.id as reviewID, r.rate, r.description, r.match_id, r.created_at, u.id, u.username, u.favorite_team
+		SELECT 
+			r.id as reviewID, r.rate, r.description, 
+			r.match_id, r.created_at, u.id, u.username, u.favorite_team,
+			COUNT(l.review_id) as like_count,
+			COUNT(CASE WHEN l.like_owner_id = $1 THEN 1 END) > 0 AS is_liked
 		FROM reviews r
-		JOIN users u ON u.id = r.user_id
-		WHERE r.id = $1
+		LEFT JOIN users u ON u.id = r.user_id
+		LEFT JOIN likes l ON l.review_id = reviewID
+		WHERE r.id = $2
 	`
 
-	row := repo.db.QueryRow(query, reviewID)
+	row := repo.db.QueryRow(query, requesterID, reviewID)
 
 	review, err := repo.scanReview(row)
 	if err != nil {
@@ -78,7 +83,24 @@ func (repo *reviewRepository) FindOneByID(reviewID int64) (*domain.Review, error
 	return review, nil
 }
 
-func (repo *reviewRepository) ListFeed(requesterID, strategy string, pageSize, pageIndex int) ([]domain.Review, error) {
+func (repo *reviewRepository) ExistsByID(reviewID int64) (bool, error) {
+	query := `
+		SELECT EXISTS(SELECT 1 FROM reviews WHERE reviews.id = $1)
+	`
+
+	row := repo.db.QueryRow(query, reviewID)
+
+	var exists *sql.NullBool
+
+	if err := row.Scan(&exists); err != nil {
+
+		return false, err
+	}
+
+	return exists.Bool, nil
+}
+
+func (repo *reviewRepository) ListFeed(requesterID, strategy string, page *pagination.Page) ([]domain.Review, error) {
 	orderBy := func() string {
 		switch strategy {
 		case "relevant":
@@ -108,8 +130,7 @@ func (repo *reviewRepository) ListFeed(requesterID, strategy string, pageSize, p
 				r.away_team_id
 			FROM reviews r
 			WHERE r.created_at >= NOW() - INTERVAL '7 days'
-			ORDER BY r.created_at DESC
-			LIMIT 1000
+			LIMIT 500
 		),
 		ranked_feed AS (
 			SELECT 
@@ -120,11 +141,18 @@ func (repo *reviewRepository) ListFeed(requesterID, strategy string, pageSize, p
 				rr.created_at,
 				u.id,
 				u.username, 
-				u.favorite_team
+				u.favorite_team,
+				COUNT(l.review_id) as like_count,
+      			COUNT(CASE WHEN l.like_owner_id = $1 THEN 1 END) > 0 AS is_liked
 			FROM recent_reviews rr
 			JOIN users u ON u.id = rr.user_id
-			CROSS JOIN requester req
+			LEFT JOIN requester req ON true
 			LEFT JOIN followers f ON f.following_id = rr.user_id AND f.follower_id = req.id
+			LEFT JOIN likes l ON l.review_id = rr.reviewID
+			GROUP BY 
+				rr.reviewID, rr.rate, rr.description, rr.match_id, rr.created_at, 
+				u.id, u.username, u.favorite_team, f.follower_id, req.favorite_team,
+				rr.home_team_id, rr.away_team_id
 			ORDER BY (CASE 
 					WHEN f.follower_id IS NOT NULL THEN 1.5
 					ELSE 0 
@@ -133,7 +161,13 @@ func (repo *reviewRepository) ListFeed(requesterID, strategy string, pageSize, p
 					WHEN rr.home_team_id = req.favorite_team THEN 0.6
 					WHEN rr.away_team_id = req.favorite_team THEN 0.5
 					ELSE 0
-				END) DESC, rr.created_at DESC
+				END) + 
+				(CASE
+					WHEN rr.created_at >= NOW() - INTERVAL '1 day' THEN 0.30
+					WHEN rr.created_at >= NOW() - INTERVAL '2 days' THEN 0.20
+					WHEN rr.created_at >= NOW() - INTERVAL '3 days' THEN 0.10
+					ELSE 0
+				END) DESC
 		)
 
 		SELECT * FROM ranked_feed
@@ -142,22 +176,20 @@ func (repo *reviewRepository) ListFeed(requesterID, strategy string, pageSize, p
 		OFFSET ($3 - 1) * $2
 	`, orderBy)
 
-	rows, err := repo.db.Query(query, requesterID, pageSize, pageIndex)
+	rows, err := repo.db.Query(query, requesterID, page.Size, page.Index)
 	if err != nil {
-		log.Fatal(err)
 		return nil, err
 	}
 
 	reviews, err := repo.scanReviews(rows)
 	if err != nil {
-		log.Fatal(err)
 		return nil, err
 	}
 
 	return reviews, nil
 }
 
-func (repo *reviewRepository) ListAll(pageSize, pageIndex int, userID, team, match string) ([]domain.Review, error) {
+func (repo *reviewRepository) ListAll(requesterID, userID, team, match string, page *pagination.Page) ([]domain.Review, error) {
 
 	whereBuilder := utils.NewWhereBuilder()
 
@@ -181,21 +213,66 @@ func (repo *reviewRepository) ListAll(pageSize, pageIndex int, userID, team, mat
 			r.created_at,
 			u.id, 
 			u.username, 
-			u.favorite_team
+			u.favorite_team,
+			COUNT(l.review_id) as like_count,
+			COUNT(CASE WHEN l.like_owner_id = $1 THEN 1 END) > 0 AS is_liked
 		FROM reviews r
-		JOIN users u ON u.id = r.user_id
+		LEFT JOIN users u ON u.id = r.user_id
+		LEFT JOIN likes l ON l.review_id = r.id
 		%s
+		GROUP BY r.id, u.id
 		ORDER BY r.created_at DESC
 		LIMIT $%d
 		OFFSET ($%d - 1) * $%d
 	`, whereQuery, len(params)+1, len(params)+2, len(params)+1)
 
-	rows, err := repo.db.Query(query, append(params, pageSize, pageIndex)...)
+	rows, err := repo.db.Query(query, append(params, page.Size, page.Index)...)
 	if err != nil {
 		return nil, err
 	}
 
 	return repo.scanReviews(rows)
+}
+
+func (repo *reviewRepository) Like(requesterID string, reviewID int64) error {
+	query := `
+		INSERT INTO likes (like_owner_id, review_id)
+		VALUES ($1, $2)
+	`
+
+	if _, err := repo.db.Exec(query, requesterID, reviewID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (repo *reviewRepository) Unlike(requesterID string, reviewID int64) error {
+	query := `
+		DELETE FROM likes WHERE like_owner_id = $1 AND review_id = $2
+	`
+
+	if _, err := repo.db.Exec(query, requesterID, reviewID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (repo *reviewRepository) IsLiked(requesterID string, reviewID int64) (bool, error) {
+	query := `
+		SELECT EXISTS (
+			SELECT 1 FROM likes
+			WHERE like_owner_id = $1 AND review_id = $2
+		)
+	`
+
+	var exists bool
+	if err := repo.db.QueryRow(query, requesterID, reviewID).Scan(&exists); err != nil {
+		return false, err
+	}
+
+	return exists, nil
 }
 
 func (repo *reviewRepository) scanReview(row *sql.Row) (*domain.Review, error) {
@@ -208,6 +285,8 @@ func (repo *reviewRepository) scanReview(row *sql.Row) (*domain.Review, error) {
 		&review.MatchID, &review.CreatedAt, &review.Author.ID,
 		&review.Author.Username,
 		&review.Author.FavoriteTeamID,
+		&review.Likes,
+		&review.IsLiked,
 	); err != nil {
 		return nil, err
 	}
@@ -230,6 +309,8 @@ func (repo *reviewRepository) scanReviews(rows *sql.Rows) ([]domain.Review, erro
 			&review.MatchID, &review.CreatedAt, &review.Author.ID,
 			&review.Author.Username,
 			&review.Author.FavoriteTeamID,
+			&review.Likes,
+			&review.IsLiked,
 		); err != nil {
 			return nil, err
 		}

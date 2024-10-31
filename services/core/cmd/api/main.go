@@ -10,7 +10,6 @@ import (
 	"github.com/modasby/futeboxd-api/services/core/database"
 	"github.com/modasby/futeboxd-api/services/core/internal/handler"
 	"github.com/modasby/futeboxd-api/services/core/internal/middleware"
-	"github.com/modasby/futeboxd-api/services/core/internal/queries"
 	"github.com/modasby/futeboxd-api/services/core/internal/repository"
 	reviewsUsecases "github.com/modasby/futeboxd-api/services/core/internal/usecase/reviews"
 	usersUsecases "github.com/modasby/futeboxd-api/services/core/internal/usecase/users"
@@ -28,24 +27,26 @@ func main() {
 	sessionRepository := repository.NewSessionRepository(db)
 	followersRepo := repository.NewFollowersRepository(db)
 	commentsRepo := repository.NewCommentsRepository(db)
+	profileRepo := repository.NewProfileRepository(db)
 
 	footballClient := football.NewClient("http://localhost:80/football")
-
-	followStatsQueryService := queries.NewFollowStatsQuery(db)
 
 	createReviewUseCase := reviewsUsecases.NewCreateReviewUseCase(reviewRepository, footballClient)
 	listReviewsUseCase := reviewsUsecases.NewListReviewsUseCase(reviewRepository, userRepository)
 	listFeedUsecase := reviewsUsecases.NewListFeedUsecase(reviewRepository, userRepository)
 	deleteReviewsUseCase := reviewsUsecases.NewDeleteReviewUseCase(reviewRepository)
-	createCommentUsecase := reviewsUsecases.NewCreateCommentUsecase(commentsRepo, userRepository)
+	createCommentUsecase := reviewsUsecases.NewCreateCommentUsecase(commentsRepo, reviewRepository)
 	listCommentsUsecase := reviewsUsecases.NewGetCommentsUsecase(commentsRepo)
+	toggleLikeCommentUsecase := reviewsUsecases.NewToggleLikeCommentUsecase(commentsRepo)
+	toggleLikeReviewUsecase := reviewsUsecases.NewToggleLikeReviewUsecase(reviewRepository)
 
 	createUserUseCase := usersUsecases.NewCreateUserUseCase(userRepository, footballClient)
-	findByProfile := usersUsecases.NewFindProfile(userRepository, footballClient, followStatsQueryService)
-	editUserUsecase := usersUsecases.NewEditUserUseCase(userRepository)
+	findByProfile := usersUsecases.NewFindProfileUsecase(profileRepo, footballClient)
+	editUserUsecase := usersUsecases.NewEditUserUseCase(userRepository, footballClient)
 	loginUsecase := usersUsecases.NewLoginUseCase(sessionRepository, userRepository)
-	followUserUsecase := usersUsecases.NewFollowUserUseCase(followersRepo, userRepository)
-	unfollowUserUsecase := usersUsecases.NewUnfollowUserUseCase(followersRepo, userRepository)
+	logoutUsecase := usersUsecases.NewLogoutUsecase(sessionRepository)
+	updatePasswordUsecase := usersUsecases.NewUpdatePasswordUsecase(userRepository)
+	toggleFollowUsecase := usersUsecases.NewToggleFollowUsecase(userRepository, followersRepo)
 
 	reviewHandler := handler.NewReviewHandler(
 		createReviewUseCase,
@@ -54,14 +55,17 @@ func main() {
 		deleteReviewsUseCase,
 		createCommentUsecase,
 		listCommentsUsecase,
+		toggleLikeCommentUsecase,
+		toggleLikeReviewUsecase,
 	)
 	userHandler := handler.NewUserHandler(
 		createUserUseCase,
 		findByProfile,
 		editUserUsecase,
 		loginUsecase,
-		followUserUsecase,
-		unfollowUserUsecase,
+		logoutUsecase,
+		updatePasswordUsecase,
+		toggleFollowUsecase,
 	)
 
 	injectUser := middleware.NewInjectUserMiddleware(sessionRepository, userRepository)

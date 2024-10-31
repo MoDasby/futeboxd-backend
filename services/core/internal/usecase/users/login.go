@@ -1,9 +1,6 @@
 package usecase
 
 import (
-	"crypto/rand"
-	"encoding/hex"
-	"io"
 	"time"
 
 	"github.com/modasby/futeboxd-api/pkg/errors"
@@ -46,14 +43,10 @@ func (uc *LoginUseCase) Execute(input *LoginInput) (*LoginOutput, error) {
 		return nil, errors.NewHTTPErr("usuário ou senha inválidos", 400, "LOGIN:WRONG_PASSWORD")
 	}
 
-	token, err := generateToken()
+	session, err := domain.NewSession(user.ID)
 	if err != nil {
 		return nil, err
 	}
-
-	expiresAt := time.Now().Add(24 * 31 * time.Hour)
-
-	session := domain.NewSession(token, user.ID, expiresAt)
 
 	newSession, err := uc.sessionRepository.Create(session)
 	if err != nil {
@@ -67,14 +60,4 @@ func (uc *LoginUseCase) Execute(input *LoginInput) (*LoginOutput, error) {
 	}
 
 	return &output, nil
-}
-
-func generateToken() (string, error) {
-	bytes := make([]byte, 48)
-
-	if _, err := io.ReadFull(rand.Reader, bytes); err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(bytes), nil
 }

@@ -11,7 +11,7 @@ import (
 
 type ctxKey string
 
-type Middleware func(next http.HandlerFunc) http.HandlerFunc
+type Middleware func(next http.HandlerFunc, permitAnonymous bool) http.HandlerFunc
 
 const (
 	UserKey    ctxKey = "user"
@@ -22,16 +22,27 @@ func NewInjectUserMiddleware(
 	sessionRepository domain.SessionRepository,
 	userRepository domain.UserRepository,
 ) Middleware {
-	return func(next http.HandlerFunc) http.HandlerFunc {
+	return func(next http.HandlerFunc, permitAnonymous bool) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			token := r.Header.Get("Authorization")
 
 			if token == "" {
-				user := domain.NewAnonymousUser()
+				if permitAnonymous {
+					user := domain.NewAnonymousUser()
 
-				ctx := context.WithValue(r.Context(), UserKey, user)
+					ctx := context.WithValue(r.Context(), UserKey, user)
 
-				next.ServeHTTP(w, r.WithContext(ctx))
+					next.ServeHTTP(w, r.WithContext(ctx))
+
+					return
+				}
+
+				err := errors.NewHTTPErr(
+					"sessão inválida",
+					401,
+					"MIDDLEWARE:AUTHENTICATION:INVALID_TOKEN",
+				)
+				errors.HandleHttpError(w, err)
 
 				return
 			}
@@ -43,7 +54,9 @@ func NewInjectUserMiddleware(
 				return
 			}
 
-			if isSessionExpired(session) {
+			if !session.IsValid() {
+				sessionRepository.Delete(session.ID)
+
 				err := errors.NewHTTPErr(
 					"essa sessão está expirada",
 					401,
@@ -54,6 +67,15 @@ func NewInjectUserMiddleware(
 				return
 			}
 
+			// renova o token se o tempo de expiração for menor que 3 dias
+			if time.Until(session.ExpiresAt).Hours() < 72 {
+				session.ExpiresAt = time.Now().Add(session.DefaultExpiration())
+
+				sessionRepository.Update(session)
+			}
+
+			// TODO colocar o user como uma entidade dentro do seession
+			// pra nao precisar fazer duas queries
 			user, err := userRepository.FindOneByIdOrUsername(session.UserID)
 			if err != nil {
 				errors.HandleHttpError(w, err)
@@ -67,8 +89,4 @@ func NewInjectUserMiddleware(
 			next.ServeHTTP(w, r.WithContext(ctx))
 		}
 	}
-}
-
-func isSessionExpired(session *domain.Session) bool {
-	return session.ExpiresAt.UTC().Before(time.Now().UTC())
 }

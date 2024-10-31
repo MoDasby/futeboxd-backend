@@ -15,8 +15,8 @@ func NewDeleteReviewUseCase(repo domain.ReviewRepository) *DeleteReviewUseCase {
 	}
 }
 
-func (uc *DeleteReviewUseCase) Execute(reviewID int64, userID string) error {
-	review, err := uc.reviewRepository.FindOneByID(reviewID)
+func (uc *DeleteReviewUseCase) Execute(requesterID string, reviewID int64, userID string) error {
+	review, err := uc.reviewRepository.FindOneByID(requesterID, reviewID)
 	if err != nil {
 		return err
 	}

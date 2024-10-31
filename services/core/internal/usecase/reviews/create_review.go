@@ -6,11 +6,10 @@ import (
 )
 
 type CreateReviewInputDTO struct {
-	Author         *domain.User
-	AuthorUsername string `json:"author_username"`
-	Rate           int    `json:"rate"`
-	Description    string `json:"description"`
-	MatchID        int64  `json:"match_id"`
+	Author      *domain.User
+	Rate        int    `json:"rate"`
+	Description string `json:"description"`
+	MatchID     int64  `json:"match_id"`
 }
 
 type CreateReviewUseCase struct {
@@ -30,7 +29,7 @@ func NewCreateReviewUseCase(
 
 func (uc *CreateReviewUseCase) Execute(input CreateReviewInputDTO) error {
 	match, err := uc.footballClient.GetMatch(input.MatchID)
-	if err != nil {
+	if err != nil || match == nil {
 		return err
 	}
 

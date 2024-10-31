@@ -2,34 +2,47 @@ package errors
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 )
 
 type responseBody struct {
 	Msg  string `json:"message"`
-	Code int    `json:"code"`
+	Code string `json:"code"`
+}
+
+func sendResponse(w http.ResponseWriter, err *HTTPErr) {
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(err.Code)
+
+	body := responseBody{
+		Msg:  err.Msg,
+		Code: err.ErrorCode,
+	}
+
+	json.NewEncoder(w).Encode(body)
 }
 
 func HandleHttpError(w http.ResponseWriter, err error) {
 
-	log.Println(err.Error())
-
 	if e, ok := err.(*HTTPErr); ok {
-		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(e.Code)
+		sendResponse(w, e)
 
-		body := responseBody{
-			Msg:  e.Msg,
-			Code: e.Code,
-		}
-
-		json.NewEncoder(w).Encode(body)
+		log.Println(err.Error())
 
 		return
 	}
 
-	w.WriteHeader(500)
+	httpErr := NewHTTPErr(
+		"ocorreu um erro desconhecido",
+		500,
+		fmt.Sprintf("INTERNAL_SERVER_ERROR: %s", err.Error()),
+	)
+
+	sendResponse(w, httpErr)
+
+	log.Println(httpErr.Error())
 
 	/* switch err.(type) {
 	case *ErrNotFound:

@@ -1,23 +1,28 @@
 package pagination
 
-import "github.com/modasby/futeboxd-api/pkg/errors"
+import (
+	"strconv"
+)
 
 type Page struct {
 	Size  int
 	Index int
 }
 
-func WithPage(size, index int) (*Page, error) {
-	if size > 100 {
-		return nil, errors.NewHTTPErr(
-			"cada página deve ter um valor máximo de 100",
-			400,
-			"PAGINATION:INVALID_PAGE_SIZE",
-		)
+func WithPage(size, index string) (*Page, error) {
+
+	sizeInt, err := strconv.ParseUint(size, 10, 64)
+	if err != nil {
+		sizeInt = 50
+	}
+
+	indexInt, err := strconv.ParseUint(index, 10, 64)
+	if err != nil {
+		indexInt = 1
 	}
 
 	return &Page{
-		Size:  size,
-		Index: index,
+		Size:  int(sizeInt),
+		Index: int(indexInt),
 	}, nil
 }

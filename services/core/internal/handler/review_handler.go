@@ -13,12 +13,14 @@ import (
 )
 
 type ReviewHandler struct {
-	createReviewUseCase  *usecase.CreateReviewUseCase
-	listReviewsUseCase   *usecase.ListReviewsUseCase
-	listFeedUsecase      *usecase.ListFeedUsecase
-	deleteReviewUseCase  *usecase.DeleteReviewUseCase
-	createCommentUsecase *usecase.CreateCommentUsecase
-	listCommentsUsecase  *usecase.GetCommentsUsecase
+	createReviewUseCase      *usecase.CreateReviewUseCase
+	listReviewsUseCase       *usecase.ListReviewsUseCase
+	listFeedUsecase          *usecase.ListFeedUsecase
+	deleteReviewUseCase      *usecase.DeleteReviewUseCase
+	createCommentUsecase     *usecase.CreateCommentUsecase
+	listCommentsUsecase      *usecase.GetCommentsUsecase
+	toggleLikeCommentUsecase *usecase.ToggleLikeCommentUsecase
+	toggleLikeReviewUsecase  *usecase.ToggleLikeReviewUsecase
 }
 
 func NewReviewHandler(
@@ -28,29 +30,101 @@ func NewReviewHandler(
 	deleteReviewUseCase *usecase.DeleteReviewUseCase,
 	createCommentUsecase *usecase.CreateCommentUsecase,
 	listCommentsUsecase *usecase.GetCommentsUsecase,
+	toggleLikeCommentUsecase *usecase.ToggleLikeCommentUsecase,
+	toggleLikeReviewUsecase *usecase.ToggleLikeReviewUsecase,
 ) *ReviewHandler {
 	return &ReviewHandler{
-		createReviewUseCase:  createReviewUseCase,
-		listReviewsUseCase:   listReviewsUseCase,
-		listFeedUsecase:      listFeedUsecase,
-		deleteReviewUseCase:  deleteReviewUseCase,
-		createCommentUsecase: createCommentUsecase,
-		listCommentsUsecase:  listCommentsUsecase,
+		createReviewUseCase:      createReviewUseCase,
+		listReviewsUseCase:       listReviewsUseCase,
+		listFeedUsecase:          listFeedUsecase,
+		deleteReviewUseCase:      deleteReviewUseCase,
+		createCommentUsecase:     createCommentUsecase,
+		listCommentsUsecase:      listCommentsUsecase,
+		toggleLikeCommentUsecase: toggleLikeCommentUsecase,
+		toggleLikeReviewUsecase:  toggleLikeReviewUsecase,
 	}
 }
 
 func (h *ReviewHandler) RegisterRoutes(router *http.ServeMux, injectUser middleware.Middleware) {
-	router.HandleFunc("POST /reviews", injectUser(h.create))
-	router.HandleFunc("GET /reviews/feed", injectUser(h.listFeed))
-	router.HandleFunc("GET /reviews", h.listAll)
-	router.HandleFunc("DELETE /reviews/{reviewID}", injectUser(h.delete))
-	router.HandleFunc("POST /reviews/{reviewID}/comments", injectUser(h.createComment))
-	router.HandleFunc("GET /reviews/{reviewID}/comments", injectUser(h.listComments))
+	router.HandleFunc("POST /reviews", injectUser(h.create, false))
+	router.HandleFunc("GET /reviews/feed", injectUser(h.listFeed, false))
+	router.HandleFunc("GET /reviews", injectUser(h.listAll, true))
+	router.HandleFunc("DELETE /reviews/{reviewID}", injectUser(h.delete, false))
+	router.HandleFunc("POST /reviews/{reviewID}/comments", injectUser(h.createComment, false))
+	router.HandleFunc("GET /reviews/{reviewID}/comments", injectUser(h.listComments, true))
+	router.HandleFunc("POST /reviews/{reviewID}/like", injectUser(h.toggleLikeReview, false))
+	router.HandleFunc("POST /reviews/{reviewID}/comments/{commentID}/like", injectUser(h.toggleLikeComment, false))
+}
+
+func (h *ReviewHandler) toggleLikeReview(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value(middleware.UserKey).(*domain.User)
+	if !ok || user == nil {
+		httpErr := errors.NewHTTPErr("ocorreu um erro de autenticação, tente logar novamente", 401, "HANDLER:AUTHENTICATE_USER:INVALID_USER")
+		errors.HandleHttpError(w, httpErr)
+
+		return
+	}
+
+	reviewID, err := strconv.ParseUint(r.PathValue("reviewID"), 10, 64)
+	if err != nil {
+		err = errors.NewHTTPErr(
+			"id de reviews só pode conter números positivos",
+			400,
+			"HANDLER:LIKE_REVIEW:INVALID_REVIEW_ID_FORMAT",
+		)
+
+		errors.HandleHttpError(w, err)
+
+		return
+	}
+
+	output, err := h.toggleLikeReviewUsecase.Execute(user.ID, int64(reviewID))
+	if err != nil {
+		errors.HandleHttpError(w, err)
+
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(output)
+}
+
+func (h *ReviewHandler) toggleLikeComment(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value(middleware.UserKey).(*domain.User)
+	if !ok || user == nil {
+		httpErr := errors.NewHTTPErr("ocorreu um erro de autenticação, tente logar novamente", 401, "HANDLER:AUTHENTICATE_USER:INVALID_USER")
+		errors.HandleHttpError(w, httpErr)
+
+		return
+	}
+
+	commentID, err := strconv.ParseUint(r.PathValue("commentID"), 10, 64)
+	if err != nil {
+		err = errors.NewHTTPErr(
+			"id de comentarios só pode conter números positivos",
+			400,
+			"HANDLER:LIKE_COMMENT:INVALID_COMMENT_ID_FORMAT",
+		)
+
+		errors.HandleHttpError(w, err)
+
+		return
+	}
+
+	output, err := h.toggleLikeCommentUsecase.Execute(user.ID, int64(commentID))
+	if err != nil {
+		errors.HandleHttpError(w, err)
+
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(output)
 }
 
 func (h *ReviewHandler) listComments(w http.ResponseWriter, r *http.Request) {
 	user, ok := r.Context().Value(middleware.UserKey).(*domain.User)
-	if !ok || user == nil || user.Username == "anonymous" {
+	if !ok || user == nil {
 		httpErr := errors.NewHTTPErr("ocorreu um erro de autenticação, tente logar novamente", 401, "HANDLER:AUTHENTICATE_USER:INVALID_USER")
 		errors.HandleHttpError(w, httpErr)
 
@@ -70,24 +144,17 @@ func (h *ReviewHandler) listComments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	size, err := strconv.ParseInt(r.URL.Query().Get("page_size"), 10, 64)
-	if err != nil {
-		size = 50
-	}
-
-	index, err := strconv.ParseInt(r.URL.Query().Get("page"), 10, 64)
-	if err != nil {
-		index = 1
-	}
-
-	page, err := pagination.WithPage(int(size), int(index))
+	page, err := pagination.WithPage(
+		r.URL.Query().Get("page_size"),
+		r.URL.Query().Get("page"),
+	)
 	if err != nil {
 		errors.HandleHttpError(w, err)
 
 		return
 	}
 
-	comments, err := h.listCommentsUsecase.Execute(reviewID, page)
+	comments, err := h.listCommentsUsecase.Execute(user.ID, reviewID, page)
 	if err != nil {
 		errors.HandleHttpError(w, err)
 
@@ -100,7 +167,7 @@ func (h *ReviewHandler) listComments(w http.ResponseWriter, r *http.Request) {
 
 func (h *ReviewHandler) createComment(w http.ResponseWriter, r *http.Request) {
 	user, ok := r.Context().Value(middleware.UserKey).(*domain.User)
-	if !ok || user == nil || user.Username == "anonymous" {
+	if !ok || user == nil {
 		httpErr := errors.NewHTTPErr("ocorreu um erro de autenticação, tente logar novamente", 401, "HANDLER:AUTHENTICATE_USER:INVALID_USER")
 		errors.HandleHttpError(w, httpErr)
 
@@ -136,7 +203,7 @@ func (h *ReviewHandler) createComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	input.AuthorID = user.ID
+	input.Author = user
 
 	if err := h.createCommentUsecase.Execute(input); err != nil {
 		errors.HandleHttpError(w, err)
@@ -147,7 +214,7 @@ func (h *ReviewHandler) createComment(w http.ResponseWriter, r *http.Request) {
 
 func (h *ReviewHandler) create(w http.ResponseWriter, r *http.Request) {
 	user, ok := r.Context().Value(middleware.UserKey).(*domain.User)
-	if !ok || user == nil || user.Username == "anonymous" {
+	if !ok || user == nil {
 		httpErr := errors.NewHTTPErr("ocorreu um erro de autenticação, tente logar novamente", 401, "HANDLER:AUTHENTICATE_USER:INVALID_USER")
 		errors.HandleHttpError(w, httpErr)
 
@@ -180,28 +247,23 @@ func (h *ReviewHandler) create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ReviewHandler) listAll(w http.ResponseWriter, r *http.Request) {
+	user, _ := r.Context().Value(middleware.UserKey).(*domain.User)
+
 	username := r.URL.Query().Get("username")
 	team := r.URL.Query().Get("team")
 	match := r.URL.Query().Get("match")
 
-	size, err := strconv.ParseInt(r.URL.Query().Get("page_size"), 10, 64)
-	if err != nil {
-		size = 50
-	}
-
-	index, err := strconv.ParseInt(r.URL.Query().Get("page"), 10, 64)
-	if err != nil {
-		index = 1
-	}
-
-	page, err := pagination.WithPage(int(size), int(index))
+	page, err := pagination.WithPage(
+		r.URL.Query().Get("page_size"),
+		r.URL.Query().Get("page"),
+	)
 	if err != nil {
 		errors.HandleHttpError(w, err)
 
 		return
 	}
 
-	reviews, err := h.listReviewsUseCase.Execute(username, team, match, *page)
+	reviews, err := h.listReviewsUseCase.Execute(user.ID, username, team, match, page)
 	if err != nil {
 		errors.HandleHttpError(w, err)
 
@@ -214,7 +276,7 @@ func (h *ReviewHandler) listAll(w http.ResponseWriter, r *http.Request) {
 
 func (h *ReviewHandler) delete(w http.ResponseWriter, r *http.Request) {
 	user, ok := r.Context().Value(middleware.UserKey).(*domain.User)
-	if !ok || user == nil || user.Username == "anonymous" {
+	if !ok || user == nil {
 		httpErr := errors.NewHTTPErr("ocorreu um erro de autenticação, tente logar novamente", 401, "HANDLER:AUTHENTICATE_USER:INVALID_USER")
 		errors.HandleHttpError(w, httpErr)
 
@@ -235,7 +297,7 @@ func (h *ReviewHandler) delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.deleteReviewUseCase.Execute(reviewID, user.ID); err != nil {
+	if err := h.deleteReviewUseCase.Execute(user.ID, reviewID, user.ID); err != nil {
 		errors.HandleHttpError(w, err)
 
 		return
@@ -244,7 +306,7 @@ func (h *ReviewHandler) delete(w http.ResponseWriter, r *http.Request) {
 
 func (h *ReviewHandler) listFeed(w http.ResponseWriter, r *http.Request) {
 	user, ok := r.Context().Value(middleware.UserKey).(*domain.User)
-	if !ok || user == nil || user.Username == "anonymous" {
+	if !ok || user == nil {
 		httpErr := errors.NewHTTPErr("ocorreu um erro de autenticação, tente logar novamente", 401, "HANDLER:AUTHENTICATE_USER:INVALID_USER")
 		errors.HandleHttpError(w, httpErr)
 
@@ -253,17 +315,10 @@ func (h *ReviewHandler) listFeed(w http.ResponseWriter, r *http.Request) {
 
 	strategy := r.URL.Query().Get("strategy")
 
-	size, err := strconv.ParseInt(r.URL.Query().Get("page_size"), 10, 64)
-	if err != nil {
-		size = 50
-	}
-
-	index, err := strconv.ParseInt(r.URL.Query().Get("page"), 10, 64)
-	if err != nil {
-		index = 1
-	}
-
-	page, err := pagination.WithPage(int(size), int(index))
+	page, err := pagination.WithPage(
+		r.URL.Query().Get("page_size"),
+		r.URL.Query().Get("page"),
+	)
 	if err != nil {
 		errors.HandleHttpError(w, err)
 
