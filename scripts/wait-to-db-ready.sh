@@ -1,9 +1,5 @@
-# Carrega as variáveis do arquivo .env
-export $(grep -v '^#' .env | xargs)
-
-# Função para verificar se o banco de dados está pronto
 check_db() {
-  PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "\q" >/dev/null 2>&1
+  PGPASSWORD=$POSTGRES_PASSWORD psql -h $DB_HOST -p $PGPORT -U $DB_USER -d $POSTGRES_DB -c "\q" >/dev/null 2>&1
 }
 
 # Número de tentativas
@@ -12,7 +8,6 @@ attempt=1
 
 # Loop de tentativas
 while [ $attempt -le $max_attempts ]; do
-
   if check_db; then
     echo "Conexão com o banco de dados estabelecida com sucesso!"
     exit 0

@@ -29,7 +29,7 @@ func main() {
 	commentsRepo := repository.NewCommentsRepository(db)
 	profileRepo := repository.NewProfileRepository(db)
 
-	footballClient := football.NewClient("http://localhost:80/football")
+	footballClient := football.NewClient("http://nginx:80/football")
 
 	createReviewUseCase := reviewsUsecases.NewCreateReviewUseCase(reviewRepository, footballClient)
 	listReviewsUseCase := reviewsUsecases.NewListReviewsUseCase(reviewRepository, userRepository)

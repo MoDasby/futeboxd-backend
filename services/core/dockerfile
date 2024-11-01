@@ -2,16 +2,16 @@ FROM golang:1.22.5 AS builder
 
 WORKDIR /app
 
-COPY services/football/go.mod services/football/go.sum ./
+COPY services/core/go.mod services/core/go.sum ./
 COPY pkg/ ../pkg/
 
 RUN go mod download
 
-COPY services/football/internal ./internal
-COPY services/football/cmd ./cmd
-COPY services/football/database/db.go ./database/db.go
+COPY services/core/internal ./internal
+COPY services/core/cmd ./cmd
+COPY services/core/database/db.go ./database/db.go
 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o api ./cmd/football/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o api ./cmd/api/main.go
 
 FROM alpine:latest AS runner
 

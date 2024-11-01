@@ -1,18 +1,60 @@
 services:
+  core-db:
+    container_name: "core-db"
+    image: postgres:latest
+    env_file: ./env/core.env
+    volumes:
+      - ./infra/core/migrations:/docker-entrypoint-initdb.d
+      - postgres_core_data:/var/lib/postgresql/data
+    networks:
+      - futeboxd
+
+  core:
+    container_name: core-service
+    env_file: ./env/core.env
+    build: 
+      context: .
+      dockerfile: ./services/core/dockerfile
+    depends_on:
+      - core-db
+    networks:
+      - futeboxd
+
+  football-db:
+    container_name: "football-db"
+    env_file: ./env/football.env
+    image: postgres:latest
+    volumes:
+      - ./infra/football/migrations:/docker-entrypoint-initdb.d
+      - postgres_football_data:/var/lib/postgresql/data
+    networks:
+      - futeboxd
+
   football:
     container_name: football-service
+    env_file: ./env/football.env
     build: 
       context: .
-      dockerfile: services/football/dockerfile
-  
-  reviews:
-    container_name: reviews-service
-    build: 
-      context: .
-      dockerfile: services/reviews/dockerfile
+      dockerfile: ./services/football/dockerfile
+    depends_on:
+      - football-db
+    networks:
+      - futeboxd
 
-  users:
-    container_name: users-service
-    build: 
-      context: .
-      dockerfile: services/users/dockerfile
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf  # Mapeia o arquivo de configuração do Nginx
+    ports:
+      - "8080:80"  # Expõe a porta 80
+    networks:
+      - futeboxd
+
+networks:
+  futeboxd:
+    driver: bridge
+
+volumes:
+  postgres_core_data:
+  postgres_football_data:
