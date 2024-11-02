@@ -40,7 +40,7 @@ func (uc *EditUserUseCase) Execute(input EditUserInputDTO) error {
 			return err
 		}
 
-		if emailExists {
+		if emailExists && input.Email != user.Email {
 			return errors.NewHTTPErr(
 				"esse email já existe",
 				409,
@@ -56,7 +56,7 @@ func (uc *EditUserUseCase) Execute(input EditUserInputDTO) error {
 			return err
 		}
 
-		if usernameExists {
+		if usernameExists && input.Username != user.Username {
 			return errors.NewHTTPErr(
 				"esse username já existe",
 				409,

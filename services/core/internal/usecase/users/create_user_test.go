@@ -6,13 +6,12 @@ import (
 	"github.com/modasby/futeboxd-api/services/core/internal/client/football"
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
 	"github.com/modasby/futeboxd-api/services/core/internal/dto"
-	"github.com/modasby/futeboxd-api/services/core/internal/repository"
+	repository_mocks "github.com/modasby/futeboxd-api/services/core/internal/repository/mocks"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestCreateUserUsecase(t *testing.T) {
-	mockRepo := new(repository.MockUserRepo)
+	mockRepo := repository_mocks.NewMockUserRepo()
 	mockFootballClient := new(football.MockFootballClient)
 
 	createUserUsecase := NewCreateUserUseCase(mockRepo, mockFootballClient)
@@ -31,9 +30,6 @@ func TestCreateUserUsecase(t *testing.T) {
 		FavoriteTeamID: user.FavoriteTeamID,
 	}
 
-	mockRepo.On("Exists", user.Username, user.Email).Return(false, nil)
-	mockRepo.On("Create", mock.AnythingOfType("*domain.User")).Return(&user, nil)
-
 	team := football.Team{
 		ID:           7632,
 		Name:         "Atlético MG",
@@ -51,6 +47,5 @@ func TestCreateUserUsecase(t *testing.T) {
 	assert.Equal(t, user.Email, output.Email)
 	assert.Equal(t, team, *output.FavoriteTeam)
 
-	mockRepo.AssertExpectations(t)
 	mockFootballClient.AssertExpectations(t)
 }

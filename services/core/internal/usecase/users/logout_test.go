@@ -4,23 +4,20 @@ import (
 	"testing"
 
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
-	"github.com/modasby/futeboxd-api/services/core/internal/repository"
+	repository_mocks "github.com/modasby/futeboxd-api/services/core/internal/repository/mocks"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestLogout(t *testing.T) {
-	mockSessionRepo := new(repository.MockSessionRepo)
-
-	mockSessionRepo.On("Delete", mock.AnythingOfType("string")).Return(nil)
-
-	uc := NewLogoutUsecase(mockSessionRepo)
+	mockSessionRepo := repository_mocks.NewMockSessionRepo()
 
 	session, _ := domain.NewSession("uuid")
+
+	mockSessionRepo.Create(session)
+
+	uc := NewLogoutUsecase(mockSessionRepo)
 
 	err := uc.Execute(session)
 
 	assert.Nil(t, err)
-
-	mockSessionRepo.AssertExpectations(t)
 }

@@ -5,14 +5,23 @@ import (
 
 	"github.com/modasby/futeboxd-api/services/core/internal/client/football"
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
-	"github.com/modasby/futeboxd-api/services/core/internal/repository"
+	repository_mocks "github.com/modasby/futeboxd-api/services/core/internal/repository/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestFindProfile(t *testing.T) {
-	mockRepo := new(repository.MockProfileRepository)
+	mockRepo := repository_mocks.NewMockProfileRepo()
 	mockFootballClient := new(football.MockFootballClient)
+
+	mockRepo.AddProfile(domain.Profile{
+		UserID:         "wiufwbfuwbuw",
+		Username:       "modasby2",
+		FavoriteTeam:   7632,
+		FollowersCount: 1937,
+		FollowingCount: 1938,
+		IsFollowing:    false,
+	})
 
 	uc := NewFindProfileUsecase(mockRepo, mockFootballClient)
 
@@ -23,15 +32,6 @@ func TestFindProfile(t *testing.T) {
 		Password:       "123456",
 		FavoriteTeamID: 7632,
 	}
-
-	mockRepo.On("FindOneByUsername", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(&domain.Profile{
-		UserID:         "wiufwbfuwbuw",
-		Username:       "modasby2",
-		FavoriteTeam:   7632,
-		FollowersCount: 1937,
-		FollowingCount: 1938,
-		IsFollowing:    false,
-	}, nil)
 
 	team := football.Team{
 		ID:           7632,
@@ -55,6 +55,5 @@ func TestFindProfile(t *testing.T) {
 	assert.Equal(t, 1938, profile.FollowingCount)
 	assert.False(t, profile.Following)
 
-	mockRepo.AssertExpectations(t)
 	mockFootballClient.AssertExpectations(t)
 }

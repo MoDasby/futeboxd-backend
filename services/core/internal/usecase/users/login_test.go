@@ -2,17 +2,15 @@ package usecase
 
 import (
 	"testing"
-	"time"
 
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
-	"github.com/modasby/futeboxd-api/services/core/internal/repository"
+	repository_mocks "github.com/modasby/futeboxd-api/services/core/internal/repository/mocks"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestLogin(t *testing.T) {
-	mockUserRepo := new(repository.MockUserRepo)
-	mockSessionRepo := new(repository.MockSessionRepo)
+	mockUserRepo := repository_mocks.NewMockUserRepo()
+	mockSessionRepo := repository_mocks.NewMockSessionRepo()
 
 	uc := NewLoginUseCase(mockSessionRepo, mockUserRepo)
 
@@ -31,24 +29,12 @@ func TestLogin(t *testing.T) {
 
 	user.HashPassword()
 
-	session := domain.Session{
-		Token:     "generatedToken",
-		ExpiresAt: time.Now().Add(domain.DEFAULT_EXPIRATION),
-		CreatedAt: time.Now(),
-		UserID:    "uuid",
-	}
-
-	mockUserRepo.On("FindOneByCredential", mock.AnythingOfType("string")).Return(&user, nil)
-
-	mockSessionRepo.On("Create", mock.AnythingOfType("*domain.Session")).Return(&session, nil)
+	mockUserRepo.Create(&user)
 
 	output, err := uc.Execute(&input)
 
 	assert.Nil(t, err)
-	assert.Equal(t, session.Token, output.Token)
-	assert.Equal(t, session.ExpiresAt, output.ExpiresAt)
-	assert.Equal(t, session.CreatedAt, output.CreatedAt)
-
-	mockSessionRepo.AssertExpectations(t)
-	mockUserRepo.AssertExpectations(t)
+	assert.NotEmpty(t, output.Token)
+	assert.NotEmpty(t, output.ExpiresAt)
+	assert.NotEmpty(t, output.CreatedAt)
 }
