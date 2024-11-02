@@ -3,7 +3,6 @@ FROM golang:1.22.5 AS builder
 WORKDIR /app
 
 COPY services/football/go.mod services/football/go.sum ./
-COPY pkg/ ../pkg/
 
 RUN go mod download
 
@@ -20,8 +19,8 @@ WORKDIR /root/
 RUN apk update && apk add postgresql-client
 
 COPY --from=builder /app/api ./api
-COPY scripts/entrypoint.sh ./
-COPY scripts/wait-to-db-ready.sh ./
+COPY infra/entrypoint.sh ./
+COPY infra/wait-to-db-ready.sh ./
 
 RUN chmod +x ./entrypoint.sh
 RUN chmod +x ./wait-to-db-ready.sh

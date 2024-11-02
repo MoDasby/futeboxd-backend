@@ -2,4 +2,3 @@ bin
 tmp
 .env
 coverage.out
-database/postgres_data

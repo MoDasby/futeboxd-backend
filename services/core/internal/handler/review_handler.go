@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/modasby/futeboxd-api/pkg/errors"
-	"github.com/modasby/futeboxd-api/pkg/pagination"
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
+	"github.com/modasby/futeboxd-api/services/core/internal/errors"
 	"github.com/modasby/futeboxd-api/services/core/internal/middleware"
+	"github.com/modasby/futeboxd-api/services/core/internal/pagination"
 	usecase "github.com/modasby/futeboxd-api/services/core/internal/usecase/reviews"
 )
 

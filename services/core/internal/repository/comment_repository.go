@@ -3,8 +3,8 @@ package repository
 import (
 	"database/sql"
 
-	"github.com/modasby/futeboxd-api/pkg/pagination"
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
+	"github.com/modasby/futeboxd-api/services/core/internal/pagination"
 )
 
 type CommentsRepository struct {

@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/modasby/futeboxd-api/pkg/client/football"
 	"github.com/modasby/futeboxd-api/services/core/database"
+	"github.com/modasby/futeboxd-api/services/core/internal/client/football"
 	"github.com/modasby/futeboxd-api/services/core/internal/handler"
 	"github.com/modasby/futeboxd-api/services/core/internal/middleware"
 	"github.com/modasby/futeboxd-api/services/core/internal/repository"
@@ -29,7 +29,7 @@ func main() {
 	commentsRepo := repository.NewCommentsRepository(db)
 	profileRepo := repository.NewProfileRepository(db)
 
-	footballClient := football.NewClient("http://nginx:80/football")
+	footballClient := football.NewClient()
 
 	createReviewUseCase := reviewsUsecases.NewCreateReviewUseCase(reviewRepository, footballClient)
 	listReviewsUseCase := reviewsUsecases.NewListReviewsUseCase(reviewRepository, userRepository)

@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/modasby/futeboxd-api/pkg/errors"
+	"github.com/modasby/futeboxd-api/services/core/internal/errors"
 	"golang.org/x/crypto/bcrypt"
 )
 

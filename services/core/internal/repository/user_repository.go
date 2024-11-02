@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	errorsTypes "github.com/modasby/futeboxd-api/pkg/errors"
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
+	errorsTypes "github.com/modasby/futeboxd-api/services/core/internal/errors"
 )
 
 type userRepository struct {

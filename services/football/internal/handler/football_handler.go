@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/modasby/futeboxd-api/pkg/errors"
+	"github.com/modasby/futeboxd-api/services/football/internal/errors"
 	"github.com/modasby/futeboxd-api/services/football/internal/usecase"
 )
 

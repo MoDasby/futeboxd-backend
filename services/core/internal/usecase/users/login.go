@@ -3,8 +3,8 @@ package usecase
 import (
 	"time"
 
-	"github.com/modasby/futeboxd-api/pkg/errors"
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
+	"github.com/modasby/futeboxd-api/services/core/internal/errors"
 )
 
 type LoginUseCase struct {

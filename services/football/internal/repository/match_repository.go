@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	errorsTypes "github.com/modasby/futeboxd-api/pkg/errors"
 	"github.com/modasby/futeboxd-api/services/football/internal/domain"
+	errorsTypes "github.com/modasby/futeboxd-api/services/football/internal/errors"
 )
 
 type matchRepository struct {

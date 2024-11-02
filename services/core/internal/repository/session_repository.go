@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	errorsTypes "github.com/modasby/futeboxd-api/pkg/errors"
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
+	errorsTypes "github.com/modasby/futeboxd-api/services/core/internal/errors"
 )
 
 type SessionRepository struct {

@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/modasby/futeboxd-api/pkg/errors"
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
+	"github.com/modasby/futeboxd-api/services/core/internal/errors"
 )
 
 type ctxKey string

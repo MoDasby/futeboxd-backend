@@ -1,6 +1,6 @@
 package dto
 
-import "github.com/modasby/futeboxd-api/pkg/client/football"
+import "github.com/modasby/futeboxd-api/services/core/internal/client/football"
 
 type UserDTO struct {
 	ID           string         `json:"id"`

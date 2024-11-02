@@ -1,8 +1,8 @@
 package usecase
 
 import (
-	"github.com/modasby/futeboxd-api/pkg/errors"
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
+	"github.com/modasby/futeboxd-api/services/core/internal/errors"
 )
 
 type ToggleLikeReviewUsecase struct {

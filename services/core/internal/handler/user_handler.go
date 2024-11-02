@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/modasby/futeboxd-api/pkg/errors"
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
 	"github.com/modasby/futeboxd-api/services/core/internal/dto"
+	"github.com/modasby/futeboxd-api/services/core/internal/errors"
 	"github.com/modasby/futeboxd-api/services/core/internal/middleware"
 	usecase "github.com/modasby/futeboxd-api/services/core/internal/usecase/users"
 )

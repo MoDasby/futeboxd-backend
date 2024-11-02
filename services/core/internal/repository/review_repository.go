@@ -4,10 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/modasby/futeboxd-api/pkg/errors"
-	"github.com/modasby/futeboxd-api/pkg/pagination"
-	"github.com/modasby/futeboxd-api/pkg/utils"
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
+	"github.com/modasby/futeboxd-api/services/core/internal/errors"
+	"github.com/modasby/futeboxd-api/services/core/internal/pagination"
+	"github.com/modasby/futeboxd-api/services/core/internal/utils"
 )
 
 type reviewRepository struct {
@@ -215,7 +215,7 @@ func (repo *reviewRepository) ListAll(requesterID, userID, team, match string, p
 			u.username, 
 			u.favorite_team,
 			COUNT(l.review_id) as like_count,
-			COUNT(CASE WHEN l.like_owner_id = $1 THEN 1 END) > 0 AS is_liked
+			COUNT(CASE WHEN l.like_owner_id = $%d THEN 1 END) > 0 AS is_liked
 		FROM reviews r
 		LEFT JOIN users u ON u.id = r.user_id
 		LEFT JOIN likes l ON l.review_id = r.id
@@ -224,9 +224,9 @@ func (repo *reviewRepository) ListAll(requesterID, userID, team, match string, p
 		ORDER BY r.created_at DESC
 		LIMIT $%d
 		OFFSET ($%d - 1) * $%d
-	`, whereQuery, len(params)+1, len(params)+2, len(params)+1)
+	`, len(params)+1, whereQuery, len(params)+2, len(params)+3, len(params)+2)
 
-	rows, err := repo.db.Query(query, append(params, page.Size, page.Index)...)
+	rows, err := repo.db.Query(query, append(params, requesterID, page.Size, page.Index)...)
 	if err != nil {
 		return nil, err
 	}

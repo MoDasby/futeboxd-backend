@@ -1,6 +1,6 @@
 package domain
 
-import "github.com/modasby/futeboxd-api/pkg/pagination"
+import "github.com/modasby/futeboxd-api/services/core/internal/pagination"
 
 type SessionRepository interface {
 	FindOneByToken(token string) (*Session, error)

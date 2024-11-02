@@ -3,9 +3,9 @@ package usecase
 import (
 	"fmt"
 
-	"github.com/modasby/futeboxd-api/pkg/pagination"
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
 	"github.com/modasby/futeboxd-api/services/core/internal/dto"
+	"github.com/modasby/futeboxd-api/services/core/internal/pagination"
 )
 
 type ListFeedUsecase struct {
