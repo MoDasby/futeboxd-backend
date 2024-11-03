@@ -29,7 +29,7 @@ func NewCreateReviewUseCase(
 
 func (uc *CreateReviewUseCase) Execute(input CreateReviewInputDTO) error {
 	match, err := uc.footballClient.GetMatch(input.MatchID)
-	if err != nil || match == nil {
+	if err != nil || match == nil { //TODO se o match for nil o err não será nil isso está errado
 		return err
 	}
 
