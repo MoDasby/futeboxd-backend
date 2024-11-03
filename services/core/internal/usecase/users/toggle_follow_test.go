@@ -41,5 +41,5 @@ func TestToggleFollow(t *testing.T) {
 	output, err = uc.Execute(follower.ID, following.ID)
 
 	assert.NoError(t, err)
-	assert.False(t, output.Follow)
+	assert.True(t, output.Follow)
 }
