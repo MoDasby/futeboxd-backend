@@ -15,7 +15,7 @@ func TestFindProfile(t *testing.T) {
 	mockFootballClient := new(football.MockFootballClient)
 
 	mockRepo.AddProfile(domain.Profile{
-		UserID:         "wiufwbfuwbuw",
+		UserID:         "uuid",
 		Username:       "modasby2",
 		FavoriteTeam:   7632,
 		FollowersCount: 1937,

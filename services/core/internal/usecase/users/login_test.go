@@ -14,11 +14,6 @@ func TestLogin(t *testing.T) {
 
 	uc := NewLoginUseCase(mockSessionRepo, mockUserRepo)
 
-	input := LoginInput{
-		Credential: "modasby",
-		Password:   "123456",
-	}
-
 	user := domain.User{
 		ID:             "uuid",
 		Username:       "modasby",
@@ -31,10 +26,41 @@ func TestLogin(t *testing.T) {
 
 	mockUserRepo.Create(&user)
 
-	output, err := uc.Execute(&input)
+	t.Run("should login successfully", func(t *testing.T) {
+		input := LoginInput{
+			Credential: "modasby",
+			Password:   "123456",
+		}
 
-	assert.Nil(t, err)
-	assert.NotEmpty(t, output.Token)
-	assert.NotEmpty(t, output.ExpiresAt)
-	assert.NotEmpty(t, output.CreatedAt)
+		output, err := uc.Execute(&input)
+
+		assert.Nil(t, err)
+		assert.NotEmpty(t, output.Token)
+		assert.False(t, output.ExpiresAt.IsZero())
+		assert.False(t, output.CreatedAt.IsZero())
+	})
+
+	t.Run("should return error when invalid credential", func(t *testing.T) {
+		input := LoginInput{
+			Credential: "invalid_credential",
+			Password:   "123456",
+		}
+
+		output, err := uc.Execute(&input)
+
+		assert.Error(t, err)
+		assert.Nil(t, output)
+	})
+
+	t.Run("should return error when invalid password", func(t *testing.T) {
+		input := LoginInput{
+			Credential: "modasby",
+			Password:   "invalid_pass",
+		}
+
+		output, err := uc.Execute(&input)
+
+		assert.Error(t, err)
+		assert.Nil(t, output)
+	})
 }
