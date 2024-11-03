@@ -8,7 +8,7 @@ dev:
 	~/go/bin/air --build.cmd "go build -o bin/api cmd/api/main.go" --build.bin "./bin/api"
 
 test:
-	@go test ./... -coverprofile=coverage.out
+	@go test ./... 
 
 build:
 	@go build -o bin/api cmd/api/main.go
