@@ -69,6 +69,10 @@ func (h *UserHandler) updatePassword(w http.ResponseWriter, r *http.Request) {
 			400,
 			"HANDLER:UPDATE_PASSWORD:INVALID_BODY",
 		)
+
+		errors.HandleHttpError(w, err)
+
+		return
 	}
 
 	input.User = user

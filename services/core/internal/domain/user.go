@@ -120,34 +120,9 @@ func (u *User) HashPassword() error {
 func (u *User) CheckPassword(providedPassword string) error {
 	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(providedPassword)); err != nil {
 		return errors.NewHTTPErr(
-			"username deve ter mais de 1 caracter",
+			"senha não confere",
 			400,
-			"DOMAIN:USER:VALIDATE:INVALID_USERNAME",
-		)
-	}
-
-	if strings.Contains(u.Username, " ") {
-		return errors.NewHTTPErr(
-			"username são pode conter espaços",
-			400,
-			"DOMAIN:USER:VALIDATE:INVALID_USERNAME",
-		)
-	}
-
-	matched, err := regexp.MatchString("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$", u.Email)
-	if err != nil {
-		return err
-	}
-
-	if !matched {
-		return errors.NewHTTPErr("email inválido", 400, "DOMAIN:USER:VALIDATE:INVALID_EMAIL")
-	}
-
-	if len(u.Password) <= 5 {
-		return errors.NewHTTPErr(
-			"senha deve ter pelo menos 5 caracteres",
-			400,
-			"DOMAIN:USER:VALIDATE:INVALID_PASSWORD",
+			"DOMAIN:USER:CHECK_PASSWORD:WRONG_PASSWORD",
 		)
 	}
 
