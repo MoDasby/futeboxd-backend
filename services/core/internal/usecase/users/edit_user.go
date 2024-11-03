@@ -34,46 +34,16 @@ func (uc *EditUserUseCase) Execute(input EditUserInputDTO) error {
 		return err
 	}
 
-	if input.Email != "" {
-		emailExists, err := uc.userRepository.Exists("", input.Email)
-		if err != nil {
-			return err
-		}
-
-		if emailExists && input.Email != user.Email {
-			return errors.NewHTTPErr(
-				"esse email já existe",
-				409,
-				"USECASE:USER:EDIT:EMAIL_ALREADY_EXISTS",
-			)
-		}
-		user.Email = input.Email
+	if err := uc.updateEmail(user, input.Email); err != nil {
+		return err
 	}
 
-	if input.Username != "" {
-		usernameExists, err := uc.userRepository.Exists(input.Username, "")
-		if err != nil {
-			return err
-		}
-
-		if usernameExists && input.Username != user.Username {
-			return errors.NewHTTPErr(
-				"esse username já existe",
-				409,
-				"USECASE:USER:EDIT:USERNAME_ALREADY_EXISTS",
-			)
-		}
-
-		user.Username = input.Username
+	if err := uc.updateUsername(user, input.Username); err != nil {
+		return err
 	}
 
-	if input.FavoriteTeamID > 0 {
-		team, err := uc.footballClient.GetTeam(input.FavoriteTeamID)
-		if err != nil {
-			return err
-		}
-
-		user.FavoriteTeamID = team.ID
+	if err := uc.updateFavoriteTeam(user, input.FavoriteTeamID); err != nil {
+		return err
 	}
 
 	if err := user.Validate(); err != nil {
@@ -82,6 +52,60 @@ func (uc *EditUserUseCase) Execute(input EditUserInputDTO) error {
 
 	if err := uc.userRepository.Update(user); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (uc *EditUserUseCase) updateFavoriteTeam(user *domain.User, favoriteTeam int64) error {
+	if favoriteTeam > 0 {
+		team, err := uc.footballClient.GetTeam(favoriteTeam)
+		if err != nil {
+			return err
+		}
+
+		user.FavoriteTeamID = team.ID
+	}
+
+	return nil
+}
+
+func (uc *EditUserUseCase) updateEmail(user *domain.User, email string) error {
+	if email != "" {
+		emailExists, err := uc.userRepository.Exists("", email)
+		if err != nil {
+			return err
+		}
+
+		if emailExists && email != user.Email {
+			return errors.NewHTTPErr(
+				"esse email já existe",
+				409,
+				"USECASE:USER:EDIT:EMAIL_ALREADY_EXISTS",
+			)
+		}
+		user.Email = email
+	}
+
+	return nil
+}
+
+func (uc *EditUserUseCase) updateUsername(user *domain.User, username string) error {
+	if username != "" {
+		usernameExists, err := uc.userRepository.Exists(username, "")
+		if err != nil {
+			return err
+		}
+
+		if usernameExists && username != user.Username {
+			return errors.NewHTTPErr(
+				"esse username já existe",
+				409,
+				"USECASE:USER:EDIT:USERNAME_ALREADY_EXISTS",
+			)
+		}
+
+		user.Username = username
 	}
 
 	return nil
