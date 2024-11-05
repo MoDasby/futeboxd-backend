@@ -53,8 +53,8 @@ func (h *UserHandler) RegisterRoutes(r *http.ServeMux, injectUser middleware.Mid
 }
 
 func (h *UserHandler) updatePassword(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value(middleware.UserKey).(*domain.User)
-	if !ok || user == nil {
+	user, err := GetUserFromCtx(r.Context())
+	if err != nil {
 		httpErr := errors.NewHTTPErr("ocorreu um erro de autenticação, tente logar novamente", 401, "HANDLER:AUTHENTICATE_USER:INVALID_USER")
 		errors.HandleHttpError(w, httpErr)
 
@@ -102,8 +102,8 @@ func (h *UserHandler) logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) toggleFollow(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value(middleware.UserKey).(*domain.User)
-	if !ok || user == nil {
+	user, err := GetUserFromCtx(r.Context())
+	if err != nil {
 		httpErr := errors.NewHTTPErr("ocorreu um erro de autenticação, tente logar novamente", 401, "HANDLER:AUTHENTICATE_USER:INVALID_USER")
 		errors.HandleHttpError(w, httpErr)
 
@@ -140,8 +140,8 @@ func (h *UserHandler) login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) getCurrentUser(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value(middleware.UserKey).(*domain.User)
-	if !ok || user == nil {
+	user, err := GetUserFromCtx(r.Context())
+	if err != nil {
 		httpErr := errors.NewHTTPErr("ocorreu um erro de autenticação, tente logar novamente", 401, "HANDLER:AUTHENTICATE_USER:INVALID_USER")
 		errors.HandleHttpError(w, httpErr)
 
@@ -185,8 +185,8 @@ func (h *UserHandler) createUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) editUser(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value(middleware.UserKey).(*domain.User)
-	if !ok || user == nil {
+	user, err := GetUserFromCtx(r.Context())
+	if err != nil {
 		httpErr := errors.NewHTTPErr("ocorreu um erro de autenticação, tente logar novamente", 401, "HANDLER:AUTHENTICATE_USER:INVALID_USER")
 		errors.HandleHttpError(w, httpErr)
 
@@ -203,8 +203,7 @@ func (h *UserHandler) editUser(w http.ResponseWriter, r *http.Request) {
 
 	input.UserID = user.ID
 
-	err := h.editUserUseCase.Execute(input)
-	if err != nil {
+	if err := h.editUserUseCase.Execute(input); err != nil {
 		errors.HandleHttpError(w, err)
 
 		return
@@ -216,9 +215,9 @@ func (h *UserHandler) editUser(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandler) findByUsername(w http.ResponseWriter, r *http.Request) {
 	username := r.PathValue("username")
 
-	requester, ok := r.Context().Value(middleware.UserKey).(*domain.User)
-	if !ok || requester == nil {
-		httpErr := errors.NewHTTPErr("ocorreu um erro de autenticação, tente logar novamente", 401, "HANDLER:USER:EDIT:INVALID_SESSION")
+	requester, err := GetUserFromCtx(r.Context())
+	if err != nil {
+		httpErr := errors.NewHTTPErr("ocorreu um erro de autenticação, tente logar novamente", 401, "HANDLER:AUTHENTICATE_USER:INVALID_USER")
 		errors.HandleHttpError(w, httpErr)
 
 		return
