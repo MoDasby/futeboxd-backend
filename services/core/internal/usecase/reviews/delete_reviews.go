@@ -15,13 +15,13 @@ func NewDeleteReviewUseCase(repo domain.ReviewRepository) *DeleteReviewUseCase {
 	}
 }
 
-func (uc *DeleteReviewUseCase) Execute(requesterID string, reviewID int64, userID string) error {
+func (uc *DeleteReviewUseCase) Execute(requesterID string, reviewID int64) error {
 	review, err := uc.reviewRepository.FindOneByID(requesterID, reviewID)
 	if err != nil {
 		return err
 	}
 
-	if review.Author.ID != userID {
+	if review.Author.ID != requesterID {
 		return errors.NewHTTPErr(
 			"você não pode executar essa ação",
 			403,
