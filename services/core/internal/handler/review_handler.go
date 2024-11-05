@@ -3,9 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
-	"github.com/modasby/futeboxd-api/services/core/internal/domain"
 	"github.com/modasby/futeboxd-api/services/core/internal/errors"
 	"github.com/modasby/futeboxd-api/services/core/internal/middleware"
 	"github.com/modasby/futeboxd-api/services/core/internal/pagination"
@@ -21,6 +19,7 @@ type ReviewHandler struct {
 	listCommentsUsecase      *usecase.GetCommentsUsecase
 	toggleLikeCommentUsecase *usecase.ToggleLikeCommentUsecase
 	toggleLikeReviewUsecase  *usecase.ToggleLikeReviewUsecase
+	deleteCommentUsecase     *usecase.DeleteCommentUsecase
 }
 
 func NewReviewHandler(
@@ -32,6 +31,7 @@ func NewReviewHandler(
 	listCommentsUsecase *usecase.GetCommentsUsecase,
 	toggleLikeCommentUsecase *usecase.ToggleLikeCommentUsecase,
 	toggleLikeReviewUsecase *usecase.ToggleLikeReviewUsecase,
+	deleteCommentUsecase *usecase.DeleteCommentUsecase,
 ) *ReviewHandler {
 	return &ReviewHandler{
 		createReviewUseCase:      createReviewUseCase,
@@ -42,6 +42,7 @@ func NewReviewHandler(
 		listCommentsUsecase:      listCommentsUsecase,
 		toggleLikeCommentUsecase: toggleLikeCommentUsecase,
 		toggleLikeReviewUsecase:  toggleLikeReviewUsecase,
+		deleteCommentUsecase:     deleteCommentUsecase,
 	}
 }
 
@@ -51,9 +52,33 @@ func (h *ReviewHandler) RegisterRoutes(router *http.ServeMux, injectUser middlew
 	router.HandleFunc("GET /reviews", injectUser(h.listAll, true))
 	router.HandleFunc("DELETE /reviews/{reviewID}", injectUser(h.delete, false))
 	router.HandleFunc("POST /reviews/{reviewID}/comments", injectUser(h.createComment, false))
+	router.HandleFunc("DELETE /reviews/{reviewID}/comments/{commentID}", injectUser(h.deleteComment, false))
 	router.HandleFunc("GET /reviews/{reviewID}/comments", injectUser(h.listComments, true))
 	router.HandleFunc("POST /reviews/{reviewID}/like", injectUser(h.toggleLikeReview, false))
 	router.HandleFunc("POST /reviews/{reviewID}/comments/{commentID}/like", injectUser(h.toggleLikeComment, false))
+}
+
+func (h *ReviewHandler) deleteComment(w http.ResponseWriter, r *http.Request) {
+	user, err := GetUserFromCtx(r.Context())
+	if err != nil {
+		httpErr := errors.NewHTTPErr("ocorreu um erro de autenticação, tente logar novamente", 401, "HANDLER:AUTHENTICATE_USER:INVALID_USER")
+		errors.HandleHttpError(w, httpErr)
+
+		return
+	}
+
+	commentID, err := ParseIntPathValue(r.PathValue("commentID"))
+	if err != nil {
+		errors.HandleHttpError(w, err)
+
+		return
+	}
+
+	if err := h.deleteCommentUsecase.Execute(user.ID, commentID); err != nil {
+		errors.HandleHttpError(w, err)
+
+		return
+	}
 }
 
 func (h *ReviewHandler) toggleLikeReview(w http.ResponseWriter, r *http.Request) {

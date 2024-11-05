@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
+	"github.com/modasby/futeboxd-api/services/core/internal/errors"
 	"github.com/modasby/futeboxd-api/services/core/internal/pagination"
 )
 
@@ -59,6 +60,42 @@ func (repo *CommentsRepository) ExistsByID(commentID int64) (bool, error) {
 	}
 
 	return exists.Bool, nil
+}
+
+func (repo *CommentsRepository) FindOneByID(commentID int64) (*domain.Comment, error) {
+	query := `
+		SELECT 
+			c.id, c.user_id, c.review_id, c.content, c.created_at
+		FROM comments c
+		WHERE c.id = $1
+	`
+
+	row := repo.db.QueryRow(query, commentID)
+
+	var comment domain.Comment
+
+	var author domain.User
+
+	comment.Author = &author
+
+	if err := row.Scan(
+		&comment.ID, &comment.Author.ID, &comment.ParentID, &comment.Content, &comment.CreatedAt,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errors.NewHTTPErr(
+				"comentário não encontrado",
+				404,
+				"COMMENT_REPOSITORY:FIND_COMMENT_BY_ID:COMMENT_NOT_FOUND",
+			)
+		}
+		return nil, errors.NewHTTPErr(
+			"ocorreu um erro desconhecido",
+			500,
+			"COMMENT_REPOSITORY:FIND_COMMENT_BY_ID:SQL_ERROR",
+		)
+	}
+
+	return &comment, nil
 }
 
 func (repo *CommentsRepository) ListByReview(

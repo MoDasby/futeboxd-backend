@@ -39,6 +39,7 @@ func main() {
 	listCommentsUsecase := reviewsUsecases.NewGetCommentsUsecase(commentsRepo)
 	toggleLikeCommentUsecase := reviewsUsecases.NewToggleLikeCommentUsecase(commentsRepo)
 	toggleLikeReviewUsecase := reviewsUsecases.NewToggleLikeReviewUsecase(reviewRepository)
+	deleteCommentUsecase := reviewsUsecases.NewDeleteCommentUsecase(commentsRepo)
 
 	createUserUseCase := usersUsecases.NewCreateUserUseCase(userRepository, footballClient)
 	findByProfile := usersUsecases.NewFindProfileUsecase(profileRepo, footballClient)
@@ -57,6 +58,7 @@ func main() {
 		listCommentsUsecase,
 		toggleLikeCommentUsecase,
 		toggleLikeReviewUsecase,
+		deleteCommentUsecase,
 	)
 	userHandler := handler.NewUserHandler(
 		createUserUseCase,

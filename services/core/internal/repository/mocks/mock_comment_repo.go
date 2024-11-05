@@ -41,8 +41,18 @@ func (m *MockCommentsRepo) ExistsByID(commentID int64) (bool, error) {
 	return false, nil
 }
 
+func (m *MockCommentsRepo) FindOneByID(commentID int64) (*domain.Comment, error) {
+	for _, comment := range m.comments {
+		if comment.ID == commentID {
+			return &comment, nil
+		}
+	}
+
+	return nil, errors.New("commment not found")
+}
+
 func (m *MockCommentsRepo) ListByReview(requesterID string, reviewID int64, page *pagination.Page) ([]domain.Comment, error) {
-	start := page.Index * page.Size
+	start := (page.Index - 1) * page.Size
 	end := start + page.Size
 
 	var filteredComments []domain.Comment

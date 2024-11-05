@@ -39,6 +39,7 @@ type CommentsRepository interface {
 	Create(comment *Comment) error
 	Delete(commentID int64) error
 	ExistsByID(commentID int64) (bool, error)
+	FindOneByID(commentID int64) (*Comment, error)
 	ListByReview(requesterID string, reviewID int64, page *pagination.Page) ([]Comment, error)
 	Like(requesterID string, commentID int64) error
 	Unlike(requesterID string, commentID int64) error
