@@ -42,7 +42,7 @@ func (m *MockReviewRepo) ExistsByID(reviewID int64) (bool, error) {
 }
 
 func (m *MockReviewRepo) ListFeed(requesterID, strategy string, page *pagination.Page) ([]domain.Review, error) {
-	start := page.Index * page.Size
+	start := (page.Index - 1) * page.Size
 	end := start + page.Size
 
 	if start > len(m.reviews) {
