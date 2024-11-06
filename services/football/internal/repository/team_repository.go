@@ -17,7 +17,7 @@ func NewTeamRepository(db *sql.DB) domain.TeamRepository {
 }
 
 // AddTeam insere um novo time na tabela de teams.
-func (repo *teamRepository) AddTeam(team *domain.Team) error {
+func (repo *teamRepository) Create(team *domain.Team) error {
 	query := `
 		INSERT INTO teams (id, name, abbreviation, color, logo)
 		VALUES ($1, $2, $3, $4, $5)
@@ -28,7 +28,7 @@ func (repo *teamRepository) AddTeam(team *domain.Team) error {
 }
 
 // FindTeamById busca um time pelo ID.
-func (repo *teamRepository) FindTeamById(ID string) (*domain.Team, error) {
+func (repo *teamRepository) FindOneById(ID string) (*domain.Team, error) {
 	query := `
 		SELECT t.id, t.name, t.abbreviation, t.color, t.logo
 		FROM teams t

@@ -19,7 +19,7 @@ func NewMatchRepository(db *sql.DB) domain.MatchRepository {
 	return &matchRepository{db: db}
 }
 
-func (repo *matchRepository) AddMatch(match *domain.Match) error {
+func (repo *matchRepository) Create(match *domain.Match) error {
 	query := `
 		INSERT INTO matches (
 			id, match_date, venue_name, venue_city, home_team_score, home_team_id, home_team_rosters,
@@ -45,7 +45,7 @@ func (repo *matchRepository) AddMatch(match *domain.Match) error {
 	return err
 }
 
-func (repo *matchRepository) FindMatchByID(matchID string) (*domain.Match, error) {
+func (repo *matchRepository) FindOneByID(matchID string) (*domain.Match, error) {
 
 	query := `
 		SELECT id, match_date, venue_name, venue_city, home_team_score, home_team_id, home_team_rosters,
@@ -89,7 +89,7 @@ func (repo *matchRepository) FindMatchByID(matchID string) (*domain.Match, error
 	return &match, nil
 }
 
-func (repo *matchRepository) FindMatchBatch(ids []int64) ([]domain.Match, error) {
+func (repo *matchRepository) FindBatchByID(ids []int64) ([]domain.Match, error) {
 	placeholders := make([]string, len(ids))
 	args := make([]interface{}, len(ids)) // slice de argumentos
 

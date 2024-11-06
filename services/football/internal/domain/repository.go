@@ -1,13 +1,13 @@
 package domain
 
 type MatchRepository interface {
-	AddMatch(event *Match) error
-	FindMatchByID(eventID string) (*Match, error)
-	FindMatchBatch(ids []int64) ([]Match, error)
+	Create(event *Match) error
+	FindOneByID(eventID string) (*Match, error)
+	FindBatchByID(ids []int64) ([]Match, error)
 }
 
 type TeamRepository interface {
-	FindTeamById(ID string) (*Team, error)
-	AddTeam(team *Team) error
+	FindOneById(ID string) (*Team, error)
+	Create(team *Team) error
 	FindAll(name string) ([]*Team, error)
 }
