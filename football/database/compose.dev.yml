@@ -1,0 +1,21 @@
+services:
+  football-db:
+    networks:
+      - football_db
+    image: postgres:latest
+    env_file: ../.env
+    volumes:
+      - ./migrations:/docker-entrypoint-initdb.d
+    ports:
+      - ${PGPORT}:${PGPORT}
+    deploy:
+      resources:
+        limits:
+          memory: 1.5g
+          cpus: "0.5" 
+        reservations:
+          memory: 1g
+
+networks:
+  football_db:
+    driver: bridge

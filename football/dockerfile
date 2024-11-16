@@ -1,0 +1,24 @@
+FROM golang:1.22.5 AS builder
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+
+RUN go mod download
+
+COPY . .
+
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o api ./cmd/api/main.go
+
+FROM alpine:latest AS runner
+
+WORKDIR /root/
+
+RUN apk update && apk add postgresql-client
+
+COPY --from=builder /app/api ./api
+COPY wait-to-db-ready.sh ./
+
+RUN chmod +x ./wait-to-db-ready.sh
+
+CMD ["sh", "-c", "./wait-to-db-ready.sh && ./api"]

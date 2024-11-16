@@ -1,0 +1,58 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22.5'
+
+    - name: Test Core Service
+      id: core_test
+      run: |
+        cd services/core
+        go test ./... -v
+
+    - name: Test Football Service
+      id: football_test
+      run: |
+        cd services/football
+        go test ./... -v
+
+    - name: Comment on Pull Request
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v5
+      with:
+        script: |
+          const coreTestSuccess = "${{ steps.core_test.outcome }}" === "success";
+          const footballTestSuccess = "${{ steps.football_test.outcome }}" === "success";
+
+          const statusMessage = `
+          ### Test Results
+          **Core Service:** ${coreTestSuccess ? "✅ Passed" : "❌ Failed"}
+          **Football Service:** ${footballTestSuccess ? "✅ Passed" : "❌ Failed"}
+          `;
+
+          const { owner, repo } = context.repo;
+          const pullRequestNumber = context.issue.number;
+
+          await github.issues.createComment({
+            owner,
+            repo,
+            issue_number: pullRequestNumber,
+            body: statusMessage
+          });

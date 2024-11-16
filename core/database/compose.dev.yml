@@ -1,0 +1,24 @@
+services:
+  core-db:
+    networks:
+      - core_db
+    image: postgres:latest
+    env_file:
+      - ../.env
+    volumes:
+      - ./migrations:/docker-entrypoint-initdb.d
+    environment:
+      - PGPORT=${PGPORT}
+    ports:
+      - ${PGPORT}:${PGPORT}
+    deploy:
+      resources:
+        limits:
+          memory: 1.5g
+          cpus: "0.5"
+        reservations:
+          memory: 1g
+
+networks:
+  core_db:
+    driver: bridge
