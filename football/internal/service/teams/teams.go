@@ -55,7 +55,6 @@ func (s *teamService) ListSchedule(team, season string) (*ScheduleOutputDTO, err
 	schedule.Matches = make([]domain.Match, 0)
 
 	for _, espnEvent := range espnSchedule.Events {
-		venue := domain.NewVenue(espnEvent.Competitions[0].Venue.FullName, espnEvent.Competitions[0].Venue.Address.City)
 
 		var homeCompetitor domain.Competitor
 		var awayCompetitor domain.Competitor
@@ -97,7 +96,7 @@ func (s *teamService) ListSchedule(team, season string) (*ScheduleOutputDTO, err
 		}
 
 		newMatch := domain.NewMatch(
-			eventID, *venue, espnEvent.Date, note,
+			eventID, espnEvent.Competitions[0].Venue.FullName, espnEvent.Date, note,
 			homeCompetitor, awayCompetitor, espnEvent.Competitions[0].Status.Type.Completed, espnEvent.Competitions[0].Status.Type.Name,
 			espnEvent.SeasonType.Name,
 		)

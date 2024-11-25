@@ -54,7 +54,7 @@ func InsertMatches() {
 				_, err := matchService.FindOneByID(match.ID)
 				if err != nil {
 					matchesFailed = append(matchesFailed, match.ID)
-					log.Printf("partida falhada %d", match.ID)
+					log.Printf("partida falhada %d, %s", match.ID, err)
 				} else {
 					log.Printf("inserida partida %d", match.ID)
 				}

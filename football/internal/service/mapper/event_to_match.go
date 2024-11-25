@@ -8,7 +8,6 @@ import (
 )
 
 func EspnEventToMatch(espnEvent *service.EspnEventSummary) (*domain.Match, *domain.MatchSummary, error) {
-	venue := domain.NewVenue(espnEvent.GameInfo.Venue.FullName, espnEvent.GameInfo.Venue.Address.City)
 
 	var homeCompetitor domain.Competitor
 	var awayCompetitor domain.Competitor
@@ -83,7 +82,7 @@ func EspnEventToMatch(espnEvent *service.EspnEventSummary) (*domain.Match, *doma
 	summary.Events = events
 
 	match := domain.NewMatch(
-		matchID, *venue, espnEvent.Header.Competitions[0].Date,
+		matchID, espnEvent.GameInfo.Venue.FullName, espnEvent.Header.Competitions[0].Date,
 		note, homeCompetitor, awayCompetitor, espnEvent.Header.Competitions[0].Status.Type.Completed,
 		espnEvent.Header.Competitions[0].Status.Type.Name,
 		espnEvent.Header.Season.Name,

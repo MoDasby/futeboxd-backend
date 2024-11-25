@@ -12,11 +12,6 @@ type Event struct {
 	} `json:"clock"`
 }
 
-type Venue struct {
-	Name string `json:"name"`
-	City string `json:"city"`
-}
-
 type Roster struct {
 	Starter bool `json:"starter"`
 	Athlete struct {
@@ -46,7 +41,7 @@ type Competitor struct {
 
 type Match struct {
 	ID              int64      `json:"id"`
-	Venue           Venue      `json:"venue"`
+	Venue           string     `json:"venue"`
 	Date            string     `json:"date"`
 	Note            string     `json:"note"`
 	Completed       bool       `json:"completed"`

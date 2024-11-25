@@ -21,11 +21,11 @@ func NewMatchRepository(db *sql.DB) domain.MatchRepository {
 func (repo *matchRepository) Create(match *domain.Match, summary *domain.MatchSummary) error {
 	query := `
 		INSERT INTO matches (
-			id, match_date, venue_name, venue_city, home_team_score, home_team_id, home_team_rosters,
+			id, match_date, venue, home_team_score, home_team_id, home_team_rosters,
 			away_team_score, away_team_id, away_team_rosters, 
 			note, completed, status_name, competition_name, events
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 	`
 
 	events, err := json.Marshal(summary.Events)
@@ -45,7 +45,7 @@ func (repo *matchRepository) Create(match *domain.Match, summary *domain.MatchSu
 
 	_, err = repo.db.Exec(
 		query,
-		match.ID, match.Date, match.Venue.Name, match.Venue.City, match.HomeCompetitor.Score,
+		match.ID, match.Date, match.Venue, match.HomeCompetitor.Score,
 		match.HomeCompetitor.Team.ID, homeRoster,
 		match.AwayCompetitor.Score, match.AwayCompetitor.Team.ID, awayRoster,
 		match.Note, match.Completed, match.StatusName, match.CompetitionName, events,
@@ -57,7 +57,7 @@ func (repo *matchRepository) Create(match *domain.Match, summary *domain.MatchSu
 func (repo *matchRepository) FindOneByID(matchID int64) (*domain.Match, error) {
 
 	query := `
-		SELECT m.id, match_date, venue_name, venue_city, 
+		SELECT m.id, match_date, venue, 
 		home_team_score, home_team_id, ht.name AS home_team_name, 
 		ht.abbreviation AS home_team_abbreviation, ht.color AS home_team_color, ht.logo AS home_team_logo,
 		away_team_score, away_team_id, at.name AS away_team_name, 
@@ -76,7 +76,7 @@ func (repo *matchRepository) FindOneByID(matchID int64) (*domain.Match, error) {
 	var match domain.Match
 
 	if err := rows.Scan(
-		&match.ID, &match.Date, &match.Venue.Name, &match.Venue.City, &match.HomeCompetitor.Score,
+		&match.ID, &match.Date, &match.Venue, &match.HomeCompetitor.Score,
 		&match.HomeCompetitor.Team.ID, &match.HomeCompetitor.Team.Name, &match.HomeCompetitor.Team.Abbreviation,
 		&match.HomeCompetitor.Team.Color, &match.HomeCompetitor.Team.Logo,
 		&match.AwayCompetitor.Score, &match.AwayCompetitor.Team.ID, &match.AwayCompetitor.Team.Name,
@@ -106,7 +106,7 @@ func (repo *matchRepository) FindBatchByID(ids []int64) ([]domain.Match, error) 
 
 	query := fmt.Sprintf(`
 		SELECT 
-			m.id, match_date, venue_name, venue_city, 
+			m.id, match_date, venue, venue, 
 			home_team_score, home_team_id, ht.name AS home_team_name, 
 			ht.abbreviation AS home_team_abbreviation, ht.color AS home_team_color, ht.logo AS home_team_logo,
 			away_team_score, away_team_id, at.name AS away_team_name, 
@@ -132,7 +132,7 @@ func (repo *matchRepository) FindBatchByID(ids []int64) ([]domain.Match, error) 
 		var match domain.Match
 
 		if err := rows.Scan(
-			&match.ID, &match.Date, &match.Venue.Name, &match.Venue.City, &match.HomeCompetitor.Score,
+			&match.ID, &match.Date, &match.Venue, &match.HomeCompetitor.Score,
 			&match.HomeCompetitor.Team.ID, &match.HomeCompetitor.Team.Name, &match.HomeCompetitor.Team.Abbreviation,
 			&match.HomeCompetitor.Team.Color, &match.HomeCompetitor.Team.Logo,
 			&match.AwayCompetitor.Score, &match.AwayCompetitor.Team.ID, &match.AwayCompetitor.Team.Name,

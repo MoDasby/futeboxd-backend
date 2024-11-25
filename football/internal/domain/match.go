@@ -12,11 +12,6 @@ type Event struct {
 	} `json:"clock"`
 }
 
-type Venue struct {
-	Name string `json:"name"`
-	City string `json:"city"`
-}
-
 type Competitor struct {
 	HomeAway string `json:"homeAway"`
 	Winner   bool   `json:"winner"`
@@ -26,7 +21,7 @@ type Competitor struct {
 
 type Match struct {
 	ID              int64      `json:"id"`
-	Venue           Venue      `json:"venue"`
+	Venue           string     `json:"venue"`
 	Date            string     `json:"date"`
 	Note            string     `json:"note"`
 	Completed       bool       `json:"completed"`
@@ -38,7 +33,7 @@ type Match struct {
 
 func NewMatch(
 	ID int64,
-	venue Venue,
+	venue string,
 	date string,
 	note string,
 	homeCompetitor Competitor,
@@ -57,12 +52,6 @@ func NewMatch(
 		Completed:       completed,
 		StatusName:      statusName,
 		CompetitionName: competitionName,
-	}
-}
-
-func NewVenue(name string, city string) *Venue {
-	return &Venue{
-		Name: name, City: city,
 	}
 }
 

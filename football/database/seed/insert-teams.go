@@ -14,7 +14,7 @@ import (
 var leagues = []string{
 	"bra.1", "bra.2", "bra.3", "bra.copa_do_brazil", "uefa.champions", "uefa.europa",
 	"fifa.world", "conmebol.libertadores", "conmebol.sudamericana", "eng.1", "eng.2",
-	"esp.1", "esp.2", "fra.1", "ger.1", "ger.2", "ita.1", "ita.2", "por.1", "bra.camp.paulista",
+	"esp.1", "fra.1", "ger.1", "ita.1", "por.1", "bra.camp.paulista",
 	"bra.camp.carioca", "bra.camp.gaucho", "bra.camp.mineiro", "bra.copa_do_nordeste", "bra.supercopa_do_brazil",
 	"uefa.euroq", "conmebol.america",
 }
