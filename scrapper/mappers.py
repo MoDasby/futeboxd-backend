@@ -25,7 +25,7 @@ def from_schedule_to_match(schedule_item) -> Match:
         if c["homeAway"] == "away":
             match.away_competitor = competitor
     
-    match.completed = schedule_item["status_name"] == "STATUS_FULL_TIME"
+    match.completed = schedule_item["completed"]
     match.events = schedule_item["events"]
     match.status_name = schedule_item["status_name"]
     match.competition_name = ""

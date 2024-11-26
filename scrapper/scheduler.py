@@ -1,18 +1,18 @@
 from multiprocessing import Process
 from datetime import timezone, datetime
 from time import sleep
-from functools import partial
-from typing import Callable, Any, Dict
+from typing import Any, Dict
+import logger
 
 class Scheduler():
-    scheduled: Dict[datetime, Callable[[Any], Any]]
+    scheduled: Dict[datetime, Any]
 
     def __init__(self) -> None:
         self.scheduled = {}
 
-    def schedule(self, executionDate: datetime, func: Callable[[Any], Any], *args, **kwargs) -> None:
-        print(f"agendando execucao de {func} para {executionDate}, {args}")
-        self.scheduled[executionDate] = partial(func, *args, **kwargs)
+    def schedule(self, executionDate: datetime, func: Any) -> None:
+        logger.info(f"agendando execucao de {func.func.__name__}, args: {", ".join(repr(arg) for arg in func.args)} para {executionDate}")
+        self.scheduled[executionDate] = func
     
     def _start(self) -> None:
         while True:
@@ -20,7 +20,7 @@ class Scheduler():
 
             for executionDate, func in list(self.scheduled.items()):
                 if currentDate >= executionDate:
-                    print(f"executando {func}")
+                    logger.info(f"executando {func}")
                     proc = Process(target=func)
                     proc.start()
                     self.scheduled.pop(executionDate, None)

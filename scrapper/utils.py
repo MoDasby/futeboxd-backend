@@ -11,7 +11,7 @@ def get_execution_date(date_input=None):
 
     if date_input is None:
         # Caso padrão: 5 minutos a partir de agora
-        return current_date + timedelta(minutes=5)
+        return current_date + timedelta(seconds=10)
 
     if date_input == 'morning':
     # Próximo dia às 9h UTC

@@ -1,18 +1,39 @@
 from match_repo import MatchRepository
 from espn import Espn
+from scheduler import Scheduler
+from models.match import Match
+from datetime import datetime, timezone, timedelta
+from functools import partial
 from mappers import from_schedule_to_match
 
-"""
-cria ou atualiza a partida na tabela e retorna se deve tentar daqui cinco minutos
-se todas as partidas foram finalizadas não há necessidade
-"""
-def upsert_league_schedule(repo: MatchRepository, espn: Espn, league: str) -> bool:
-    day_schedule = espn.get_day_schedule(league)
-    endedMatches = 0
+class MatchService:
+    espn: Espn
+    match_repo: MatchRepository
+    scheduler: Scheduler
 
-    for event in day_schedule:
-        match = from_schedule_to_match(event)
+    def __init__(self, espn: Espn, match_repo: MatchRepository, scheduler: Scheduler) -> None:
+        self.espn = espn
+        self.match_repo = match_repo
+        self.scheduler = scheduler
 
-        repo.upsert(match)
-    
-    return endedMatches == len(day_schedule)
+    def process_league_schedule(self, league: str) -> None:
+        day_schedule = self.espn.get_day_schedule(league)
+        print(f"processando liga {league}")
+
+        for event in day_schedule:
+            match = from_schedule_to_match(event)
+
+            self.match_repo.upsert(match)
+
+            self.schedule_if_necessary(match, league)
+
+    def schedule_if_necessary(self, match: Match, league: str) -> None:
+        date = datetime.strptime(match.date, '%Y-%m-%dT%H:%MZ').replace(tzinfo=timezone.utc)
+        if date > datetime.now(timezone.utc):
+            self.scheduler.schedule(date, partial(self.process_league_schedule, league))
+            return
+
+        # checa se a partida está em andamento
+        if not match.completed:
+            self.scheduler.schedule(datetime.now(timezone.utc) + timedelta(minutes=5), partial(self.process_league_schedule, league))
+            return
