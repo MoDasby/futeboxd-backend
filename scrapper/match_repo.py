@@ -49,5 +49,6 @@ class MatchRepository:
 
         with conn.cursor() as cursor:
             cursor.execute(query, values)
+            conn.commit()
         
         self.__db.release(conn)

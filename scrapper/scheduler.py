@@ -1,4 +1,5 @@
 from threading import Thread, Lock
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timezone, datetime
 from time import sleep
 from typing import Any, Dict, List
@@ -8,9 +9,11 @@ lock = Lock()
 
 class Scheduler():
     scheduled: Dict[datetime, List[Any]]
+    executor: ThreadPoolExecutor
 
-    def __init__(self) -> None:
+    def __init__(self, max_threads: int = 10) -> None:
         self.scheduled = {}
+        self.executor = ThreadPoolExecutor(max_workers=max_threads)
 
     def schedule(self, executionDate: datetime, func: Any) -> None:
         with lock:
@@ -42,18 +45,18 @@ class Scheduler():
         while True:
             currentDate = datetime.now(timezone.utc).replace(microsecond=0)
 
-            for executionDate, tasks in list(self.scheduled.items()):
-                if currentDate >= executionDate:
-                    for func in tasks:
-                        logger.info(f"executando {func.func.__name__}, args: {', '.join(repr(arg) for arg in func.args)}")
-                        thread = Thread(target=func)
-                        thread.start()
-                    
-                        with lock:
-                            self.scheduled.pop(executionDate, None)
+            with lock:
+                for executionDate, tasks in list(self.scheduled.items()):
+                    if currentDate >= executionDate:
+                        for func in tasks:
+                            logger.info(f"executando {func.func.__name__}, args: {', '.join(repr(arg) for arg in func.args)}")
+                            self.executor.submit(func)
+                        
+                        self.scheduled.pop(executionDate, [])
 
             sleep(1)
 
     def run(self) -> None:
         thread = Thread(target=self._start)
         thread.start()
+        thread.join()
