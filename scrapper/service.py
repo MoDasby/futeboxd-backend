@@ -18,7 +18,6 @@ class MatchService:
 
     def process_league_schedule(self, league: str) -> None:
         day_schedule = self.espn.get_day_schedule(league)
-        print(f"processando liga {league}")
 
         for event in day_schedule:
             match = from_schedule_to_match(event)
@@ -28,12 +27,12 @@ class MatchService:
             self.schedule_if_necessary(match, league)
 
     def schedule_if_necessary(self, match: Match, league: str) -> None:
-        date = datetime.strptime(match.date, '%Y-%m-%dT%H:%MZ').replace(tzinfo=timezone.utc)
-        if date > datetime.now(timezone.utc):
-            self.scheduler.schedule(date, partial(self.process_league_schedule, league))
+        match_date = datetime.strptime(match.date, '%Y-%m-%dT%H:%MZ').replace(tzinfo=timezone.utc, microsecond=0)
+        if match_date > datetime.now(timezone.utc):
+            self.scheduler.schedule(match_date, partial(self.process_league_schedule, league))
             return
 
         # checa se a partida está em andamento
         if not match.completed:
-            self.scheduler.schedule(datetime.now(timezone.utc) + timedelta(minutes=5), partial(self.process_league_schedule, league))
+            self.scheduler.schedule(datetime.now(timezone.utc) + timedelta(minutes=5, microseconds=0), partial(self.process_league_schedule, league))
             return
