@@ -9,7 +9,7 @@ class Espn():
         return res.json()["leagues"][0]["calendar"]
     
     def get_day_schedule(self, league):
-        res = get(f"https://site.api.espn.com/apis/site/v2/sports/soccer/{league}/scoreboard?lang=pt").json()
+        res = get(f"{self.BASE_URL}/sports/soccer/{league}/scoreboard?lang=pt").json()
 
         events = res["events"]
 
