@@ -1,5 +1,5 @@
-from db import DB
-from models.match import Match
+from database.db import DB
+from .match import Match
 import json
 
 class MatchRepository:
@@ -9,15 +9,14 @@ class MatchRepository:
         self.__db = db
 
     def upsert(self, match: Match) -> None:
-        conn = self.__db.get_connection()
-
         query = """
             INSERT INTO matches (
                 id, match_date, venue, home_team_score, home_team_id,
                 away_team_score, away_team_id, 
-                note, completed, status_name, competition_name, events
+                note, completed, status_name, competition_name, events,
+                home_team_rosters, away_team_rosters
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (id) DO UPDATE SET
                 match_date = EXCLUDED.match_date,
                 venue = EXCLUDED.venue,
@@ -27,7 +26,9 @@ class MatchRepository:
                 completed = EXCLUDED.completed,
                 status_name = EXCLUDED.status_name,
                 competition_name = EXCLUDED.competition_name,
-                events = EXCLUDED.events
+                events = EXCLUDED.events,
+                home_team_rosters = EXCLUDED.home_team_rosters,
+                away_team_rosters = EXCLUDED.away_team_rosters
         """
 
         events = json.dumps(match.events)
@@ -37,18 +38,16 @@ class MatchRepository:
             match.date,
             match.venue,
             match.home_competitor.score,
-            match.home_competitor.team_id,
+            match.home_competitor.team.id,
             match.away_competitor.score,
-            match.away_competitor.team_id,
+            match.away_competitor.team.id,
             match.note,
             match.completed,
             match.status_name,
             match.competition_name,
-            events
+            events,
+            match.home_competitor.roster,
+            match.away_competitor.roster
         )
 
-        with conn.cursor() as cursor:
-            cursor.execute(query, values)
-            conn.commit()
-        
-        self.__db.release(conn)
+        self.__db.execute(query, values)

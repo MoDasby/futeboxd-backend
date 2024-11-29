@@ -1,5 +1,6 @@
 from psycopg2.pool import ThreadedConnectionPool
 import os
+from typing import Any
 
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_NAME = os.getenv("DB_NAME", "futeboxd-football")
@@ -15,23 +16,37 @@ class DB:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, minconn=2, maxconn=10, **db_params):
-        pass
-    
-    def get_connection(self):
+    def __init__(self, minconn=2, maxconn=20, **db_params):
         pass
 
-    def release(self, conn) -> None:
+    def execute(self, query: str, values: any):
+        pass
+
+    def fetch(self, query: str, values: any) -> Any:
         pass
 
 class PostgresDB(DB):
-    def __init__(self, minconn=2, maxconn=10):
+    def __init__(self, minconn=2, maxconn=20):
         if not hasattr(self, "_pool"):
             DSN = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
             self._pool = ThreadedConnectionPool(minconn, maxconn, DSN)
-    
-    def get_connection(self):
-        return self._pool.getconn()
 
-    def release(self, conn) -> None:
+    def execute(self, query: str, values: any):
+        conn = self._pool.getconn()
+
+        with conn.cursor() as cursor:
+            cursor.execute(query, values)
+            conn.commit()
+        
+        self._pool.putconn(conn)
+    
+    def fetch(self, query: str, values: any) -> Any:
+        conn = self._pool.getconn()
+
+        with conn.cursor() as cursor:
+            cursor.execute(query, values)
+            result = cursor.fetchone()
+
+            return result[0]
+        
         self._pool.putconn(conn)

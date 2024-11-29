@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Any, List
+from team.models import Team
 
 @dataclass
 class EventType:
@@ -21,7 +22,8 @@ class Competitor:
     home_away: str
     winner: bool
     score: int
-    team_id: int
+    team: Team
+    roster: str
 
 class Match:
     id: int
