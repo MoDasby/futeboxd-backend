@@ -16,6 +16,8 @@ type MatchService interface {
 	FindOneByID(matchID int64) (*domain.Match, error)
 	FindBatchByID(ids []int64) ([]domain.Match, error)
 	GetMatchSummary(matchID int64) (*domain.MatchSummary, error)
+	FindLiveMatches(pageSize, pageIndex int) ([]domain.Match, error)
+	ListByYear(teamID, season, pageSize, pageIndex int) ([]domain.Match, error)
 }
 
 func NewMatchService(
@@ -72,4 +74,12 @@ func (s *matchService) FindBatchByID(ids []int64) ([]domain.Match, error) {
 
 func (s *matchService) GetMatchSummary(matchID int64) (*domain.MatchSummary, error) {
 	return s.matchRepo.GetMatchSummary(matchID)
+}
+
+func (s *matchService) FindLiveMatches(pageSize, pageIndex int) ([]domain.Match, error) {
+	return s.matchRepo.FindLiveMatches(pageSize, pageIndex)
+}
+
+func (s *matchService) ListByYear(teamID, season, pageSize, pageIndex int) ([]domain.Match, error) {
+	return s.matchRepo.ListByYear(int64(teamID), season, pageSize, pageIndex)
 }

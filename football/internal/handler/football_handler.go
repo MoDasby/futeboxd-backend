@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/modasby/futeboxd-api/services/football/internal/errors"
 	"github.com/modasby/futeboxd-api/services/football/internal/service/matches"
@@ -32,6 +33,31 @@ func (h *FootballHandler) RegisterRoutes(r *http.ServeMux) {
 	r.HandleFunc("GET /football/match/{matchID}", h.GetMatch)
 	r.HandleFunc("GET /football/match/{matchID}/summary", h.GetMatchSummary)
 	r.HandleFunc("POST /football/match/batch", h.FindMatchesBatch)
+	r.HandleFunc("GET /football/match/live", h.FindLiveMatches)
+}
+
+func (h *FootballHandler) FindLiveMatches(w http.ResponseWriter, r *http.Request) {
+	params := r.URL.Query()
+	page, err := NewPageWithQueryParam(&params)
+	if err != nil {
+		errors.HandleHttpError(w, err)
+
+		return
+	}
+
+	matches, err := h.matchService.FindLiveMatches(page.Size, page.Index)
+	if err != nil {
+		errors.HandleHttpError(w, err)
+
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(matches); err != nil {
+		errors.HandleHttpError(w, err)
+
+		return
+	}
 }
 
 func (h *FootballHandler) FindMatchesBatch(w http.ResponseWriter, r *http.Request) {
@@ -86,7 +112,28 @@ func (h *FootballHandler) ListTeamSchedule(w http.ResponseWriter, r *http.Reques
 	team := r.PathValue("team")
 	season := r.URL.Query().Get("season")
 
-	schedule, err := h.teamService.ListSchedule(team, season)
+	teamInt, err := strconv.ParseUint(team, 10, 64)
+	if err != nil {
+		err = errors.NewHTTPErr("invalid int value", 400, "")
+		errors.HandleHttpError(w, err)
+
+		return
+	}
+
+	seasonInt, err := strconv.ParseUint(season, 10, 64)
+	if err != nil {
+		seasonInt = uint64(time.Now().Year())
+	}
+
+	params := r.URL.Query()
+	page, err := NewPageWithQueryParam(&params)
+	if err != nil {
+		errors.HandleHttpError(w, err)
+
+		return
+	}
+
+	schedule, err := h.matchService.ListByYear(int(teamInt), int(seasonInt), page.Size, page.Index)
 	if err != nil {
 		errors.HandleHttpError(w, err)
 

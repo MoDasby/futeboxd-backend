@@ -106,7 +106,7 @@ func (repo *matchRepository) FindBatchByID(ids []int64) ([]domain.Match, error) 
 
 	query := fmt.Sprintf(`
 		SELECT 
-			m.id, match_date, venue, venue, 
+			m.id, match_date, venue, 
 			home_team_score, home_team_id, ht.name AS home_team_name, 
 			ht.abbreviation AS home_team_abbreviation, ht.color AS home_team_color, ht.logo AS home_team_logo,
 			away_team_score, away_team_id, at.name AS away_team_name, 
@@ -164,7 +164,7 @@ func (repo *matchRepository) GetMatchSummary(matchID int64) (*domain.MatchSummar
 
 	var output domain.MatchSummary
 
-	var homeTeamRoster, awayTeamRoster, events []byte
+	var homeTeamRoster, awayTeamRoster, events sql.NullString
 
 	if err := row.Scan(&homeTeamRoster, &awayTeamRoster, &events); err != nil {
 		if err == sql.ErrNoRows {
@@ -174,17 +174,124 @@ func (repo *matchRepository) GetMatchSummary(matchID int64) (*domain.MatchSummar
 		return nil, err
 	}
 
-	if err := json.Unmarshal(homeTeamRoster, &output.HomeCompetitorRoster); err != nil {
-		return nil, err
+	if homeTeamRoster.Valid {
+		if err := json.Unmarshal([]byte(homeTeamRoster.String), &output.HomeCompetitorRoster); err != nil {
+			return nil, err
+		}
 	}
 
-	if err := json.Unmarshal(awayTeamRoster, &output.AwayCompetitorRoster); err != nil {
-		return nil, err
+	if awayTeamRoster.Valid {
+		if err := json.Unmarshal([]byte(awayTeamRoster.String), &output.AwayCompetitorRoster); err != nil {
+			return nil, err
+		}
 	}
 
-	if err := json.Unmarshal(events, &output.Events); err != nil {
-		return nil, err
+	if events.Valid {
+		if err := json.Unmarshal([]byte(events.String), &output.Events); err != nil {
+			return nil, err
+		}
 	}
 
 	return &output, nil
+}
+
+func (repo *matchRepository) ListByYear(teamID int64, year, pageSize, pageIndex int) ([]domain.Match, error) {
+	query := `
+		SELECT 
+			m.id, match_date, venue, 
+			home_team_score, home_team_id, ht.name AS home_team_name, 
+			ht.abbreviation AS home_team_abbreviation, ht.color AS home_team_color, ht.logo AS home_team_logo,
+			away_team_score, away_team_id, at.name AS away_team_name, 
+			at.abbreviation AS away_team_abbreviation, at.color AS away_team_color, at.logo AS away_team_logo,
+			note, completed, status_name, competition_name, 
+			(home_team_score > away_team_score) AS home_team_winner,
+			(away_team_score > home_team_score) AS away_team_winner
+		FROM matches m
+		LEFT JOIN teams ht ON ht.id = m.home_team_id
+		LEFT JOIN teams at ON at.id = m.away_team_id
+		WHERE (m.home_team_id = $1 or m.away_team_id = $1) and EXTRACT(YEAR FROM m.match_date) = $2
+		ORDER BY m.match_date DESC
+		LIMIT $3
+		OFFSET ($4 - 1) * $3
+	`
+
+	rows, err := repo.db.Query(query, teamID, year, pageSize, pageIndex)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	matches := make([]domain.Match, 0)
+
+	for rows.Next() {
+		var match domain.Match
+
+		if err := rows.Scan(
+			&match.ID, &match.Date, &match.Venue, &match.HomeCompetitor.Score,
+			&match.HomeCompetitor.Team.ID, &match.HomeCompetitor.Team.Name, &match.HomeCompetitor.Team.Abbreviation,
+			&match.HomeCompetitor.Team.Color, &match.HomeCompetitor.Team.Logo,
+			&match.AwayCompetitor.Score, &match.AwayCompetitor.Team.ID, &match.AwayCompetitor.Team.Name,
+			&match.AwayCompetitor.Team.Abbreviation, &match.AwayCompetitor.Team.Color, &match.AwayCompetitor.Team.Logo,
+			&match.Note, &match.Completed, &match.StatusName, &match.CompetitionName,
+			&match.HomeCompetitor.Winner, &match.AwayCompetitor.Winner,
+		); err != nil {
+			if err == sql.ErrNoRows {
+				return nil, errors.NewHTTPErr("partida não encontrada", 404, "REPOSITORY:MATCH:FIND_BY_ID:NOT_FOUND")
+			}
+
+			return nil, err
+		}
+
+		matches = append(matches, match)
+	}
+
+	return matches, nil
+}
+
+func (repo *matchRepository) FindLiveMatches(pageSize, pageIndex int) ([]domain.Match, error) {
+	query := `
+		SELECT 
+			m.id, match_date, venue, 
+			home_team_score, home_team_id, ht.name AS home_team_name, 
+			ht.abbreviation AS home_team_abbreviation, ht.color AS home_team_color, ht.logo AS home_team_logo,
+			away_team_score, away_team_id, at.name AS away_team_name, 
+			at.abbreviation AS away_team_abbreviation, at.color AS away_team_color, at.logo AS away_team_logo,
+			note, completed, status_name, competition_name, 
+			(home_team_score > away_team_score) AS home_team_winner,
+			(away_team_score > home_team_score) AS away_team_winner
+		FROM matches m
+		LEFT JOIN teams ht ON ht.id = m.home_team_id
+		LEFT JOIN teams at ON at.id = m.away_team_id
+		WHERE NOT m.completed
+		ORDER BY m.match_date
+		LIMIT $1
+		OFFSET ($2 - 1) * $1
+	`
+
+	rows, err := repo.db.Query(query, pageSize, pageIndex)
+	if err != nil {
+		return nil, err
+	}
+
+	matches := make([]domain.Match, 0)
+
+	for rows.Next() {
+		var match domain.Match
+
+		if err := rows.Scan(
+			&match.ID, &match.Date, &match.Venue, &match.HomeCompetitor.Score,
+			&match.HomeCompetitor.Team.ID, &match.HomeCompetitor.Team.Name, &match.HomeCompetitor.Team.Abbreviation,
+			&match.HomeCompetitor.Team.Color, &match.HomeCompetitor.Team.Logo,
+			&match.AwayCompetitor.Score, &match.AwayCompetitor.Team.ID, &match.AwayCompetitor.Team.Name,
+			&match.AwayCompetitor.Team.Abbreviation, &match.AwayCompetitor.Team.Color, &match.AwayCompetitor.Team.Logo,
+			&match.Note, &match.Completed, &match.StatusName, &match.CompetitionName,
+			&match.HomeCompetitor.Winner, &match.AwayCompetitor.Winner,
+		); err != nil {
+			return nil, err
+		}
+
+		matches = append(matches, match)
+	}
+
+	return matches, nil
 }
