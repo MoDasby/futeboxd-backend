@@ -11,8 +11,10 @@ CREATE TABLE IF NOT EXISTS matches(
     note VARCHAR(100),
     completed BOOLEAN NOT NULL,
     status_name VARCHAR(40) NOT NULL,
-    competition_name VARCHAR(100) NULL,
-    events JSONB NULL
+    competition_name VARCHAR(100) NULL, -- TODO lembrar de colocar foreign key no banco
+    events JSONB NULL,
+    FOREIGN KEY(home_team_id) REFERENCES teams(id),
+    FOREIGN KEY(away_team_id) REFERENCES teams(id)
 );
 
 CREATE TABLE IF NOT EXISTS teams(
