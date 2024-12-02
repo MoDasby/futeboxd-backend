@@ -48,12 +48,13 @@ func (uc *SearchReviews) Execute(requesterID, term string, page *pagination.Page
 				ID:       review.Author.ID,
 				Username: review.Author.Username,
 			},
-			Rate:        review.Rate,
-			Description: review.Description,
-			Match:       &match,
-			Likes:       review.Likes,
-			IsLiked:     review.IsLiked,
-			CreatedAt:   review.CreatedAt,
+			Rate:          review.Rate,
+			Description:   review.Description,
+			Match:         &match,
+			CommentsCount: review.CommentsCount,
+			Likes:         review.Likes,
+			IsLiked:       review.IsLiked,
+			CreatedAt:     review.CreatedAt,
 		}
 	}
 

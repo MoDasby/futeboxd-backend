@@ -65,8 +65,8 @@ func (repo *CommentsRepository) ExistsByID(commentID int64) (bool, error) {
 func (repo *CommentsRepository) FindOneByID(requesterID string, commentID int64) (*domain.Comment, error) {
 	query := `
 		SELECT 
-			u.id as user_id, u.username, u.email, u.favorite_team,
-			c.id as comment_id, c.content, c.created_at,
+			c.id as comment_id, u.id as user_id, 
+			c.review_id, c.content, c.created_at,
 			COUNT(l.comment_id) as like_count,
       		COUNT(CASE WHEN l.like_owner_id = $2 THEN 1 END) > 0 AS is_liked
 		FROM comments c
@@ -87,7 +87,9 @@ func (repo *CommentsRepository) FindOneByID(requesterID string, commentID int64)
 	comment.Author = &author
 
 	if err := row.Scan(
-		&comment.ID, &comment.Author.ID, &comment.ParentID, &comment.Content, &comment.CreatedAt,
+		&comment.ID, &comment.Author.ID, &comment.ParentID,
+		&comment.Content, &comment.CreatedAt, &comment.LikeCount,
+		&comment.IsLiked,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.NewHTTPErr(
@@ -96,11 +98,7 @@ func (repo *CommentsRepository) FindOneByID(requesterID string, commentID int64)
 				"COMMENT_REPOSITORY:FIND_COMMENT_BY_ID:COMMENT_NOT_FOUND",
 			)
 		}
-		return nil, errors.NewHTTPErr(
-			"ocorreu um erro desconhecido",
-			500,
-			"COMMENT_REPOSITORY:FIND_COMMENT_BY_ID:SQL_ERROR",
-		)
+		return nil, err
 	}
 
 	return &comment, nil

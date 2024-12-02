@@ -7,16 +7,17 @@ import (
 )
 
 type Review struct {
-	ID          int
-	Author      *User
-	Rate        int
-	Description string
-	MatchID     int64
-	HomeTeamID  int64
-	AwayTeamID  int64
-	Likes       int
-	IsLiked     bool
-	CreatedAt   time.Time
+	ID            int
+	Author        *User
+	Rate          int
+	Description   string
+	MatchID       int64
+	HomeTeamID    int64
+	AwayTeamID    int64
+	Likes         int
+	CommentsCount int
+	IsLiked       bool
+	CreatedAt     time.Time
 }
 
 func NewReview(

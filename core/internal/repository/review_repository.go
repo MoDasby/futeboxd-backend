@@ -53,11 +53,13 @@ func (repo *reviewRepository) FindOneByID(requesterID string, reviewID int64) (*
 		SELECT 
 			r.id, r.rate, r.description, 
 			r.match_id, r.created_at, u.id, u.username, u.favorite_team,
+			COUNT(c.review_id) as comments_count,
 			COUNT(l.review_id) as like_count,
 			COUNT(CASE WHEN l.like_owner_id = $1 THEN 1 END) > 0 AS is_liked
 		FROM reviews r
 		LEFT JOIN users u ON u.id = r.user_id
 		LEFT JOIN likes l ON l.review_id = r.id
+		LEFT JOIN comments c ON c.review_id = r.id
 		WHERE r.id = $2
 		GROUP BY r.id, u.id
 	`
@@ -138,6 +140,7 @@ func (repo *reviewRepository) ListFeed(requesterID, strategy string, page *pagin
 				u.id,
 				u.username, 
 				u.favorite_team,
+				COUNT(c.review_id) as comments_count,
 				COUNT(l.review_id) as like_count,
       			COUNT(CASE WHEN l.like_owner_id = $1 THEN 1 END) > 0 AS is_liked
 			FROM recent_reviews rr
@@ -145,6 +148,7 @@ func (repo *reviewRepository) ListFeed(requesterID, strategy string, page *pagin
 			LEFT JOIN requester req ON true
 			LEFT JOIN followers f ON f.following_id = rr.user_id AND f.follower_id = req.id
 			LEFT JOIN likes l ON l.review_id = rr.reviewID
+			LEFT JOIN comments c ON c.review_id = rr.reviewID
 			GROUP BY 
 				rr.reviewID, rr.rate, rr.description, rr.match_id, rr.created_at, 
 				u.id, u.username, u.favorite_team, f.follower_id, req.favorite_team,
@@ -197,11 +201,13 @@ func (repo *reviewRepository) ListAll(requesterID, where string, params []any, p
 			u.id, 
 			u.username, 
 			u.favorite_team,
+			COUNT(c.review_id) as comments_count,
 			COUNT(l.review_id) as like_count,
 			COUNT(CASE WHEN l.like_owner_id = $%d THEN 1 END) > 0 AS is_liked
 		FROM reviews r
 		LEFT JOIN users u ON u.id = r.user_id
 		LEFT JOIN likes l ON l.review_id = r.id
+		LEFT JOIN comments c ON c.review_id = r.id
 		%s
 		GROUP BY r.id, u.id
 		ORDER BY r.match_id, r.created_at DESC
@@ -259,11 +265,13 @@ func (repo *reviewRepository) Search(requesterID, term string, page *pagination.
 			u.id, 
 			u.username, 
 			u.favorite_team,
+			COUNT(c.review_id) as comments_count,
 			COUNT(l.review_id) as like_count,
 			COUNT(CASE WHEN l.like_owner_id = $2 THEN 1 END) > 0 AS is_liked
 		FROM reviews r
 		LEFT JOIN users u ON u.id = r.user_id
 		LEFT JOIN likes l ON l.review_id = r.id
+		LEFT JOIN comments c ON c.review_id = r.id
 		WHERE r.search_vector @@ websearch_to_tsquery('portuguese', $1)
 		GROUP BY r.id, u.id
 		LIMIT $3
@@ -348,6 +356,7 @@ func (repo *reviewRepository) scanReview(row *sql.Row) (*domain.Review, error) {
 		&review.MatchID, &review.CreatedAt, &review.Author.ID,
 		&review.Author.Username,
 		&review.Author.FavoriteTeamID,
+		&review.CommentsCount,
 		&review.Likes,
 		&review.IsLiked,
 	); err != nil {
@@ -372,6 +381,7 @@ func (repo *reviewRepository) scanReviews(rows *sql.Rows) ([]domain.Review, erro
 			&review.MatchID, &review.CreatedAt, &review.Author.ID,
 			&review.Author.Username,
 			&review.Author.FavoriteTeamID,
+			&review.CommentsCount,
 			&review.Likes,
 			&review.IsLiked,
 		); err != nil {

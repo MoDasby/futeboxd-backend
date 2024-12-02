@@ -51,12 +51,13 @@ func (uc *ListFeedUsecase) Execute(requesterID, strategy string, page *paginatio
 				ID:       review.Author.ID,
 				Username: review.Author.Username,
 			},
-			Rate:        review.Rate,
-			Description: review.Description,
-			Match:       &match,
-			Likes:       review.Likes,
-			IsLiked:     review.IsLiked,
-			CreatedAt:   review.CreatedAt,
+			Rate:          review.Rate,
+			Description:   review.Description,
+			Match:         &match,
+			Likes:         review.Likes,
+			CommentsCount: review.CommentsCount,
+			IsLiked:       review.IsLiked,
+			CreatedAt:     review.CreatedAt,
 		})
 	}
 
