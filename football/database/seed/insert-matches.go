@@ -8,7 +8,7 @@ import (
 
 	"github.com/modasby/futeboxd-api/services/football/internal/domain"
 	"github.com/modasby/futeboxd-api/services/football/internal/repository"
-	"github.com/modasby/futeboxd-api/services/football/internal/service"
+	"github.com/modasby/futeboxd-api/services/football/internal/service/espn"
 	"github.com/modasby/futeboxd-api/services/football/internal/service/mapper"
 	"github.com/modasby/futeboxd-api/services/football/internal/service/matches"
 	"github.com/modasby/futeboxd-api/services/football/internal/service/teams"
@@ -30,7 +30,7 @@ func InsertMatches() {
 	teamRepository := repository.NewTeamRepository(db)
 	matchRepository := repository.NewMatchRepository(db)
 
-	espnService := service.NewEspnService()
+	espnService := espn.NewEspnService()
 
 	teamService := teams.NewTeamService(teamRepository, espnService)
 	matchService := matches.NewMatchService(matchRepository, espnService)
@@ -69,7 +69,7 @@ func InsertMatches() {
 
 func checkTeamExists(
 	teamRepository domain.TeamRepository,
-	espnService service.EspnService,
+	espnService espn.EspnService,
 	team domain.Team,
 ) {
 	_, err := teamRepository.FindOneById(team.ID)

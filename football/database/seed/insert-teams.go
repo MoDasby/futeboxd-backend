@@ -8,7 +8,7 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
-	"github.com/modasby/futeboxd-api/services/football/internal/service"
+	"github.com/modasby/futeboxd-api/services/football/internal/service/espn"
 )
 
 var leagues = []string{
@@ -24,7 +24,7 @@ func InsertTeams() {
 	if err != nil {
 		panic(err)
 	}
-	espn_service := service.NewEspnService()
+	espn_service := espn.NewEspnService()
 
 	connStr := fmt.Sprintf(
 		"user=%s dbname=%s password=%s host=%s sslmode=disable port=5433",

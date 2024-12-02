@@ -1,4 +1,4 @@
-package service
+package espn
 
 import (
 	"encoding/json"

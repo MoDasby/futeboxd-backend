@@ -1,13 +1,14 @@
 package mapper
 
 import (
+	"log"
 	"strconv"
 
 	"github.com/modasby/futeboxd-api/services/football/internal/domain"
-	"github.com/modasby/futeboxd-api/services/football/internal/service"
+	"github.com/modasby/futeboxd-api/services/football/internal/service/espn"
 )
 
-func EspnEventToMatch(espnEvent *service.EspnEventSummary) (*domain.Match, *domain.MatchSummary, error) {
+func EspnEventToMatch(espnEvent *espn.EspnEventSummary) (*domain.Match, *domain.MatchSummary, error) {
 
 	var homeCompetitor domain.Competitor
 	var awayCompetitor domain.Competitor
@@ -70,12 +71,16 @@ func EspnEventToMatch(espnEvent *service.EspnEventSummary) (*domain.Match, *doma
 
 	for _, keyEvent := range espnEvent.KeyEvents {
 
+		clockValue, err := strconv.ParseInt(keyEvent.Clock.DisplayValue, 10, 64)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		events = append(events, *domain.NewEvent(
 			keyEvent.Type.ID,
 			keyEvent.Type.Text,
 			keyEvent.Text,
-			keyEvent.Clock.Value,
-			keyEvent.Clock.DisplayValue,
+			int(clockValue),
 		))
 	}
 

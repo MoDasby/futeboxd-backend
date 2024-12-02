@@ -1,4 +1,4 @@
-package service
+package espn
 
 type EspnTeam struct {
 	ID           string `json:"id"`

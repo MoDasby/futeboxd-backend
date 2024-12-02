@@ -4,12 +4,12 @@ import (
 	"strconv"
 
 	"github.com/modasby/futeboxd-api/services/football/internal/domain"
-	"github.com/modasby/futeboxd-api/services/football/internal/service"
+	"github.com/modasby/futeboxd-api/services/football/internal/service/espn"
 )
 
 type teamService struct {
 	teamRepo    domain.TeamRepository
-	espnService service.EspnService
+	espnService espn.EspnService
 }
 
 type TeamService interface {
@@ -19,7 +19,7 @@ type TeamService interface {
 	ListSchedule(team, season string) (*ScheduleOutputDTO, error)
 }
 
-func NewTeamService(teamRepo domain.TeamRepository, espnService service.EspnService) TeamService {
+func NewTeamService(teamRepo domain.TeamRepository, espnService espn.EspnService) TeamService {
 	return &teamService{
 		teamRepo:    teamRepo,
 		espnService: espnService,

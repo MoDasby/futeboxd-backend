@@ -3,13 +3,13 @@ package matches
 import (
 	"github.com/modasby/futeboxd-api/services/football/internal/domain"
 	"github.com/modasby/futeboxd-api/services/football/internal/errors"
-	"github.com/modasby/futeboxd-api/services/football/internal/service"
+	"github.com/modasby/futeboxd-api/services/football/internal/service/espn"
 	"github.com/modasby/futeboxd-api/services/football/internal/service/mapper"
 )
 
 type matchService struct {
 	matchRepo   domain.MatchRepository
-	espnService service.EspnService
+	espnService espn.EspnService
 }
 
 type MatchService interface {
@@ -22,7 +22,7 @@ type MatchService interface {
 
 func NewMatchService(
 	matchRepo domain.MatchRepository,
-	espnService service.EspnService,
+	espnService espn.EspnService,
 ) MatchService {
 	return &matchService{matchRepo: matchRepo, espnService: espnService}
 }

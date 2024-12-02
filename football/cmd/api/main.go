@@ -9,7 +9,7 @@ import (
 	"github.com/modasby/futeboxd-api/services/football/database"
 	"github.com/modasby/futeboxd-api/services/football/internal/handler"
 	"github.com/modasby/futeboxd-api/services/football/internal/repository"
-	"github.com/modasby/futeboxd-api/services/football/internal/service"
+	"github.com/modasby/futeboxd-api/services/football/internal/service/espn"
 	"github.com/modasby/futeboxd-api/services/football/internal/service/matches"
 	"github.com/modasby/futeboxd-api/services/football/internal/service/teams"
 )
@@ -17,7 +17,7 @@ import (
 func main() {
 	db := database.InitDatabase()
 
-	espnService := service.NewEspnService()
+	espnService := espn.NewEspnService()
 
 	teamRepository := repository.NewTeamRepository(db)
 	matchRepository := repository.NewMatchRepository(db)

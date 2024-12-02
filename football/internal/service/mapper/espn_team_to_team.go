@@ -4,10 +4,10 @@ import (
 	"strconv"
 
 	"github.com/modasby/futeboxd-api/services/football/internal/domain"
-	"github.com/modasby/futeboxd-api/services/football/internal/service"
+	"github.com/modasby/futeboxd-api/services/football/internal/service/espn"
 )
 
-func EspnTeamToTeam(espnTeam service.EspnTeam) (*domain.Team, error) {
+func EspnTeamToTeam(espnTeam espn.EspnTeam) (*domain.Team, error) {
 	ID, err := strconv.ParseUint(espnTeam.ID, 10, 64)
 	if err != nil {
 		return nil, err
