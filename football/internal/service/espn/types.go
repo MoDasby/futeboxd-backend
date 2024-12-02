@@ -174,5 +174,14 @@ type EspnEventSummary struct {
 			Value        float64 `json:"value"`
 			DisplayValue string  `json:"displayValue"`
 		} `json:"clock"`
+		Team struct {
+			ID          string `json:"id"`
+			DisplayName string `json:"displayName"`
+		} `json:"team"`
+		Participants []struct {
+			Athlete struct {
+				DisplayName string `json:"displayName"`
+			} `json:"athlete"`
+		} `json:"participants"`
 	} `json:"keyEvents"`
 }

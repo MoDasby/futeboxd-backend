@@ -71,16 +71,28 @@ func EspnEventToMatch(espnEvent *espn.EspnEventSummary) (*domain.Match, *domain.
 
 	for _, keyEvent := range espnEvent.KeyEvents {
 
-		clockValue, err := strconv.ParseInt(keyEvent.Clock.DisplayValue, 10, 64)
-		if err != nil {
-			log.Fatal(err)
+		var teamID int64
+		if keyEvent.Team.ID != "" {
+			var err error
+			teamID, err = strconv.ParseInt(keyEvent.Team.ID, 10, 64)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+
+		participantName := ""
+
+		if len(keyEvent.Participants) > 0 {
+			participantName = keyEvent.Participants[0].Athlete.DisplayName
 		}
 
 		events = append(events, *domain.NewEvent(
 			keyEvent.Type.ID,
 			keyEvent.Type.Text,
 			keyEvent.Text,
-			int(clockValue),
+			int(keyEvent.Clock.Value),
+			int(teamID),
+			participantName,
 		))
 	}
 
