@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
-	"github.com/modasby/futeboxd-api/services/core/internal/errors"
 )
 
 type ToggleLikeCommentUsecase struct {
@@ -22,25 +21,12 @@ type OutputDTO struct {
 }
 
 func (uc *ToggleLikeCommentUsecase) Execute(requesterID string, commentID int64) (*OutputDTO, error) {
-	commentExists, err := uc.commentRepo.ExistsByID(commentID)
+	comment, err := uc.commentRepo.FindOneByID(requesterID, commentID)
 	if err != nil {
 		return nil, err
 	}
 
-	if !commentExists {
-		return nil, errors.NewHTTPErr(
-			"esse comentário não existe",
-			404,
-			"USECASE:TOGGLE_LIKE_COMMENT:COMMENT_NOT_FOUND",
-		)
-	}
-
-	isLiked, err := uc.commentRepo.IsLiked(requesterID, commentID)
-	if err != nil {
-		return nil, err
-	}
-
-	if isLiked {
+	if comment.IsLiked {
 		if err := uc.commentRepo.Unlike(requesterID, commentID); err != nil {
 			return nil, err
 		}

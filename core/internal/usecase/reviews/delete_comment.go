@@ -16,7 +16,7 @@ func NewDeleteCommentUsecase(commentsRepo domain.CommentsRepository) *DeleteComm
 }
 
 func (uc *DeleteCommentUsecase) Execute(requesterID string, commentID int64) error {
-	comment, err := uc.commentsRepo.FindOneByID(commentID)
+	comment, err := uc.commentsRepo.FindOneByID(requesterID, commentID)
 	if err != nil {
 		return err
 	}

@@ -41,7 +41,7 @@ func (m *MockCommentsRepo) ExistsByID(commentID int64) (bool, error) {
 	return false, nil
 }
 
-func (m *MockCommentsRepo) FindOneByID(commentID int64) (*domain.Comment, error) {
+func (m *MockCommentsRepo) FindOneByID(requesterID string, commentID int64) (*domain.Comment, error) {
 	for _, comment := range m.comments {
 		if comment.ID == commentID {
 			return &comment, nil

@@ -62,15 +62,23 @@ func (repo *CommentsRepository) ExistsByID(commentID int64) (bool, error) {
 	return exists.Bool, nil
 }
 
-func (repo *CommentsRepository) FindOneByID(commentID int64) (*domain.Comment, error) {
+func (repo *CommentsRepository) FindOneByID(requesterID string, commentID int64) (*domain.Comment, error) {
 	query := `
 		SELECT 
-			c.id, c.user_id, c.review_id, c.content, c.created_at
+			u.id as user_id, u.username, u.email, u.favorite_team,
+			c.id as comment_id, c.content, c.created_at,
+			COUNT(l.comment_id) as like_count,
+      		COUNT(CASE WHEN l.like_owner_id = $2 THEN 1 END) > 0 AS is_liked
 		FROM comments c
+		LEFT JOIN users u ON u.id = c.user_id
+		LEFT JOIN likes l ON l.comment_id = c.id
 		WHERE c.id = $1
+		GROUP BY 
+			u.id, u.username, u.email, u.favorite_team,
+			c.id, c.content, c.created_at
 	`
 
-	row := repo.db.QueryRow(query, commentID)
+	row := repo.db.QueryRow(query, commentID, requesterID)
 
 	var comment domain.Comment
 
