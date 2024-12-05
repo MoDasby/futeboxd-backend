@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS teams(
+    id BIGINT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    abbreviation VARCHAR(20) NOT NULL,
+    color VARCHAR(6) NOT NULL DEFAULT '000000',
+    logo VARCHAR(255)
+);
