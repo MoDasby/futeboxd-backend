@@ -113,13 +113,13 @@ func (tq *ListTrendingMatchQuery) Execute(page *pagination.Page) ([]TrendingMatc
 		rateMap[trendingMatch.Match] = trendingMatch.RateStats
 	}
 
-	var output []TrendingMatchOutputDTO
+	output := make([]TrendingMatchOutputDTO, len(trendingMatches))
 
-	for _, match := range matches {
-		output = append(output, TrendingMatchOutputDTO{
+	for index, match := range matches {
+		output[index] = TrendingMatchOutputDTO{
 			Match:     match,
 			RateStats: rateMap[match.ID],
-		})
+		}
 	}
 
 	return output, nil
