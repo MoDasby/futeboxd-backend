@@ -111,7 +111,7 @@ func (u *User) Validate() error {
 		return errors.NewHTTPErr(
 			"nome não pode estar vazio",
 			400,
-			"DOMAIN:USER:VALIDADE:INVALID_NAME",
+			"DOMAIN:USER:VALIDADE:EMPTY_NAME",
 		)
 	}
 
