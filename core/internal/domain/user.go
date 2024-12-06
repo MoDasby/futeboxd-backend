@@ -4,12 +4,19 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/modasby/futeboxd-api/services/core/internal/errors"
 	"golang.org/x/crypto/bcrypt"
 )
 
 const (
 	passwordCost int = 10
+)
+
+var (
+	bannedUsernames map[string]bool = map[string]bool{
+		"partidas": true, "anonymous": true, "reviews": true,
+	}
 )
 
 type User struct {
@@ -24,7 +31,7 @@ type User struct {
 
 func NewAnonymousUser() *User {
 	return &User{
-		ID:       "anonymous",
+		ID:       uuid.NewString(),
 		Username: "anonymous",
 	}
 }
@@ -87,6 +94,22 @@ func (u *User) Validate() error {
 			"o username não pode conter espaços",
 			400,
 			"DOMAIN:USER:VALIDADE:WHITE_SPACE_IN_USERNAME",
+		)
+	}
+
+	if u.Username == "" {
+		return errors.NewHTTPErr(
+			"nome de usuário não pode estar vazio",
+			400,
+			"DOMAIN:USER:VALIDADE:EMPTY_USERNAME",
+		)
+	}
+
+	if bannedUsernames[u.Username] {
+		return errors.NewHTTPErr(
+			"nome de usuário não está disponível",
+			400,
+			"DOMAIN:USER:VALIDADE:BANNED_USERNAME",
 		)
 	}
 
