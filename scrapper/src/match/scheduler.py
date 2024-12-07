@@ -42,7 +42,7 @@ class Scheduler():
                 if currentDate >= executionDate:
                     for func in tasks:
                         logger.info(f"executando {func.func.__name__}, args: {', '.join(repr(arg) for arg in func.args)}")
-                        self.executor.submit(func)
+                        func()
                     
                     self.scheduled.pop(executionDate, [])
 
