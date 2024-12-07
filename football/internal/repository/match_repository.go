@@ -21,11 +21,11 @@ func NewMatchRepository(db *sql.DB) domain.MatchRepository {
 func (repo *matchRepository) Create(match *domain.Match, summary *domain.MatchSummary) error {
 	query := `
 		INSERT INTO matches (
-			id, match_date, venue, home_team_score, home_team_id, home_team_rosters,
-			away_team_score, away_team_id, away_team_rosters, 
+			id, match_date, venue, home_team_score, home_team_id,
+			away_team_score, away_team_id, 
 			note, completed, status_name, competition_name, events
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`
 
 	events, err := json.Marshal(summary.Events)
@@ -33,21 +33,11 @@ func (repo *matchRepository) Create(match *domain.Match, summary *domain.MatchSu
 		return err
 	}
 
-	homeRoster, err := json.Marshal(summary.HomeCompetitorRoster)
-	if err != nil {
-		return err
-	}
-
-	awayRoster, err := json.Marshal(summary.AwayCompetitorRoster)
-	if err != nil {
-		return err
-	}
-
 	_, err = repo.db.Exec(
 		query,
 		match.ID, match.Date, match.Venue, match.HomeCompetitor.Score,
-		match.HomeCompetitor.Team.ID, homeRoster,
-		match.AwayCompetitor.Score, match.AwayCompetitor.Team.ID, awayRoster,
+		match.HomeCompetitor.Team.ID,
+		match.AwayCompetitor.Score, match.AwayCompetitor.Team.ID,
 		match.Note, match.Completed, match.StatusName, match.CompetitionName, events,
 	)
 
@@ -155,7 +145,7 @@ func (repo *matchRepository) FindBatchByID(ids []int64) ([]domain.Match, error) 
 
 func (repo *matchRepository) GetMatchSummary(matchID int64) (*domain.MatchSummary, error) {
 	query := `
-		SELECT home_team_rosters, away_team_rosters, events 
+		SELECT events 
 		FROM matches
 		WHERE id = $1
 	`
@@ -164,26 +154,14 @@ func (repo *matchRepository) GetMatchSummary(matchID int64) (*domain.MatchSummar
 
 	var output domain.MatchSummary
 
-	var homeTeamRoster, awayTeamRoster, events sql.NullString
+	var events sql.NullString
 
-	if err := row.Scan(&homeTeamRoster, &awayTeamRoster, &events); err != nil {
+	if err := row.Scan(&events); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.NewHTTPErr("partida não encontrada", 404, "REPOSITORY:MATCH:GET_MATCH_SUMMARY:NOT_FOUND")
 		}
 
 		return nil, err
-	}
-
-	if homeTeamRoster.Valid {
-		if err := json.Unmarshal([]byte(homeTeamRoster.String), &output.HomeCompetitorRoster); err != nil {
-			return nil, err
-		}
-	}
-
-	if awayTeamRoster.Valid {
-		if err := json.Unmarshal([]byte(awayTeamRoster.String), &output.AwayCompetitorRoster); err != nil {
-			return nil, err
-		}
 	}
 
 	if events.Valid {
