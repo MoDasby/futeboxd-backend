@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
 	repository_mocks "github.com/modasby/futeboxd-api/services/core/internal/repository/mocks"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +26,7 @@ func TestInjectUser(t *testing.T) {
 			user := r.Context().Value(UserKey).(*domain.User)
 			assert.NotNil(t, user)
 			assert.Equal(t, "anonymous", user.Username)
-			assert.Equal(t, "anonymous", user.ID)
+			assert.NoError(t, uuid.Validate(user.ID))
 		}
 
 		middleware := injectUser(next, true)
