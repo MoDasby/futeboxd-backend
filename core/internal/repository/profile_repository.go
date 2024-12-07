@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+
 	"github.com/modasby/futeboxd-api/services/core/internal/pagination"
 
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
@@ -32,11 +33,12 @@ func (repo *ProfileRepository) FindOneByUsername(username, requesterID string) (
 	row := repo.db.QueryRow(query, username, requesterID)
 
 	var profile domain.Profile
+	var bio sql.NullString
 
 	if err := row.Scan(
 		&profile.UserID,
 		&profile.Name,
-		&profile.Bio,
+		&bio,
 		&profile.Username,
 		&profile.FavoriteTeam,
 		&profile.FollowersCount,
@@ -52,6 +54,8 @@ func (repo *ProfileRepository) FindOneByUsername(username, requesterID string) (
 		}
 		return nil, err
 	}
+
+	profile.Bio = bio.String
 
 	return &profile, nil
 }
@@ -78,11 +82,12 @@ func (repo *ProfileRepository) Search(requesterID, term string, page *pagination
 
 	for rows.Next() {
 		var profile domain.Profile
+		var bio sql.NullString
 
 		if err := rows.Scan(
 			&profile.UserID,
 			&profile.Name,
-			&profile.Bio,
+			&bio,
 			&profile.Username,
 			&profile.FavoriteTeam,
 			&profile.FollowersCount,
@@ -91,6 +96,8 @@ func (repo *ProfileRepository) Search(requesterID, term string, page *pagination
 		); err != nil {
 			return nil, err
 		}
+
+		profile.Bio = bio.String
 
 		profiles = append(profiles, profile)
 	}

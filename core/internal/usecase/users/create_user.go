@@ -5,6 +5,7 @@ import (
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
 	"github.com/modasby/futeboxd-api/services/core/internal/dto"
 	"github.com/modasby/futeboxd-api/services/core/internal/errors"
+	"github.com/modasby/futeboxd-api/services/core/internal/json/null"
 )
 
 type CreateUserUseCase struct {
@@ -64,8 +65,8 @@ func (uc *CreateUserUseCase) Execute(input dto.UserInputDTO) (*dto.UserDTO, erro
 
 	output := dto.UserDTO{
 		ID:           res.ID,
-		Name:         user.Name,
-		Bio:          user.Bio,
+		Name:         null.NewString(user.Name),
+		Bio:          null.NewString(user.Bio),
 		Username:     user.Username,
 		Email:        user.Email,
 		FavoriteTeam: favoriteTeam,

@@ -4,6 +4,7 @@ import (
 	"github.com/modasby/futeboxd-api/services/core/internal/client/football"
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
 	"github.com/modasby/futeboxd-api/services/core/internal/dto"
+	"github.com/modasby/futeboxd-api/services/core/internal/json/null"
 	"github.com/modasby/futeboxd-api/services/core/internal/pagination"
 )
 
@@ -40,7 +41,8 @@ func (uc *SearchProfile) Execute(requester *domain.User, term string, page *pagi
 		output[index] = dto.ProfileDTO{
 			UserDTO: &dto.UserDTO{
 				ID:           profile.UserID,
-				Name:         profile.Name,
+				Name:         null.NewString(profile.Name),
+				Bio:          null.NewString(profile.Name),
 				Username:     profile.Username,
 				FavoriteTeam: favoriteTeam,
 			},

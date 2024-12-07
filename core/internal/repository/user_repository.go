@@ -57,11 +57,11 @@ func (r *userRepository) FindBatchByID(ids []string) ([]domain.User, error) {
 func (r *userRepository) Update(user *domain.User) error {
 	query := `
 		UPDATE users
-		SET name = $1, username = $2, email = $3, password = $4, favorite_team = $5
-		WHERE id = $6
+		SET name = $1, username = $2, email = $3, password = $4, favorite_team = $5, bio = $6
+		WHERE id = $7
 	`
 
-	if _, err := r.db.Exec(query, user.Name, user.Username, user.Email, user.Password, user.FavoriteTeamID, user.ID); err != nil {
+	if _, err := r.db.Exec(query, user.Name, user.Username, user.Email, user.Password, user.FavoriteTeamID, user.Bio, user.ID); err != nil {
 		return err
 	}
 

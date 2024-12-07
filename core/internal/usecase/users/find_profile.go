@@ -4,6 +4,7 @@ import (
 	"github.com/modasby/futeboxd-api/services/core/internal/client/football"
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
 	"github.com/modasby/futeboxd-api/services/core/internal/dto"
+	"github.com/modasby/futeboxd-api/services/core/internal/json/null"
 )
 
 type FindProfileUsecase struct {
@@ -35,8 +36,8 @@ func (uc *FindProfileUsecase) Execute(requester *domain.User, username string) (
 	output := dto.ProfileDTO{
 		UserDTO: &dto.UserDTO{
 			ID:           profile.UserID,
-			Name:         profile.Name,
-			Bio:          profile.Bio,
+			Name:         null.NewString(profile.Name),
+			Bio:          null.NewString(profile.Bio),
 			Username:     profile.Username,
 			FavoriteTeam: favoriteTeam,
 		},
