@@ -35,16 +35,22 @@ func InsertMatches() {
 	teamService := teams.NewTeamService(teamRepository, espnService)
 	matchService := matches.NewMatchService(matchRepository, espnService)
 
-	teams, _ := teamRepository.FindAll("", 1000, 1)
+	teams, _ := teamRepository.FindAll("", 2000, 1)
 
 	matchesFailed := make([]int64, 0)
 
 	for _, team := range teams {
+		if !team.Mandatory {
+			log.Printf("pulando %s não é mandatório", team.Name)
+
+			continue
+		}
+
 		var temp int64
 		for temp = 2006; temp < 2025; temp++ {
 			schedule, err := teamService.ListSchedule(strconv.FormatInt(team.ID, 10), strconv.FormatInt(temp, 10))
 			if err != nil {
-				panic(err)
+				log.Printf("schedule falhado: %d, %d", team.ID, temp)
 			}
 
 			for _, match := range schedule.Matches {

@@ -6,6 +6,7 @@ type Team struct {
 	Abbreviation string `json:"abbreviation"`
 	Color        string `json:"color"`
 	Logo         string `json:"logo"`
+	Mandatory    bool   `json:"-"`
 }
 
 func NewTeam(ID int64, name string, abbreviation string, color string, logo string) *Team {

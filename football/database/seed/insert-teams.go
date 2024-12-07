@@ -48,8 +48,8 @@ func InsertTeams() {
 
 		for _, team := range teams {
 			query := `
-				INSERT INTO teams (id, name, abbreviation, color, logo)
-				VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING
+				INSERT INTO teams (id, name, abbreviation, color, logo, mandatory)
+				VALUES ($1, $2, $3, $4, $5, TRUE) ON CONFLICT (id) DO UPDATE SET mandatory = TRUE
 			`
 
 			var logo = ""
