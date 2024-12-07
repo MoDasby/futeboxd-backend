@@ -60,9 +60,10 @@ func (repo *teamRepository) FindOneById(ID int64) (*domain.Team, error) {
 
 func (repo *teamRepository) FindAll(name string, pageSize, pageIndex int) ([]domain.Team, error) {
 	query := `
-	SELECT t.id, t.name, t.abbreviation, t.color, t.logo
+	SELECT t.id, t.name, t.abbreviation, t.color, t.logo, t.mandatory
 	FROM teams t 
 	WHERE LOWER(t.name) LIKE $1
+	ORDER BY t.name
 	LIMIT $2
 	OFFSET (($3 - 1) * $2)
 `
@@ -78,12 +79,15 @@ func (repo *teamRepository) FindAll(name string, pageSize, pageIndex int) ([]dom
 	for rows.Next() {
 		var name, abbreviation, color, logo sql.NullString
 		var id sql.NullInt64
+		var mandatory sql.NullBool
 
-		if err := rows.Scan(&id, &name, &abbreviation, &color, &logo); err != nil {
+		if err := rows.Scan(&id, &name, &abbreviation, &color, &logo, &mandatory); err != nil {
 			return nil, err
 		}
 
 		team := domain.NewTeam(id.Int64, name.String, abbreviation.String, color.String, logo.String)
+
+		team.Mandatory = mandatory.Bool
 
 		teams = append(teams, *team)
 	}
