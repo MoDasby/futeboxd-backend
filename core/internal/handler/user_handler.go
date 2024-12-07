@@ -2,8 +2,10 @@ package handler
 
 import (
 	"encoding/json"
-	"github.com/modasby/futeboxd-api/services/core/internal/pagination"
 	"net/http"
+
+	"github.com/modasby/futeboxd-api/services/core/internal/json/null"
+	"github.com/modasby/futeboxd-api/services/core/internal/pagination"
 
 	"github.com/modasby/futeboxd-api/services/core/internal/domain"
 	"github.com/modasby/futeboxd-api/services/core/internal/dto"
@@ -200,16 +202,12 @@ func (h *UserHandler) getCurrentUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type res struct {
-		ID       string `json:"id"`
-		Email    string `json:"email"`
-		Username string `json:"username"`
-	}
-
-	output := res{
+	output := dto.UserDTO{
 		ID:       user.ID,
-		Email:    user.Email,
+		Name:     null.String(user.Name),
+		Bio:      null.String(user.Bio),
 		Username: user.Username,
+		Email:    user.Email,
 	}
 
 	if err := sendJsonResponse(w, output); err != nil {
