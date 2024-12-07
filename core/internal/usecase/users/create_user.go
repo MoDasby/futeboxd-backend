@@ -49,10 +49,9 @@ func (uc *CreateUserUseCase) Execute(input dto.UserInputDTO) (*dto.UserDTO, erro
 		)
 	}
 
-	var favoriteTeam *football.Team
-
 	if input.FavoriteTeamID != 0 {
-		favoriteTeam, err = uc.footballClient.GetTeam(input.FavoriteTeamID)
+		// checa se o time existe
+		_, err = uc.footballClient.GetTeam(input.FavoriteTeamID)
 		if err != nil {
 			return nil, err
 		}
@@ -64,12 +63,10 @@ func (uc *CreateUserUseCase) Execute(input dto.UserInputDTO) (*dto.UserDTO, erro
 	}
 
 	output := dto.UserDTO{
-		ID:           res.ID,
-		Name:         null.NewString(user.Name),
-		Bio:          null.NewString(user.Bio),
-		Username:     user.Username,
-		Email:        user.Email,
-		FavoriteTeam: favoriteTeam,
+		ID:       res.ID,
+		Name:     null.NewString(user.Name),
+		Username: user.Username,
+		Email:    user.Email,
 	}
 
 	return &output, nil

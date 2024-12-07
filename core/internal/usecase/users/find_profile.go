@@ -34,13 +34,11 @@ func (uc *FindProfileUsecase) Execute(requester *domain.User, username string) (
 	}
 
 	output := dto.ProfileDTO{
-		UserDTO: &dto.UserDTO{
-			ID:           profile.UserID,
-			Name:         null.NewString(profile.Name),
-			Bio:          null.NewString(profile.Bio),
-			Username:     profile.Username,
-			FavoriteTeam: favoriteTeam,
-		},
+		ID:             profile.UserID,
+		Name:           null.NewString(profile.Name),
+		Bio:            null.NewString(profile.Bio),
+		Username:       profile.Username,
+		FavoriteTeam:   favoriteTeam,
 		FollowersCount: profile.FollowersCount,
 		FollowingCount: profile.FollowingCount,
 		Following:      profile.IsFollowing,

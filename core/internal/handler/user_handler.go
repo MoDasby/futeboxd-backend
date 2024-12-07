@@ -205,7 +205,6 @@ func (h *UserHandler) getCurrentUser(w http.ResponseWriter, r *http.Request) {
 	output := dto.UserDTO{
 		ID:       user.ID,
 		Name:     null.String(user.Name),
-		Bio:      null.String(user.Bio),
 		Username: user.Username,
 		Email:    user.Email,
 	}

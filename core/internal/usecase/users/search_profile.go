@@ -39,13 +39,11 @@ func (uc *SearchProfile) Execute(requester *domain.User, term string, page *pagi
 		}
 
 		output[index] = dto.ProfileDTO{
-			UserDTO: &dto.UserDTO{
-				ID:           profile.UserID,
-				Name:         null.NewString(profile.Name),
-				Bio:          null.NewString(profile.Name),
-				Username:     profile.Username,
-				FavoriteTeam: favoriteTeam,
-			},
+			ID:             profile.UserID,
+			Name:           null.NewString(profile.Name),
+			Bio:            null.NewString(profile.Bio),
+			Username:       profile.Username,
+			FavoriteTeam:   favoriteTeam,
 			FollowersCount: profile.FollowersCount,
 			FollowingCount: profile.FollowingCount,
 			Following:      profile.IsFollowing,

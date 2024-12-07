@@ -1,17 +1,14 @@
 package dto
 
 import (
-	"github.com/modasby/futeboxd-api/services/core/internal/client/football"
 	"github.com/modasby/futeboxd-api/services/core/internal/json/null"
 )
 
 type UserDTO struct {
-	ID           string         `json:"id"`
-	Name         null.String    `json:"name"`
-	Bio          null.String    `json:"bio"`
-	Username     string         `json:"username"`
-	Email        string         `json:"email"`
-	FavoriteTeam *football.Team `json:"favorite_team"`
+	ID       string      `json:"id"`
+	Name     null.String `json:"name"`
+	Username string      `json:"username"`
+	Email    string      `json:"email"`
 }
 
 type UserInputDTO struct {

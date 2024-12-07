@@ -17,7 +17,7 @@ func TestCreateUserUsecase(t *testing.T) {
 
 	input := dto.UserInputDTO{
 		Username:       "modasby",
-		Name: "giulliano",
+		Name:           "giulliano",
 		Email:          "modasby@email.com",
 		Password:       "123456",
 		FavoriteTeamID: 7632,
@@ -39,7 +39,6 @@ func TestCreateUserUsecase(t *testing.T) {
 		assert.NotNil(t, output)
 		assert.Equal(t, input.Username, output.Username)
 		assert.Equal(t, input.Email, output.Email)
-		assert.Equal(t, team, *output.FavoriteTeam)
 
 		mockFootballClient.AssertExpectations(t)
 	})
