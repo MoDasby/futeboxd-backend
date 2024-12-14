@@ -34,19 +34,21 @@ class PostgresDB(DB):
     def execute(self, query: str, values: any):
         conn = self._pool.getconn()
 
-        with conn.cursor() as cursor:
-            cursor.execute(query, values)
-            conn.commit()
-        
-        self._pool.putconn(conn)
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(query, values)
+                conn.commit()
+        finally:
+            self._pool.putconn(conn)
     
     def fetch(self, query: str, values: any) -> Any:
         conn = self._pool.getconn()
 
-        with conn.cursor() as cursor:
-            cursor.execute(query, values)
-            result = cursor.fetchone()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(query, values)
+                result = cursor.fetchone()
 
-            return result[0]
-        
-        self._pool.putconn(conn)
+                return result[0]
+        finally:
+            self._pool.putconn(conn)

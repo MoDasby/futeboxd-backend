@@ -11,7 +11,7 @@ import (
 
 type ctxKey string
 
-type Middleware func(next http.HandlerFunc, permitAnonymous bool) http.HandlerFunc
+type AuthMiddleware func(next http.HandlerFunc, permitAnonymous bool) http.HandlerFunc
 
 const (
 	UserKey    ctxKey = "user"
@@ -21,10 +21,21 @@ const (
 func NewInjectUserMiddleware(
 	sessionRepository domain.SessionRepository,
 	userRepository domain.UserRepository,
-) Middleware {
+) AuthMiddleware {
 	return func(next http.HandlerFunc, permitAnonymous bool) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			token := r.Header.Get("Authorization")
+			tokenCookie, _ := r.Cookie("futeboxd-auth-token")
+			tokenHeader := r.Header.Get("Authorization")
+
+			var token string
+
+			if tokenCookie != nil {
+				token = tokenCookie.Value
+			}
+
+			if tokenHeader != "" {
+				token = tokenHeader
+			}
 
 			if token == "" {
 				if permitAnonymous {

@@ -127,7 +127,9 @@ func (repo *reviewRepository) ListFeed(requesterID, strategy string, page *pagin
 				r.home_team_id,
 				r.away_team_id
 			FROM reviews r
-			WHERE r.created_at >= NOW() - INTERVAL '7 days'
+			INNER JOIN followers f ON f.following_id = r.user_id
+			CROSS JOIN requester req
+			WHERE f.follower_id = req.id
 			LIMIT 500
 		),
 		ranked_feed AS (
@@ -146,17 +148,13 @@ func (repo *reviewRepository) ListFeed(requesterID, strategy string, page *pagin
 			FROM recent_reviews rr
 			JOIN users u ON u.id = rr.user_id
 			LEFT JOIN requester req ON true
-			LEFT JOIN followers f ON f.following_id = rr.user_id AND f.follower_id = req.id
 			LEFT JOIN likes l ON l.review_id = rr.reviewID
 			LEFT JOIN comments c ON c.review_id = rr.reviewID
 			GROUP BY 
 				rr.reviewID, rr.rate, rr.description, rr.match_id, rr.created_at, 
-				u.id, u.username, u.favorite_team, f.follower_id, req.favorite_team,
+				u.id, u.username, u.favorite_team, req.favorite_team,
 				rr.home_team_id, rr.away_team_id
-			ORDER BY (CASE 
-					WHEN f.follower_id IS NOT NULL THEN 1.5
-					ELSE 0 
-				END) +
+			ORDER BY
 				(CASE
 					WHEN rr.home_team_id = req.favorite_team THEN 0.6
 					WHEN rr.away_team_id = req.favorite_team THEN 0.5
@@ -210,7 +208,7 @@ func (repo *reviewRepository) ListAll(requesterID, where string, params []any, p
 		LEFT JOIN comments c ON c.review_id = r.id
 		%s
 		GROUP BY r.id, u.id
-		ORDER BY r.match_id, r.created_at DESC
+		ORDER BY r.created_at DESC
 		LIMIT $%d
 		OFFSET ($%d - 1) * $%d
 	`, len(params)+1, where, len(params)+2, len(params)+3, len(params)+2)

@@ -7,13 +7,13 @@ import (
 )
 
 type ReviewDTO struct {
-	ID            int             `json:"id"`
-	Author        UserDTO         `json:"author"`
-	Rate          int             `json:"rate"`
-	Description   string          `json:"description"`
-	Match         *football.Match `json:"match"`
-	Likes         int             `json:"like_count"`
-	CommentsCount int             `json:"comments_count"`
-	IsLiked       bool            `json:"is_liked"`
-	CreatedAt     time.Time       `json:"created_at"`
+	ID            int              `json:"id"`
+	Author        ContentAuthorDTO `json:"author"`
+	Rate          int              `json:"rate"`
+	Description   string           `json:"description"`
+	Match         *football.Match  `json:"match"`
+	Likes         int              `json:"like_count"`
+	CommentsCount int              `json:"comments_count"`
+	IsLiked       bool             `json:"is_liked"`
+	CreatedAt     time.Time        `json:"created_at"`
 }

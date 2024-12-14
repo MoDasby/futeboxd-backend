@@ -47,7 +47,7 @@ func (repo *ProfileRepository) FindOneByUsername(username, requesterID string) (
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.NewHTTPErr(
-				"perfil não encontrado",
+				"perfil "+username+" não encontrado",
 				404,
 				"REPOSITORY:PROFILE:FIND_ONE_BY_USERNAME:NOT_FOUND",
 			)

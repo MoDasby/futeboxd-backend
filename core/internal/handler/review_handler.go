@@ -50,7 +50,7 @@ func NewReviewHandler(
 	}
 }
 
-func (h *ReviewHandler) RegisterRoutes(router *http.ServeMux, injectUser middleware.Middleware) {
+func (h *ReviewHandler) RegisterRoutes(router *http.ServeMux, injectUser middleware.AuthMiddleware) {
 	router.HandleFunc("POST /reviews", injectUser(h.create, false))
 	router.HandleFunc("GET /reviews/feed", injectUser(h.listFeed, false))
 	router.HandleFunc("GET /reviews", injectUser(h.listAll, true))

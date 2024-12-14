@@ -50,7 +50,7 @@ func (uc ListReviewsUseCase) Execute(
 
 		output = append(output, dto.ReviewDTO{
 			ID: review.ID,
-			Author: dto.UserDTO{
+			Author: dto.ContentAuthorDTO{
 				ID:       review.Author.ID,
 				Username: review.Author.Username,
 			},

@@ -47,7 +47,7 @@ func NewUserHandler(
 	}
 }
 
-func (h *UserHandler) RegisterRoutes(r *http.ServeMux, injectUser middleware.Middleware) {
+func (h *UserHandler) RegisterRoutes(r *http.ServeMux, injectUser middleware.AuthMiddleware) {
 	r.HandleFunc("POST /users/login", h.login)
 	r.HandleFunc("POST /users/logout", injectUser(h.logout, false))
 	r.HandleFunc("GET /users", injectUser(h.getCurrentUser, false))

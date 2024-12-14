@@ -1,24 +1,32 @@
 package main
 
-/* import (
+import (
+	"database/sql"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 
-	"github.com/modasby/futeboxd-api/services/football/database"
 	"github.com/modasby/futeboxd-api/services/football/internal/repository"
-	"github.com/modasby/futeboxd-api/services/football/internal/usecase"
+	"github.com/modasby/futeboxd-api/services/football/internal/service/espn"
+	"github.com/modasby/futeboxd-api/services/football/internal/service/teams"
+
+	_ "github.com/lib/pq"
 )
 
 func main() {
-	db := database.InitDatabase()
+	connStr := "user=postgres dbname=futeboxd-football password=123456 host=localhost sslmode=disable port=5433"
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		panic(err)
+	}
 
 	teamsRepo := repository.NewTeamRepository(db)
+	espnService := espn.NewEspnService()
 
-	listTeamsUseCase := usecase.NewListTeamsUseCase(teamsRepo)
+	teamsService := teams.NewTeamService(teamsRepo, espnService)
 
-	teams, err := listTeamsUseCase.Execute("")
+	teams, err := teamsService.FindAll("", 2000, 1)
 	if err != nil {
 		panic(err)
 	}
@@ -50,4 +58,3 @@ func main() {
 		resp.Body.Close()
 	}
 }
-*/

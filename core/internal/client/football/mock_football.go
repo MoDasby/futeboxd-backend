@@ -6,6 +6,10 @@ type MockFootballClient struct {
 	mock.Mock
 }
 
+func (m *MockFootballClient) GetMatchesMap(matchIDs []int64) (map[int64]Match, error) {
+	return nil, nil
+}
+
 func (m *MockFootballClient) GetMatch(matchID int64) (*Match, error) {
 	args := m.Called(matchID)
 

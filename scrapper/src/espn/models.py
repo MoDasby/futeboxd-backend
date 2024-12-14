@@ -59,6 +59,7 @@ class Roster:
 
 class MatchSummary:
     rosters: List[Roster]
+    events: Any
 
 class Logo:
     href: str

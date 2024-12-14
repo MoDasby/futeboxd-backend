@@ -29,7 +29,7 @@ func (uc *GetCommentsUsecase) Execute(requesterID string, reviewID int64, page *
 	for _, comment := range comments {
 		comment := dto.Comment{
 			ID: comment.ID,
-			Author: dto.UserDTO{
+			Author: dto.ContentAuthorDTO{
 				ID:       comment.Author.ID,
 				Username: comment.Author.Username,
 			},

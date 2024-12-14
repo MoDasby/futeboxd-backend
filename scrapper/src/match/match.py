@@ -8,15 +8,12 @@ class EventType:
     text: str
 
 @dataclass
-class Clock:
-    value: float
-    display_value: str
-
-@dataclass
 class Event:
     type: EventType
     text: str
-    clock: Clock
+    clock_value: int
+    team_id: int
+    participant_name: str
 
 class Competitor:
     home_away: str
@@ -35,4 +32,4 @@ class Match:
     competition_name: str
     home_competitor: Competitor
     away_competitor: Competitor
-    events: List[Any]
+    events: List[Event]

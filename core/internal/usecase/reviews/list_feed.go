@@ -47,7 +47,7 @@ func (uc *ListFeedUsecase) Execute(requesterID, strategy string, page *paginatio
 
 		output = append(output, dto.ReviewDTO{
 			ID: review.ID,
-			Author: dto.UserDTO{
+			Author: dto.ContentAuthorDTO{
 				ID:       review.Author.ID,
 				Username: review.Author.Username,
 			},

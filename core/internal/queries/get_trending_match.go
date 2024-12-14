@@ -55,7 +55,11 @@ func (tq *ListTrendingMatchQuery) Execute(page *pagination.Page) ([]TrendingMatc
 		FROM reviews r
 		WHERE r.created_at >= NOW() - INTERVAL '7 days'
 		GROUP BY r.match_id
-		ORDER BY COUNT(r.match_id) DESC
+		ORDER BY (
+    		LEAST(COUNT(r.match_id), 100)
+		) + (
+			ROUND(AVG(r.rate), 1)
+		) DESC
 		LIMIT $1
 		OFFSET ($2 - 1) * $1
 	`
@@ -102,7 +106,7 @@ func (tq *ListTrendingMatchQuery) Execute(page *pagination.Page) ([]TrendingMatc
 		ids = append(ids, matchID)
 	}
 
-	matches, err := tq.footballClient.GetMatches(ids)
+	matches, err := tq.footballClient.GetMatchesMap(ids)
 	if err != nil {
 		return nil, err
 	}
@@ -115,10 +119,10 @@ func (tq *ListTrendingMatchQuery) Execute(page *pagination.Page) ([]TrendingMatc
 
 	output := make([]TrendingMatchOutputDTO, len(trendingMatches))
 
-	for index, match := range matches {
+	for index, id := range ids {
 		output[index] = TrendingMatchOutputDTO{
-			Match:     match,
-			RateStats: rateMap[match.ID],
+			Match:     matches[id],
+			RateStats: rateMap[id],
 		}
 	}
 

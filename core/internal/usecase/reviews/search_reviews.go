@@ -44,7 +44,7 @@ func (uc *SearchReviews) Execute(requesterID, term string, page *pagination.Page
 
 		output[index] = dto.ReviewDTO{
 			ID: review.ID,
-			Author: dto.UserDTO{
+			Author: dto.ContentAuthorDTO{
 				ID:       review.Author.ID,
 				Username: review.Author.Username,
 			},

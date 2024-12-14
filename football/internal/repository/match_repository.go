@@ -240,7 +240,7 @@ func (repo *matchRepository) FindLiveMatches(pageSize, pageIndex int) ([]domain.
 		FROM matches m
 		LEFT JOIN teams ht ON ht.id = m.home_team_id
 		LEFT JOIN teams at ON at.id = m.away_team_id
-		WHERE NOT m.completed
+		WHERE NOT m.completed AND (m.status_name = 'STATUS_FIRST_HALF' OR m.status_name = 'STATUS_SECOND_HALF' OR m.status_name = 'STATUS_HALFTIME')
 		ORDER BY m.match_date
 		LIMIT $1
 		OFFSET ($2 - 1) * $1

@@ -13,6 +13,7 @@ import (
 type Client interface {
 	GetMatch(matchID int64) (*Match, error)
 	GetMatches(matchIDs []int64) ([]Match, error)
+	GetMatchesMap(matchIDs []int64) (map[int64]Match, error)
 	GetTeam(teamID int64) (*Team, error)
 }
 
@@ -27,11 +28,28 @@ func NewClient() Client {
 	}
 }
 
+func (fs *footballClient) GetMatchesMap(matchIDs []int64) (map[int64]Match, error) {
+	matches, err := fs.GetMatches(matchIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	matchesMap := make(map[int64]Match)
+
+	for _, match := range matches {
+		matchesMap[match.ID] = match
+	}
+
+	return matchesMap, nil
+}
+
 func (fs *footballClient) GetMatches(matchIDs []int64) ([]Match, error) {
 	body, err := json.Marshal(matchIDs)
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO setar o header User-Agent pra core client
 
 	res, err := http.Post(fmt.Sprintf("%s/match/batch", fs.baseUrl), "application/json", bytes.NewBuffer(body))
 	if err != nil || res.StatusCode != http.StatusOK {

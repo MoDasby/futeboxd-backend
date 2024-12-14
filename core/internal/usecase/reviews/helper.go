@@ -12,16 +12,5 @@ func GetMatchesByReview(footballClient football.Client, reviews []domain.Review)
 		matchIDs[i] = review.MatchID
 	}
 
-	matches, err := footballClient.GetMatches(matchIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	matchesMap := make(map[int64]football.Match)
-
-	for _, match := range matches {
-		matchesMap[match.ID] = match
-	}
-
-	return matchesMap, nil
+	return footballClient.GetMatchesMap(matchIDs)
 }

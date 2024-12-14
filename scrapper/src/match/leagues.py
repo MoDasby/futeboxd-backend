@@ -23,6 +23,7 @@ class League(Enum):
     
     # FIFA/CONMEBOL
     WORLD_CUP = ("fifa.world", "FIFA World Cup")
+    WORLD_CUP_CLUBS = ("fifa.intercontinental_cup", "Mundial de clubes")
     LIBERTADORES = ("conmebol.libertadores", "Copa Libertadores")
     SUDAMERICANA = ("conmebol.sudamericana", "Copa Sul-Americana")
     COPA_AMERICA = ("conmebol.america", "Copa América")

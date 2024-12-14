@@ -23,7 +23,9 @@ class Espn():
             matchEvents = []
 
             if "details" in event["competitions"][0] and len(event["competitions"][0]["details"]) > 0:
-                matchEvents = event["competitions"][0]["details"]
+                for detail in event["competitions"][0]["details"]:
+                    if "gol" in detail["type"]["text"].lower() or "goal" in detail["type"]["text"].lower():
+                        matchEvents.append(detail)
             
             matchCompetitors = []
 
@@ -74,6 +76,8 @@ class Espn():
 
         matchSummary = MatchSummary()
         matchSummary.rosters = []
+        matchSummary.events = data.get("keyEvents", [])
+
 
         for espnRoster in rosters:
             roster = Roster()

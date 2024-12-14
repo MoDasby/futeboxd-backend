@@ -1,6 +1,7 @@
 from database.db import DB
 from .match import Match
 import json
+from dataclasses import asdict
 
 class MatchRepository:
     __db: DB
@@ -28,7 +29,7 @@ class MatchRepository:
                 events = EXCLUDED.events
         """
 
-        events = json.dumps(match.events)
+        events = json.dumps([asdict(event) for event in match.events])
 
         values = (
             match.id,

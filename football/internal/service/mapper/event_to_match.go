@@ -3,6 +3,7 @@ package mapper
 import (
 	"log"
 	"strconv"
+	"strings"
 
 	"github.com/modasby/futeboxd-api/services/football/internal/domain"
 	"github.com/modasby/futeboxd-api/services/football/internal/service/espn"
@@ -71,29 +72,31 @@ func EspnEventToMatch(espnEvent *espn.EspnEventSummary) (*domain.Match, *domain.
 
 	for _, keyEvent := range espnEvent.KeyEvents {
 
-		var teamID int64
-		if keyEvent.Team.ID != "" {
-			var err error
-			teamID, err = strconv.ParseInt(keyEvent.Team.ID, 10, 64)
-			if err != nil {
-				log.Fatal(err)
+		if strings.Contains(strings.ToLower(keyEvent.Type.Text), "gol") || strings.Contains(strings.ToLower(keyEvent.Type.Text), "goal") {
+			var teamID int64
+			if keyEvent.Team.ID != "" {
+				var err error
+				teamID, err = strconv.ParseInt(keyEvent.Team.ID, 10, 64)
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
+
+			participantName := ""
+
+			if len(keyEvent.Participants) > 0 {
+				participantName = keyEvent.Participants[0].Athlete.DisplayName
+			}
+
+			events = append(events, *domain.NewEvent(
+				keyEvent.Type.ID,
+				keyEvent.Type.Text,
+				keyEvent.Text,
+				int(keyEvent.Clock.Value),
+				int(teamID),
+				participantName,
+			))
 		}
-
-		participantName := ""
-
-		if len(keyEvent.Participants) > 0 {
-			participantName = keyEvent.Participants[0].Athlete.DisplayName
-		}
-
-		events = append(events, *domain.NewEvent(
-			keyEvent.Type.ID,
-			keyEvent.Type.Text,
-			keyEvent.Text,
-			int(keyEvent.Clock.Value),
-			int(teamID),
-			participantName,
-		))
 	}
 
 	summary.Events = events
