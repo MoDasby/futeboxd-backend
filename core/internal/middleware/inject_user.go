@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/modasby/futeboxd-api/services/core/internal/domain"
-	"github.com/modasby/futeboxd-api/services/core/internal/errors"
+	"github.com/modasby/futeboxd-backend/core/internal/domain"
+	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 )
 
 type ctxKey string
@@ -14,13 +14,11 @@ type ctxKey string
 type AuthMiddleware func(next http.HandlerFunc, permitAnonymous bool) http.HandlerFunc
 
 const (
-	UserKey    ctxKey = "user"
 	SessionKey ctxKey = "session"
 )
 
 func NewInjectUserMiddleware(
 	sessionRepository domain.SessionRepository,
-	userRepository domain.UserRepository,
 ) AuthMiddleware {
 	return func(next http.HandlerFunc, permitAnonymous bool) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
@@ -39,9 +37,9 @@ func NewInjectUserMiddleware(
 
 			if token == "" {
 				if permitAnonymous {
-					user := domain.NewAnonymousUser()
+					session := domain.NewAnonymousSession()
 
-					ctx := context.WithValue(r.Context(), UserKey, user)
+					ctx := context.WithValue(r.Context(), SessionKey, session)
 
 					next.ServeHTTP(w, r.WithContext(ctx))
 
@@ -58,7 +56,7 @@ func NewInjectUserMiddleware(
 				return
 			}
 
-			session, err := sessionRepository.FindOneByToken(token)
+			session, err := sessionRepository.FindOneByToken(r.Context(), token)
 			if err != nil {
 				errors.HandleHttpError(w, err)
 
@@ -66,7 +64,7 @@ func NewInjectUserMiddleware(
 			}
 
 			if !session.IsValid() {
-				if err := sessionRepository.Delete(session.ID); err != nil {
+				if err := sessionRepository.Delete(r.Context(), session.ID); err != nil {
 					errors.HandleHttpError(w, err)
 
 					return
@@ -86,24 +84,14 @@ func NewInjectUserMiddleware(
 			if time.Until(session.ExpiresAt).Hours() < 72 {
 				session.ExpiresAt = time.Now().Add(session.DefaultExpiration())
 
-				if err := sessionRepository.Update(session); err != nil {
+				if err := sessionRepository.Update(r.Context(), session); err != nil {
 					errors.HandleHttpError(w, err)
 
 					return
 				}
 			}
 
-			// TODO colocar o user como uma entidade dentro do seession
-			// pra nao precisar fazer duas queries
-			user, err := userRepository.FindOneByIdOrUsername(session.UserID)
-			if err != nil {
-				errors.HandleHttpError(w, err)
-
-				return
-			}
-
-			ctx := context.WithValue(r.Context(), UserKey, user)
-			ctx = context.WithValue(ctx, SessionKey, session)
+			ctx := context.WithValue(r.Context(), SessionKey, session)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		}

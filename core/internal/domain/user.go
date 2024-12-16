@@ -4,8 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/google/uuid"
-	"github.com/modasby/futeboxd-api/services/core/internal/errors"
+	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -27,13 +26,6 @@ type User struct {
 	Email          string
 	Password       string
 	FavoriteTeamID int64
-}
-
-func NewAnonymousUser() *User {
-	return &User{
-		ID:       uuid.NewString(),
-		Username: "anonymous",
-	}
 }
 
 func NewUser(username, name, bio, email, password string, favoriteTeamID int64) (*User, error) {

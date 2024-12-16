@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"io"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 const (
@@ -27,6 +29,13 @@ func generateToken() (string, error) {
 	}
 
 	return hex.EncodeToString(bytes), nil
+}
+
+func NewAnonymousSession() *Session {
+	return &Session{
+		ID:     "anonymous",
+		UserID: uuid.NewString(),
+	}
 }
 
 func NewSession(userID string) (*Session, error) {
