@@ -10,13 +10,6 @@ import (
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 )
 
-type Client interface {
-	GetMatch(matchID int64) (*Match, error)
-	GetMatches(matchIDs []int64) ([]Match, error)
-	GetMatchesMap(matchIDs []int64) (map[int64]Match, error)
-	GetTeam(teamID int64) (*Team, error)
-}
-
 type footballClient struct {
 	baseUrl string
 }
