@@ -3,9 +3,12 @@ package user
 import (
 	"context"
 
+	"github.com/modasby/futeboxd-backend/core/internal/email"
+	"github.com/modasby/futeboxd-backend/core/internal/email/templates"
 	"github.com/modasby/futeboxd-backend/core/internal/user/dto"
 
 	"github.com/modasby/futeboxd-backend/core/internal/domain"
+	"github.com/modasby/futeboxd-backend/core/pkg/auth"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 	"github.com/modasby/futeboxd-backend/core/pkg/football"
 	"github.com/modasby/futeboxd-backend/core/pkg/json/null"
@@ -16,6 +19,8 @@ type Usecases interface {
 	CreateUser(ctx context.Context, input *dto.UserInput) error
 	EditUser(ctx context.Context, input *dto.EditUser) error
 	ChangePassword(ctx context.Context, input *dto.ChangePassword) error
+	RecoverPassword(ctx context.Context, input *dto.RecoverPassword) error
+	ResetPassword(ctx context.Context, input *dto.ResetPassword) error
 	GetCurrentUser(ctx context.Context) (*dto.User, error)
 }
 
@@ -151,7 +156,15 @@ func (uc *usersUsecases) ChangePassword(ctx context.Context, input *dto.ChangePa
 		return err
 	}
 
-	if err := user.UpdatePassword(input.CurrentPassword, input.NewPassword); err != nil {
+	if err := user.CheckPassword(input.CurrentPassword); err != nil {
+		return errors.NewHTTPErr(
+			"senhas não conferem",
+			401,
+			"USER:USECASE:CHANGE_PASSWORD:WRONG_PASSWORD",
+		)
+	}
+
+	if err := user.UpdatePassword(input.NewPassword); err != nil {
 		return err
 	}
 
@@ -175,4 +188,70 @@ func (uc *usersUsecases) GetCurrentUser(ctx context.Context) (*dto.User, error) 
 		Username: user.Username,
 		Email:    user.Email,
 	}, nil
+}
+
+func (uc *usersUsecases) RecoverPassword(ctx context.Context, input *dto.RecoverPassword) error {
+	token, err := auth.GenerateRandomToken()
+	if err != nil {
+		return err
+	}
+
+	user, err := uc.userRepo.FindOneByCredential(ctx, input.Credential)
+	if err != nil {
+		return err
+	}
+
+	recover := domain.Recover{
+		Token:  token,
+		UserID: user.ID,
+	}
+
+	if err := uc.userRepo.SaveRecoverToken(ctx, &recover); err != nil {
+		return err
+	}
+
+	template := templates.RecoverPasswordTemplate(user.Username, "http://localhost"+user.Email, token)
+
+	mailOpts := email.EmailOpts{
+		ContentType: "text/html",
+		To:          user.Email,
+		Subject:     "Recuperação de senha",
+		Body:        template,
+	}
+
+	if err := email.SendMail(mailOpts); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (uc *usersUsecases) ResetPassword(ctx context.Context, input *dto.ResetPassword) error {
+	recover, err := uc.userRepo.CheckRecoverToken(ctx, input.Token)
+	if err != nil {
+		return err
+	}
+
+	if recover.IsExpired() {
+		return errors.NewHTTPErr(
+			"token vencido",
+			400,
+			"USER:USECASE:EXPIRED_TOKEN",
+		)
+	}
+
+	user, err := uc.userRepo.FindOneByIdOrUsername(ctx, recover.UserID)
+	if err != nil {
+		return err
+	}
+
+	if err := user.UpdatePassword(input.Password); err != nil {
+		return err
+	}
+
+	if err := uc.userRepo.Update(ctx, user); err != nil {
+		return err
+	}
+
+	return nil
 }

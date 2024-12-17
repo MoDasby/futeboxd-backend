@@ -30,3 +30,12 @@ type ChangePassword struct {
 	CurrentPassword string `json:"current_password"`
 	NewPassword     string `json:"new_password"`
 }
+
+type RecoverPassword struct {
+	Credential string `json:"credential"`
+}
+
+type ResetPassword struct {
+	Token    string `json:"token"`
+	Password string `json:"password"`
+}

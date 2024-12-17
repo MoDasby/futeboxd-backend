@@ -22,7 +22,28 @@ func (h *Handler) RegisterRoutes(r *http.ServeMux, injectUser middleware.AuthMid
 	r.HandleFunc("GET /users", injectUser(h.getCurrentUser, false))
 	r.HandleFunc("POST /users", h.createUser)
 	r.HandleFunc("PATCH /users", injectUser(h.editUser, false))
-	r.HandleFunc("PUT /users/password", injectUser(h.changePassword, false))
+	r.HandleFunc("PATCH /users/password", injectUser(h.changePassword, false))
+	r.HandleFunc("POST /users/recover", h.recoverPassword)
+	r.HandleFunc("PATCH /users/recover", func(w http.ResponseWriter, r *http.Request) {
+		var body dto.ResetPassword
+
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			err = errors.NewHTTPErr(
+				"corpo de requisição inválido",
+				400,
+				"HANDLER:USER:RESET_PASSWORD:INVALID_BODY",
+			)
+
+			errors.HandleHttpError(w, err)
+			return
+		}
+
+		if err := h.usecase.ResetPassword(r.Context(), &body); err != nil {
+			errors.HandleHttpError(w, err)
+
+			return
+		}
+	})
 }
 
 func (h *Handler) getCurrentUser(w http.ResponseWriter, r *http.Request) {
@@ -89,6 +110,27 @@ func (h *Handler) changePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.usecase.ChangePassword(r.Context(), &input); err != nil {
+		errors.HandleHttpError(w, err)
+
+		return
+	}
+}
+
+func (h *Handler) recoverPassword(w http.ResponseWriter, r *http.Request) {
+	var body dto.RecoverPassword
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		err = errors.NewHTTPErr(
+			"corpo de requisição inválido",
+			400,
+			"HANDLER:USER:RECOVER:INVALID_BODY",
+		)
+
+		errors.HandleHttpError(w, err)
+		return
+	}
+
+	if err := h.usecase.RecoverPassword(r.Context(), &body); err != nil {
 		errors.HandleHttpError(w, err)
 
 		return

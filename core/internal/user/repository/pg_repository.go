@@ -162,3 +162,39 @@ func (r *userRepository) Exists(ctx context.Context, username, email string) (bo
 
 	return exists.Bool, nil
 }
+
+func (repo *userRepository) SaveRecoverToken(ctx context.Context, recover *domain.Recover) error {
+	query := `
+		INSERT INTO recover_password_tokens(user_id, token)
+		VALUES ($1, $2)
+	`
+
+	_, err := repo.db.ExecContext(ctx, query, recover.UserID, recover.Token)
+
+	return err
+}
+
+func (repo *userRepository) CheckRecoverToken(ctx context.Context, token string) (*domain.Recover, error) {
+	query := `
+		SELECT user_id, token, expires_at
+		FROM recover_password_tokens
+		WHERE token = $1
+	`
+
+	row := repo.db.QueryRowContext(ctx, query, token)
+
+	var recover domain.Recover
+
+	if err := row.Scan(&recover.UserID, &recover.Token, &recover.ExpiresAt); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errorsTypes.NewHTTPErr(
+				"token inválido",
+				404,
+				"REPOSITORY:USER:CHECK_RECOVER_TOKEN:TOKEN_NOT_FOUND",
+			)
+		}
+		return nil, err
+	}
+
+	return &recover, nil
+}

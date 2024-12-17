@@ -49,21 +49,12 @@ func NewUser(username, name, bio, email, password string, favoriteTeamID int64) 
 	return user, nil
 }
 
-func (u *User) UpdatePassword(currentPassword, newPassword string) error {
-
-	if err := u.CheckPassword(currentPassword); err != nil {
-		return errors.NewHTTPErr(
-			"senhas não conferem",
-			401,
-			"DOMAIN:USER:UPDATE_PASSWORD:WRONG_PASSWORD",
-		)
-	}
-
+func (u *User) UpdatePassword(newPassword string) error {
 	if err := u.CheckPassword(newPassword); err == nil {
 		return errors.NewHTTPErr(
 			"a nova senha não pode ser igual a senha antiga",
 			400,
-			"DOMAIN:USER:UPDATE_PASSWORD:SAME_PASSWORD",
+			"DOMAIN:USER:CHANGE_PASSWORD:SAME_PASSWORD",
 		)
 	}
 
@@ -81,19 +72,17 @@ func (u *User) UpdatePassword(currentPassword, newPassword string) error {
 }
 
 func (u *User) Validate() error {
-	if strings.Contains(u.Username, " ") {
-		return errors.NewHTTPErr(
-			"o username não pode conter espaços",
-			400,
-			"DOMAIN:USER:VALIDADE:WHITE_SPACE_IN_USERNAME",
-		)
+
+	usernameValid, err := regexp.MatchString("^[a-zA-Z0-9_-]+$", u.Username)
+	if err != nil {
+		return err
 	}
 
-	if u.Username == "" {
+	if !usernameValid {
 		return errors.NewHTTPErr(
-			"nome de usuário não pode estar vazio",
+			"username inválido",
 			400,
-			"DOMAIN:USER:VALIDADE:EMPTY_USERNAME",
+			"DOMAIN:USER:VALIDATE:INVALID_USERNAME",
 		)
 	}
 

@@ -1,12 +1,10 @@
 package domain
 
 import (
-	"crypto/rand"
-	"encoding/hex"
-	"io"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/modasby/futeboxd-backend/core/pkg/auth"
 )
 
 const (
@@ -21,16 +19,6 @@ type Session struct {
 	UserID    string
 }
 
-func generateToken() (string, error) {
-	bytes := make([]byte, 48)
-
-	if _, err := io.ReadFull(rand.Reader, bytes); err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(bytes), nil
-}
-
 func NewAnonymousSession() *Session {
 	return &Session{
 		ID:     "anonymous",
@@ -39,7 +27,7 @@ func NewAnonymousSession() *Session {
 }
 
 func NewSession(userID string) (*Session, error) {
-	token, err := generateToken()
+	token, err := auth.GenerateRandomToken()
 	if err != nil {
 		return nil, err
 	}
