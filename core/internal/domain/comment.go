@@ -3,7 +3,7 @@ package domain
 import (
 	"time"
 
-	"github.com/modasby/futeboxd-api/services/core/internal/errors"
+	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 )
 
 type Comment struct {

@@ -2,18 +2,25 @@ package main
 
 import (
 	"fmt"
+	"github.com/modasby/futeboxd-backend/core/internal/user/repository"
 	"log"
 	"net/http"
 	"os"
 
-	"github.com/modasby/futeboxd-api/services/core/database"
-	"github.com/modasby/futeboxd-api/services/core/internal/client/football"
-	"github.com/modasby/futeboxd-api/services/core/internal/handler"
-	"github.com/modasby/futeboxd-api/services/core/internal/middleware"
-	"github.com/modasby/futeboxd-api/services/core/internal/queries"
-	"github.com/modasby/futeboxd-api/services/core/internal/repository"
-	reviewsUsecases "github.com/modasby/futeboxd-api/services/core/internal/usecase/reviews"
-	usersUsecases "github.com/modasby/futeboxd-api/services/core/internal/usecase/users"
+	"github.com/modasby/futeboxd-backend/core/database"
+	"github.com/modasby/futeboxd-backend/core/internal/comment"
+	commentRepository "github.com/modasby/futeboxd-backend/core/internal/comment/repository"
+	"github.com/modasby/futeboxd-backend/core/internal/match"
+	matchRepository "github.com/modasby/futeboxd-backend/core/internal/match/repository"
+	"github.com/modasby/futeboxd-backend/core/internal/middleware"
+	"github.com/modasby/futeboxd-backend/core/internal/profile"
+	profileRepository "github.com/modasby/futeboxd-backend/core/internal/profile/repository"
+	reviews "github.com/modasby/futeboxd-backend/core/internal/review"
+	reviewRepository "github.com/modasby/futeboxd-backend/core/internal/review/repository"
+	"github.com/modasby/futeboxd-backend/core/internal/session"
+	sessionRepository "github.com/modasby/futeboxd-backend/core/internal/session/repository"
+	"github.com/modasby/futeboxd-backend/core/internal/user"
+	"github.com/modasby/futeboxd-backend/core/pkg/football"
 )
 
 func main() {
@@ -23,65 +30,39 @@ func main() {
 	}
 	defer db.Close()
 
-	reviewRepository := repository.NewReviewRepository(db)
-	userRepository := repository.NewUserRepository(db)
-	sessionRepository := repository.NewSessionRepository(db)
-	followersRepo := repository.NewFollowersRepository(db)
-	commentsRepo := repository.NewCommentsRepository(db)
-	profileRepo := repository.NewProfileRepository(db)
+	sessionRepo := sessionRepository.NewSessionRepository(db)
+	userRepo := repository.NewUserRepository(db)
+	profileRepo := profileRepository.NewProfileRepository(db)
+	reviewRepo := reviewRepository.NewReviewRepository(db)
+	commentRepo := commentRepository.NewCommentsRepository(db)
+	matchRepo := matchRepository.NewMatchRepository(db)
 
 	footballClient := football.NewClient()
 
-	listTrendingMatchesQuery := queries.NewListTrendingMatchQuery(db, footballClient)
+	sessionUsecases := session.NewSessionUsecases(sessionRepo, userRepo, footballClient)
+	profileUsecases := profile.NewProfileUsecases(profileRepo, footballClient)
+	reviewUsecases := reviews.NewReviewUsecases(reviewRepo, footballClient, userRepo)
+	commentUsecases := comment.NewCommentUsecases(commentRepo, reviewRepo, userRepo)
+	matchUsecases := match.NewMatchUsecases(matchRepo, footballClient)
+	userUsecases := user.NewUsersUsecases(userRepo, footballClient)
 
-	createReviewUseCase := reviewsUsecases.NewCreateReviewUseCase(reviewRepository, footballClient)
-	listReviewsUseCase := reviewsUsecases.NewListReviewsUseCase(reviewRepository, footballClient)
-	listFeedUsecase := reviewsUsecases.NewListFeedUsecase(reviewRepository, userRepository, footballClient)
-	deleteReviewsUseCase := reviewsUsecases.NewDeleteReviewUseCase(reviewRepository)
-	createCommentUsecase := reviewsUsecases.NewCreateCommentUsecase(commentsRepo, reviewRepository)
-	listCommentsUsecase := reviewsUsecases.NewGetCommentsUsecase(commentsRepo)
-	toggleLikeCommentUsecase := reviewsUsecases.NewToggleLikeCommentUsecase(commentsRepo)
-	toggleLikeReviewUsecase := reviewsUsecases.NewToggleLikeReviewUsecase(reviewRepository)
-	deleteCommentUsecase := reviewsUsecases.NewDeleteCommentUsecase(commentsRepo)
+	userHandler := user.NewUserHandler(userUsecases)
+	sessionHandler := session.NewsessionHandler(sessionUsecases)
+	profileHandler := profile.NewProfileHandler(profileUsecases)
+	reviewHandler := reviews.NewReviewsHandler(reviewUsecases)
+	commentHandler := comment.NewCommentHandler(commentUsecases)
+	matchHandler := match.NewMatchHandler(matchUsecases)
 
-	createUserUseCase := usersUsecases.NewCreateUserUseCase(userRepository, footballClient)
-	findByProfile := usersUsecases.NewFindProfileUsecase(profileRepo, footballClient)
-	editUserUsecase := usersUsecases.NewEditUserUseCase(userRepository, footballClient)
-	loginUsecase := usersUsecases.NewLoginUseCase(sessionRepository, userRepository)
-	logoutUsecase := usersUsecases.NewLogoutUsecase(sessionRepository)
-	updatePasswordUsecase := usersUsecases.NewUpdatePasswordUsecase(userRepository)
-	toggleFollowUsecase := usersUsecases.NewToggleFollowUsecase(userRepository, followersRepo)
-	searchProfile := usersUsecases.NewSearchProfile(profileRepo, footballClient)
-
-	reviewHandler := handler.NewReviewHandler(
-		createReviewUseCase,
-		listReviewsUseCase,
-		listFeedUsecase,
-		deleteReviewsUseCase,
-		createCommentUsecase,
-		listCommentsUsecase,
-		toggleLikeCommentUsecase,
-		toggleLikeReviewUsecase,
-		deleteCommentUsecase,
-		listTrendingMatchesQuery,
-	)
-	userHandler := handler.NewUserHandler(
-		createUserUseCase,
-		findByProfile,
-		editUserUsecase,
-		loginUsecase,
-		logoutUsecase,
-		updatePasswordUsecase,
-		toggleFollowUsecase,
-		searchProfile,
-	)
-
-	injectUser := middleware.NewInjectUserMiddleware(sessionRepository, userRepository)
+	injectUser := middleware.NewInjectUserMiddleware(sessionRepo)
 
 	router := http.NewServeMux()
 
-	reviewHandler.RegisterRoutes(router, injectUser)
 	userHandler.RegisterRoutes(router, injectUser)
+	sessionHandler.RegisterRoutes(router, injectUser)
+	reviewHandler.RegisterRoutes(router, injectUser)
+	profileHandler.RegisterRoutes(router, injectUser)
+	commentHandler.RegisterRoutes(router, injectUser)
+	matchHandler.RegisterRoutes(router)
 
 	port := os.Getenv("PORT")
 	log.Printf("Iniciando servidor na porta: %s", port)
