@@ -13,7 +13,7 @@ type Page struct {
 }
 
 func NewPageWithQueryParam(params *url.Values) (Page, error) {
-	size := params.Get("size")
+	size := params.Get("page_size")
 	index := params.Get("page")
 
 	sizeInt, err := strconv.ParseUint(size, 10, 64)
