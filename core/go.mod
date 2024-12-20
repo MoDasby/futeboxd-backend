@@ -1,4 +1,4 @@
-module github.com/modasby/futeboxd-api/services/core
+module github.com/modasby/futeboxd-backend/core
 
 go 1.22.5
 

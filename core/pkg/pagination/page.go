@@ -1,10 +1,10 @@
-package handler
+package pagination
 
 import (
-	"net/url"
+	"net/http"
 	"strconv"
 
-	"github.com/modasby/futeboxd-api/services/football/internal/errors"
+	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 )
 
 type Page struct {
@@ -12,9 +12,7 @@ type Page struct {
 	Index int
 }
 
-func NewPageWithQueryParam(params *url.Values) (Page, error) {
-	size := params.Get("page_size")
-	index := params.Get("page")
+func WithPage(size, index string) (*Page, error) {
 
 	sizeInt, err := strconv.ParseUint(size, 10, 64)
 	if err != nil {
@@ -27,15 +25,22 @@ func NewPageWithQueryParam(params *url.Values) (Page, error) {
 	}
 
 	if sizeInt > 100 {
-		return Page{}, errors.NewHTTPErr(
+		return nil, errors.NewHTTPErr(
 			"tamanho da página não pode ser maior que 100",
 			400,
 			"PAGINATION:PAGE_SIZE_TOO_BIG",
 		)
 	}
 
-	return Page{
+	return &Page{
 		Size:  int(sizeInt),
 		Index: int(indexInt),
 	}, nil
+}
+
+func WithRequest(r *http.Request) (*Page, error) {
+	return WithPage(
+		r.URL.Query().Get("page_size"),
+		r.URL.Query().Get("page"),
+	)
 }
