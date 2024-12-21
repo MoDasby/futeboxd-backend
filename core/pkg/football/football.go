@@ -45,12 +45,22 @@ func (fs *footballClient) GetMatches(matchIDs []int64) ([]Match, error) {
 	// TODO setar o header User-Agent pra core client
 
 	res, err := http.Post(fmt.Sprintf("%s/match/batch", fs.baseUrl), "application/json", bytes.NewBuffer(body))
-	if err != nil || res.StatusCode != http.StatusOK {
-		return nil, errors.NewHTTPErr("ocorreu um erro ao recuperar partida", res.StatusCode, "FOOTBALL_CLIENT:GET_MATCHES")
+	if err != nil {
+		return nil, err
 	}
 	defer res.Body.Close()
 
-	matches := make([]Match, len(matchIDs))
+	if res.StatusCode != http.StatusOK {
+		var body errors.ResponseBody
+
+		if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+			return nil, err
+		}
+
+		return nil, errors.NewHTTPErr(body.Msg, res.StatusCode, "CLIENT:FOOTBALL:GET_MATCHES")
+	}
+
+	matches := make([]Match, 0)
 
 	if err := json.NewDecoder(res.Body).Decode(&matches); err != nil {
 		return nil, err
@@ -61,10 +71,20 @@ func (fs *footballClient) GetMatches(matchIDs []int64) ([]Match, error) {
 
 func (fs *footballClient) GetMatch(matchID int64) (*Match, error) {
 	res, err := http.Get(fmt.Sprintf("%s/match/%d", fs.baseUrl, matchID))
-	if err != nil || res.StatusCode != http.StatusOK {
-		return nil, errors.NewHTTPErr("partida não encontrada", 400, "FOOTBALL_CLIENT:GET_MATCH")
+	if err != nil {
+		return nil, err
 	}
 	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		var body errors.ResponseBody
+
+		if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+			return nil, err
+		}
+
+		return nil, errors.NewHTTPErr(body.Msg, res.StatusCode, "CLIENT:FOOTBALL:GET_MATCH")
+	}
 
 	var match Match
 
@@ -77,10 +97,20 @@ func (fs *footballClient) GetMatch(matchID int64) (*Match, error) {
 
 func (fs *footballClient) GetTeam(teamID int64) (*Team, error) {
 	res, err := http.Get(fmt.Sprintf("%s/team/%d", fs.baseUrl, teamID))
-	if err != nil || res.StatusCode != http.StatusOK {
-		return nil, errors.NewHTTPErr("time não encontrado", 400, "FOOTBALL_CLIENT:GET_TEAM")
+	if err != nil {
+		return nil, err
 	}
 	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		var body errors.ResponseBody
+
+		if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+			return nil, err
+		}
+
+		return nil, errors.NewHTTPErr(body.Msg, res.StatusCode, "CLIENT:FOOTBALL:GET_TEAM")
+	}
 
 	var team Team
 

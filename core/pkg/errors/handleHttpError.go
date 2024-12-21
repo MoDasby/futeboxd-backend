@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-type responseBody struct {
+type ResponseBody struct {
 	Msg  string `json:"message"`
 	Code string `json:"code"`
 }
@@ -16,7 +16,7 @@ func sendResponse(w http.ResponseWriter, err *HTTPErr) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(err.Code)
 
-	body := responseBody{
+	body := ResponseBody{
 		Msg:  err.Msg,
 		Code: err.ErrorCode,
 	}
