@@ -22,7 +22,7 @@ func NewInjectUserMiddleware(
 ) AuthMiddleware {
 	return func(next http.HandlerFunc, permitAnonymous bool) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			tokenCookie, _ := r.Cookie("futeboxd-auth-token")
+			tokenCookie, _ := r.Cookie("sid")
 			tokenHeader := r.Header.Get("Authorization")
 
 			var token string
