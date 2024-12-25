@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/modasby/futeboxd-backend/core/internal/comment/dto"
-	"github.com/modasby/futeboxd-backend/core/internal/middleware"
+	"github.com/modasby/futeboxd-backend/core/pkg/auth"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 	"github.com/modasby/futeboxd-backend/core/pkg/pagination"
 	"github.com/modasby/futeboxd-backend/core/pkg/utils"
@@ -21,7 +21,7 @@ func NewCommentHandler(usecase CommentUsecases) *Handler {
 	}
 }
 
-func (h *Handler) RegisterRoutes(r *http.ServeMux, injectUser middleware.AuthMiddleware) {
+func (h *Handler) RegisterRoutes(r *http.ServeMux, injectUser auth.Middleware) {
 	r.HandleFunc("POST /comments/{reviewID}", injectUser(h.createComment, false))
 	r.HandleFunc("DELETE /comments/{commentID}", injectUser(h.deleteComment, false))
 	r.HandleFunc("GET /comments", injectUser(h.listComments, true))

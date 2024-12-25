@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/modasby/futeboxd-backend/core/internal/middleware"
 	"github.com/modasby/futeboxd-backend/core/internal/review/dto"
+	"github.com/modasby/futeboxd-backend/core/pkg/auth"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 	"github.com/modasby/futeboxd-backend/core/pkg/pagination"
 	"github.com/modasby/futeboxd-backend/core/pkg/utils"
@@ -19,7 +19,7 @@ func NewReviewsHandler(usecase ReviewUsecases) *ReviewHandler {
 	return &ReviewHandler{usecase: usecase}
 }
 
-func (h *ReviewHandler) RegisterRoutes(r *http.ServeMux, injectUser middleware.AuthMiddleware) {
+func (h *ReviewHandler) RegisterRoutes(r *http.ServeMux, injectUser auth.Middleware) {
 	r.HandleFunc("POST /reviews", injectUser(h.create, false))
 	r.HandleFunc("GET /reviews/feed", injectUser(h.listFeed, false))
 	r.HandleFunc("GET /reviews", injectUser(h.listAll, true))

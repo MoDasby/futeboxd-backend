@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/modasby/futeboxd-backend/core/internal/domain"
-	"github.com/modasby/futeboxd-backend/core/internal/middleware"
+	"github.com/modasby/futeboxd-backend/core/pkg/auth"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 )
 
@@ -25,7 +25,7 @@ func ParseIntValue(value string) (int64, error) {
 }
 
 func GetSessionFromCtx(ctx context.Context) (*domain.Session, error) {
-	session, ok := ctx.Value(middleware.SessionKey).(*domain.Session)
+	session, ok := ctx.Value(auth.SessionKey).(*domain.Session)
 	if !ok || session == nil {
 		return nil, errors.NewHTTPErr(
 			"sessão inválida",

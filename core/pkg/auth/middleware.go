@@ -1,4 +1,4 @@
-package middleware
+package auth
 
 import (
 	"context"
@@ -11,15 +11,15 @@ import (
 
 type ctxKey string
 
-type AuthMiddleware func(next http.HandlerFunc, permitAnonymous bool) http.HandlerFunc
+type Middleware func(next http.HandlerFunc, permitAnonymous bool) http.HandlerFunc
 
 const (
 	SessionKey ctxKey = "session"
 )
 
-func NewInjectUserMiddleware(
+func NewAuthMiddleware(
 	sessionRepository domain.SessionRepository,
-) AuthMiddleware {
+) Middleware {
 	return func(next http.HandlerFunc, permitAnonymous bool) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			tokenCookie, _ := r.Cookie("sid")

@@ -3,7 +3,7 @@ package profile
 import (
 	"net/http"
 
-	"github.com/modasby/futeboxd-backend/core/internal/middleware"
+	"github.com/modasby/futeboxd-backend/core/pkg/auth"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 	"github.com/modasby/futeboxd-backend/core/pkg/pagination"
 	"github.com/modasby/futeboxd-backend/core/pkg/utils"
@@ -21,7 +21,7 @@ func NewProfileHandler(
 	}
 }
 
-func (h *profileHandler) RegisterRoutes(r *http.ServeMux, injectUser middleware.AuthMiddleware) {
+func (h *profileHandler) RegisterRoutes(r *http.ServeMux, injectUser auth.Middleware) {
 	r.HandleFunc("GET /profiles/{username}", injectUser(h.findByUsername, true))
 	r.HandleFunc("POST /profiles/{username}/follow", injectUser(h.toggleFollow, false))
 	r.HandleFunc("GET /profiles", injectUser(h.searchProfiles, true))

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/modasby/futeboxd-backend/core/internal/middleware"
 	"github.com/modasby/futeboxd-backend/core/internal/session/dto"
+	"github.com/modasby/futeboxd-backend/core/pkg/auth"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 	"github.com/modasby/futeboxd-backend/core/pkg/utils"
 )
@@ -20,7 +20,7 @@ func NewsessionHandler(usecase SessionUsecases) *sessionHandler {
 	}
 }
 
-func (h *sessionHandler) RegisterRoutes(r *http.ServeMux, injectUser middleware.AuthMiddleware) {
+func (h *sessionHandler) RegisterRoutes(r *http.ServeMux, injectUser auth.Middleware) {
 	r.HandleFunc("POST /sessions", h.login)
 	r.HandleFunc("DELETE /sessions", injectUser(h.logout, false))
 }

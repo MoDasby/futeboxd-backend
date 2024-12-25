@@ -1,4 +1,4 @@
-package auth
+package token
 
 import (
 	"crypto/rand"
@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-func GenerateRandomToken() (string, error) {
+func Generate() (string, error) {
 	bytes := make([]byte, 48)
 
 	if _, err := io.ReadFull(rand.Reader, bytes); err != nil {

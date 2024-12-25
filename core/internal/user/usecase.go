@@ -3,15 +3,14 @@ package user
 import (
 	"context"
 
-	"github.com/modasby/futeboxd-backend/core/internal/email"
-	"github.com/modasby/futeboxd-backend/core/internal/email/templates"
-	"github.com/modasby/futeboxd-backend/core/internal/user/dto"
-
 	"github.com/modasby/futeboxd-backend/core/internal/domain"
-	"github.com/modasby/futeboxd-backend/core/pkg/auth"
+	"github.com/modasby/futeboxd-backend/core/internal/user/dto"
+	"github.com/modasby/futeboxd-backend/core/pkg/email"
+	"github.com/modasby/futeboxd-backend/core/pkg/email/templates"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 	"github.com/modasby/futeboxd-backend/core/pkg/football"
 	"github.com/modasby/futeboxd-backend/core/pkg/json/null"
+	"github.com/modasby/futeboxd-backend/core/pkg/token"
 	"github.com/modasby/futeboxd-backend/core/pkg/utils"
 )
 
@@ -191,7 +190,7 @@ func (uc *usersUsecases) GetCurrentUser(ctx context.Context) (*dto.User, error) 
 }
 
 func (uc *usersUsecases) RecoverPassword(ctx context.Context, input *dto.RecoverPassword) error {
-	token, err := auth.GenerateRandomToken()
+	token, err := token.Generate()
 	if err != nil {
 		return err
 	}

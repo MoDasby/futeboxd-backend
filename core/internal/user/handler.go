@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/modasby/futeboxd-backend/core/internal/middleware"
 	"github.com/modasby/futeboxd-backend/core/internal/user/dto"
+	"github.com/modasby/futeboxd-backend/core/pkg/auth"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 	"github.com/modasby/futeboxd-backend/core/pkg/utils"
 )
@@ -18,7 +18,7 @@ func NewUserHandler(usecase Usecases) *Handler {
 	return &Handler{usecase: usecase}
 }
 
-func (h *Handler) RegisterRoutes(r *http.ServeMux, injectUser middleware.AuthMiddleware) {
+func (h *Handler) RegisterRoutes(r *http.ServeMux, injectUser auth.Middleware) {
 	r.HandleFunc("GET /users", injectUser(h.getCurrentUser, false))
 	r.HandleFunc("POST /users", h.createUser)
 	r.HandleFunc("PATCH /users", injectUser(h.editUser, false))

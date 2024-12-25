@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/modasby/futeboxd-backend/core/pkg/auth"
+	"github.com/modasby/futeboxd-backend/core/pkg/token"
 )
 
 const (
@@ -27,7 +27,7 @@ func NewAnonymousSession() *Session {
 }
 
 func NewSession(userID string) (*Session, error) {
-	token, err := auth.GenerateRandomToken()
+	token, err := token.Generate()
 	if err != nil {
 		return nil, err
 	}

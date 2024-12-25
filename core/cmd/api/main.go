@@ -2,17 +2,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/modasby/futeboxd-backend/core/internal/user/repository"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/modasby/futeboxd-backend/core/internal/user/repository"
 
 	"github.com/modasby/futeboxd-backend/core/database"
 	"github.com/modasby/futeboxd-backend/core/internal/comment"
 	commentRepository "github.com/modasby/futeboxd-backend/core/internal/comment/repository"
 	"github.com/modasby/futeboxd-backend/core/internal/match"
 	matchRepository "github.com/modasby/futeboxd-backend/core/internal/match/repository"
-	"github.com/modasby/futeboxd-backend/core/internal/middleware"
 	"github.com/modasby/futeboxd-backend/core/internal/profile"
 	profileRepository "github.com/modasby/futeboxd-backend/core/internal/profile/repository"
 	reviews "github.com/modasby/futeboxd-backend/core/internal/review"
@@ -20,6 +20,7 @@ import (
 	"github.com/modasby/futeboxd-backend/core/internal/session"
 	sessionRepository "github.com/modasby/futeboxd-backend/core/internal/session/repository"
 	"github.com/modasby/futeboxd-backend/core/internal/user"
+	"github.com/modasby/futeboxd-backend/core/pkg/auth"
 	"github.com/modasby/futeboxd-backend/core/pkg/football"
 )
 
@@ -53,7 +54,7 @@ func main() {
 	commentHandler := comment.NewCommentHandler(commentUsecases)
 	matchHandler := match.NewMatchHandler(matchUsecases)
 
-	injectUser := middleware.NewInjectUserMiddleware(sessionRepo)
+	injectUser := auth.NewAuthMiddleware(sessionRepo)
 
 	router := http.NewServeMux()
 
