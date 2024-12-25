@@ -53,13 +53,5 @@ func (r *Review) Validate() error {
 		)
 	}
 
-	if r.Description == "" {
-		return errors.NewHTTPErr(
-			"insira uma descrição",
-			400,
-			"DOMAIN:REVIEW:VALIDATE:INVALID_DESCRIPTION",
-		)
-	}
-
 	return nil
 }

@@ -45,7 +45,7 @@ func TestReview(t *testing.T) {
 
 		err = review.Validate()
 
-		assert.Error(t, err)
+		assert.NoError(t, err)
 
 		review.Description = "partida bacana"
 
