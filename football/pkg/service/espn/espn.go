@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/modasby/futeboxd-api/services/football/internal/errors"
+	"github.com/modasby/futeboxd-api/services/football/pkg/errors"
 )
 
 const (

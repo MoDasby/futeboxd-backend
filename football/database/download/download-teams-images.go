@@ -7,9 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/modasby/futeboxd-api/services/football/internal/repository"
-	"github.com/modasby/futeboxd-api/services/football/internal/service/espn"
-	"github.com/modasby/futeboxd-api/services/football/internal/service/teams"
+	"github.com/modasby/futeboxd-api/services/football/internal/team"
 
 	_ "github.com/lib/pq"
 )
@@ -21,12 +19,9 @@ func main() {
 		panic(err)
 	}
 
-	teamsRepo := repository.NewTeamRepository(db)
-	espnService := espn.NewEspnService()
+	teamsRepo := team.NewTeamRepository(db)
 
-	teamsService := teams.NewTeamService(teamsRepo, espnService)
-
-	teams, err := teamsService.FindAll("", 2000, 1)
+	teams, err := teamsRepo.FindAll("", 2000, 1)
 	if err != nil {
 		panic(err)
 	}

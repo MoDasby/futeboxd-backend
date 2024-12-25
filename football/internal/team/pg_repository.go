@@ -1,22 +1,21 @@
-package repository
+package team
 
 import (
 	"database/sql"
 	"strings"
 
-	"github.com/modasby/futeboxd-api/services/football/internal/domain"
-	"github.com/modasby/futeboxd-api/services/football/internal/errors"
+	"github.com/modasby/futeboxd-api/services/football/pkg/errors"
 )
 
 type teamRepository struct {
 	db *sql.DB
 }
 
-func NewTeamRepository(db *sql.DB) domain.TeamRepository {
+func NewTeamRepository(db *sql.DB) Repository {
 	return &teamRepository{db: db}
 }
 
-// Create insere um novo time na tabela de teams.
+/* // Create insere um novo time na tabela de teams.
 func (repo *teamRepository) Create(team *domain.Team) error {
 	query := `
 		INSERT INTO teams (id, name, abbreviation, color, logo)
@@ -25,10 +24,9 @@ func (repo *teamRepository) Create(team *domain.Team) error {
 
 	_, err := repo.db.Exec(query, team.ID, team.Name, team.Abbreviation, team.Color, team.Logo)
 	return err
-}
+} */
 
-// FindOneById busca um time pelo ID.
-func (repo *teamRepository) FindOneById(ID int64) (*domain.Team, error) {
+func (repo *teamRepository) FindOneById(ID int64) (*Team, error) {
 	query := `
 		SELECT t.id, t.name, t.abbreviation, t.color, t.logo
 		FROM teams t
@@ -47,7 +45,7 @@ func (repo *teamRepository) FindOneById(ID int64) (*domain.Team, error) {
 		return nil, err
 	}
 
-	team := &domain.Team{
+	team := &Team{
 		ID:           teamID.Int64,
 		Name:         teamName.String,
 		Abbreviation: teamAbbreviation.String,
@@ -58,11 +56,11 @@ func (repo *teamRepository) FindOneById(ID int64) (*domain.Team, error) {
 	return team, nil
 }
 
-func (repo *teamRepository) FindAll(name string, pageSize, pageIndex int) ([]domain.Team, error) {
+func (repo *teamRepository) FindAll(name string, pageSize, pageIndex int) ([]Team, error) {
 	query := `
 	SELECT t.id, t.name, t.abbreviation, t.color, t.logo, t.mandatory
 	FROM teams t 
-	WHERE LOWER(t.name) LIKE $1
+	WHERE LOWER(t.name) LIKE $1 AND mandatory
 	ORDER BY t.name
 	LIMIT $2
 	OFFSET (($3 - 1) * $2)
@@ -74,7 +72,7 @@ func (repo *teamRepository) FindAll(name string, pageSize, pageIndex int) ([]dom
 	}
 	defer rows.Close()
 
-	teams := make([]domain.Team, 0)
+	teams := make([]Team, 0)
 
 	for rows.Next() {
 		var name, abbreviation, color, logo sql.NullString
@@ -85,7 +83,7 @@ func (repo *teamRepository) FindAll(name string, pageSize, pageIndex int) ([]dom
 			return nil, err
 		}
 
-		team := domain.NewTeam(id.Int64, name.String, abbreviation.String, color.String, logo.String)
+		team := NewTeam(id.Int64, name.String, abbreviation.String, color.String, logo.String)
 
 		team.Mandatory = mandatory.Bool
 

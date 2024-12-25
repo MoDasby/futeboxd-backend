@@ -1,4 +1,4 @@
-package repository
+package match
 
 import (
 	"database/sql"
@@ -6,19 +6,18 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/modasby/futeboxd-api/services/football/internal/domain"
-	"github.com/modasby/futeboxd-api/services/football/internal/errors"
+	"github.com/modasby/futeboxd-api/services/football/pkg/errors"
 )
 
 type matchRepository struct {
 	db *sql.DB
 }
 
-func NewMatchRepository(db *sql.DB) domain.MatchRepository {
+func NewMatchRepository(db *sql.DB) Repository {
 	return &matchRepository{db: db}
 }
 
-func (repo *matchRepository) Create(match *domain.Match, summary *domain.MatchSummary) error {
+func (repo *matchRepository) Create(match *Match, summary *MatchSummary) error {
 	query := `
 		INSERT INTO matches (
 			id, match_date, venue, home_team_score, home_team_id,
@@ -44,7 +43,7 @@ func (repo *matchRepository) Create(match *domain.Match, summary *domain.MatchSu
 	return err
 }
 
-func (repo *matchRepository) FindOneByID(matchID int64) (*domain.Match, error) {
+func (repo *matchRepository) FindOneByID(matchID int64) (*Match, error) {
 
 	query := `
 		SELECT m.id, match_date, venue, 
@@ -63,7 +62,7 @@ func (repo *matchRepository) FindOneByID(matchID int64) (*domain.Match, error) {
 
 	rows := repo.db.QueryRow(query, matchID)
 
-	var match domain.Match
+	var match Match
 
 	if err := rows.Scan(
 		&match.ID, &match.Date, &match.Venue, &match.HomeCompetitor.Score,
@@ -84,7 +83,7 @@ func (repo *matchRepository) FindOneByID(matchID int64) (*domain.Match, error) {
 	return &match, nil
 }
 
-func (repo *matchRepository) FindBatchByID(ids []int64) ([]domain.Match, error) {
+func (repo *matchRepository) FindBatchByID(ids []int64) ([]Match, error) {
 	placeholders := make([]string, len(ids))
 	args := make([]interface{}, len(ids)) // slice de argumentos
 
@@ -116,10 +115,10 @@ func (repo *matchRepository) FindBatchByID(ids []int64) ([]domain.Match, error) 
 	}
 	defer rows.Close()
 
-	matches := make([]domain.Match, 0)
+	matches := make([]Match, 0)
 
 	for rows.Next() {
-		var match domain.Match
+		var match Match
 
 		if err := rows.Scan(
 			&match.ID, &match.Date, &match.Venue, &match.HomeCompetitor.Score,
@@ -143,7 +142,7 @@ func (repo *matchRepository) FindBatchByID(ids []int64) ([]domain.Match, error) 
 	return matches, nil
 }
 
-func (repo *matchRepository) GetMatchSummary(matchID int64) (*domain.MatchSummary, error) {
+func (repo *matchRepository) GetMatchSummary(matchID int64) (*MatchSummary, error) {
 	query := `
 		SELECT events 
 		FROM matches
@@ -152,11 +151,12 @@ func (repo *matchRepository) GetMatchSummary(matchID int64) (*domain.MatchSummar
 
 	row := repo.db.QueryRow(query, matchID)
 
-	var output domain.MatchSummary
+	var output MatchSummary
+	var events []Event
 
-	var events sql.NullString
+	var eventsStr sql.NullString
 
-	if err := row.Scan(&events); err != nil {
+	if err := row.Scan(&eventsStr); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.NewHTTPErr("partida não encontrada", 404, "REPOSITORY:MATCH:GET_MATCH_SUMMARY:NOT_FOUND")
 		}
@@ -164,16 +164,18 @@ func (repo *matchRepository) GetMatchSummary(matchID int64) (*domain.MatchSummar
 		return nil, err
 	}
 
-	if events.Valid {
-		if err := json.Unmarshal([]byte(events.String), &output.Events); err != nil {
+	if eventsStr.Valid {
+		if err := json.Unmarshal([]byte(eventsStr.String), &events); err != nil {
 			return nil, err
 		}
 	}
 
+	output.Events = events
+
 	return &output, nil
 }
 
-func (repo *matchRepository) ListByYear(teamID int64, year, pageSize, pageIndex int) ([]domain.Match, error) {
+func (repo *matchRepository) ListByYear(teamID int64, year, pageSize, pageIndex int) ([]Match, error) {
 	query := `
 		SELECT 
 			m.id, match_date, venue, 
@@ -199,10 +201,10 @@ func (repo *matchRepository) ListByYear(teamID int64, year, pageSize, pageIndex 
 	}
 	defer rows.Close()
 
-	matches := make([]domain.Match, 0)
+	matches := make([]Match, 0)
 
 	for rows.Next() {
-		var match domain.Match
+		var match Match
 
 		if err := rows.Scan(
 			&match.ID, &match.Date, &match.Venue, &match.HomeCompetitor.Score,
@@ -226,7 +228,7 @@ func (repo *matchRepository) ListByYear(teamID int64, year, pageSize, pageIndex 
 	return matches, nil
 }
 
-func (repo *matchRepository) FindLiveMatches(pageSize, pageIndex int) ([]domain.Match, error) {
+func (repo *matchRepository) FindLiveMatches(pageSize, pageIndex int) ([]Match, error) {
 	query := `
 		SELECT 
 			m.id, match_date, venue, 
@@ -251,10 +253,10 @@ func (repo *matchRepository) FindLiveMatches(pageSize, pageIndex int) ([]domain.
 		return nil, err
 	}
 
-	matches := make([]domain.Match, 0)
+	matches := make([]Match, 0)
 
 	for rows.Next() {
-		var match domain.Match
+		var match Match
 
 		if err := rows.Scan(
 			&match.ID, &match.Date, &match.Venue, &match.HomeCompetitor.Score,
@@ -267,6 +269,56 @@ func (repo *matchRepository) FindLiveMatches(pageSize, pageIndex int) ([]domain.
 		); err != nil {
 			return nil, err
 		}
+
+		matches = append(matches, match)
+	}
+
+	return matches, nil
+}
+
+func (repo *matchRepository) List(where string, params []any, pageSize, pageIndex int) ([]Match, error) {
+	query := fmt.Sprintf(`
+		SELECT 
+			m.id, TO_CHAR(m.match_date, 'YYYY-MM-DD') AS match_date, venue, 
+			home_team_score, home_team_id, ht.name AS home_team_name, 
+			ht.abbreviation AS home_team_abbreviation, ht.color AS home_team_color, ht.logo AS home_team_logo,
+			away_team_score, away_team_id, at.name AS away_team_name, 
+			at.abbreviation AS away_team_abbreviation, at.color AS away_team_color, at.logo AS away_team_logo,
+			note, completed, status_name, competition_name, 
+			(home_team_score > away_team_score) AS home_team_winner,
+			(away_team_score > home_team_score) AS away_team_winner
+		FROM matches m
+		LEFT JOIN teams ht ON ht.id = m.home_team_id
+		LEFT JOIN teams at ON at.id = m.away_team_id
+		%s
+		ORDER BY m.match_date DESC
+		LIMIT $%d
+		OFFSET ($%d - 1) * $%d
+	`, where, len(params)+1, len(params)+2, len(params)+1)
+
+	rows, err := repo.db.Query(query, append(params, pageSize, pageIndex)...)
+	if err != nil {
+		return nil, err
+	}
+
+	matches := make([]Match, 0)
+
+	for rows.Next() {
+		var match Match
+
+		if err := rows.Scan(
+			&match.ID, &match.Date, &match.Venue, &match.HomeCompetitor.Score,
+			&match.HomeCompetitor.Team.ID, &match.HomeCompetitor.Team.Name, &match.HomeCompetitor.Team.Abbreviation,
+			&match.HomeCompetitor.Team.Color, &match.HomeCompetitor.Team.Logo,
+			&match.AwayCompetitor.Score, &match.AwayCompetitor.Team.ID, &match.AwayCompetitor.Team.Name,
+			&match.AwayCompetitor.Team.Abbreviation, &match.AwayCompetitor.Team.Color, &match.AwayCompetitor.Team.Logo,
+			&match.Note, &match.Completed, &match.StatusName, &match.CompetitionName,
+			&match.HomeCompetitor.Winner, &match.AwayCompetitor.Winner,
+		); err != nil {
+			return nil, err
+		}
+
+		fmt.Println(match.Date)
 
 		matches = append(matches, match)
 	}

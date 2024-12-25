@@ -1,4 +1,4 @@
-package domain
+package match
 
 type Roster struct {
 	Starter bool `json:"starter"`

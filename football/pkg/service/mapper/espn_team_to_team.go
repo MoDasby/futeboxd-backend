@@ -3,11 +3,11 @@ package mapper
 import (
 	"strconv"
 
-	"github.com/modasby/futeboxd-api/services/football/internal/domain"
-	"github.com/modasby/futeboxd-api/services/football/internal/service/espn"
+	"github.com/modasby/futeboxd-api/services/football/internal/team"
+	"github.com/modasby/futeboxd-api/services/football/pkg/service/espn"
 )
 
-func EspnTeamToTeam(espnTeam espn.EspnTeam) (*domain.Team, error) {
+func EspnTeamToTeam(espnTeam espn.EspnTeam) (*team.Team, error) {
 	ID, err := strconv.ParseUint(espnTeam.ID, 10, 64)
 	if err != nil {
 		return nil, err
@@ -19,7 +19,7 @@ func EspnTeamToTeam(espnTeam espn.EspnTeam) (*domain.Team, error) {
 		logo = espnTeam.Logos[0].Href
 	}
 
-	return &domain.Team{
+	return &team.Team{
 		ID:           int64(ID),
 		Name:         espnTeam.Name,
 		Abbreviation: espnTeam.Abbreviation,

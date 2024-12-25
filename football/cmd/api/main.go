@@ -7,32 +7,25 @@ import (
 	"os"
 
 	"github.com/modasby/futeboxd-api/services/football/database"
-	"github.com/modasby/futeboxd-api/services/football/internal/handler"
-	"github.com/modasby/futeboxd-api/services/football/internal/repository"
-	"github.com/modasby/futeboxd-api/services/football/internal/service/espn"
-	"github.com/modasby/futeboxd-api/services/football/internal/service/matches"
-	"github.com/modasby/futeboxd-api/services/football/internal/service/teams"
+	"github.com/modasby/futeboxd-api/services/football/internal/match"
+	"github.com/modasby/futeboxd-api/services/football/internal/team"
 )
 
 func main() {
 	db := database.InitDatabase()
 
-	espnService := espn.NewEspnService()
+	teamRepository := team.NewTeamRepository(db)
+	matchRepository := match.NewMatchRepository(db)
 
-	teamRepository := repository.NewTeamRepository(db)
-	matchRepository := repository.NewMatchRepository(db)
+	matchUC := match.NewMatchUsecases(matchRepository)
 
-	teamService := teams.NewTeamService(teamRepository, espnService)
-	matchService := matches.NewMatchService(matchRepository, espnService)
-
-	footballHandler := handler.NewFootballHandler(
-		teamService,
-		matchService,
-	)
+	matchHandler := match.NewHandler(matchUC)
+	teamHandler := team.NewHandler(teamRepository)
 
 	r := http.NewServeMux()
 
-	footballHandler.RegisterRoutes(r)
+	matchHandler.RegisterRoutes(r)
+	teamHandler.RegisterRoutes(r)
 
 	port := os.Getenv("PORT")
 	log.Printf("Iniciando servidor na porta: %s", port)

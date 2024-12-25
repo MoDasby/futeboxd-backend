@@ -1,4 +1,4 @@
-package domain
+package match
 
 type MatchSummary struct {
 	HomeCompetitorRoster []Roster `json:"home_competitor_roster"`

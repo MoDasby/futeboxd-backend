@@ -1,4 +1,4 @@
-package domain
+package match
 
 type Event struct {
 	Type struct {

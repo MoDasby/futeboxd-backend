@@ -1,4 +1,4 @@
-package domain
+package team
 
 type Team struct {
 	ID           int64  `json:"id"`

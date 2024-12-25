@@ -5,16 +5,17 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/modasby/futeboxd-api/services/football/internal/domain"
-	"github.com/modasby/futeboxd-api/services/football/internal/service/espn"
+	"github.com/modasby/futeboxd-api/services/football/internal/match"
+	"github.com/modasby/futeboxd-api/services/football/internal/team"
+	"github.com/modasby/futeboxd-api/services/football/pkg/service/espn"
 )
 
-func EspnEventToMatch(espnEvent *espn.EspnEventSummary) (*domain.Match, *domain.MatchSummary, error) {
+func EspnEventToMatch(espnEvent *espn.EspnEventSummary) (*match.Match, *match.MatchSummary, error) {
 
-	var homeCompetitor domain.Competitor
-	var awayCompetitor domain.Competitor
+	var homeCompetitor match.Competitor
+	var awayCompetitor match.Competitor
 
-	var summary domain.MatchSummary
+	var summary match.MatchSummary
 
 	for index, espnCompetitor := range espnEvent.Header.Competitions[0].Competitors {
 		logo := ""
@@ -25,7 +26,7 @@ func EspnEventToMatch(espnEvent *espn.EspnEventSummary) (*domain.Match, *domain.
 
 		teamID, _ := strconv.ParseInt(espnCompetitor.Team.Id, 10, 64)
 
-		team := domain.NewTeam(
+		team := team.NewTeam(
 			teamID, espnCompetitor.Team.Name, espnCompetitor.Team.Abbreviation,
 			espnCompetitor.Team.Color, logo,
 		)
@@ -37,14 +38,14 @@ func EspnEventToMatch(espnEvent *espn.EspnEventSummary) (*domain.Match, *domain.
 
 		espnRoster := espnEvent.Rosters[index].Roster
 
-		roster := make([]domain.Roster, 0)
+		roster := make([]match.Roster, 0)
 
 		for _, r := range espnRoster {
-			newRoster := domain.NewRoster(r.Starter, r.Athlete.ID, r.Athlete.LastName, r.Athlete.FullName, r.Athlete.DisplayName, r.Athlete.HeadShot.Href, r.Athlete.HeadShot.Alt, r.Position.DisplayName, r.Position.Abbreviation, r.SubbedIn, r.SubbedOut)
+			newRoster := match.NewRoster(r.Starter, r.Athlete.ID, r.Athlete.LastName, r.Athlete.FullName, r.Athlete.DisplayName, r.Athlete.HeadShot.Href, r.Athlete.HeadShot.Alt, r.Position.DisplayName, r.Position.Abbreviation, r.SubbedIn, r.SubbedOut)
 			roster = append(roster, *newRoster)
 		}
 
-		competitor := domain.NewCompetitor(
+		competitor := match.NewCompetitor(
 			espnCompetitor.HomeAway, espnCompetitor.Winner, int32(score),
 			*team,
 		)
@@ -68,7 +69,7 @@ func EspnEventToMatch(espnEvent *espn.EspnEventSummary) (*domain.Match, *domain.
 		note = espnEvent.Header.Competitions[0].Notes[0].Headline
 	}
 
-	var events []domain.Event
+	var events []match.Event
 
 	for _, keyEvent := range espnEvent.KeyEvents {
 
@@ -88,7 +89,7 @@ func EspnEventToMatch(espnEvent *espn.EspnEventSummary) (*domain.Match, *domain.
 				participantName = keyEvent.Participants[0].Athlete.DisplayName
 			}
 
-			events = append(events, *domain.NewEvent(
+			events = append(events, *match.NewEvent(
 				keyEvent.Type.ID,
 				keyEvent.Type.Text,
 				keyEvent.Text,
@@ -101,7 +102,7 @@ func EspnEventToMatch(espnEvent *espn.EspnEventSummary) (*domain.Match, *domain.
 
 	summary.Events = events
 
-	match := domain.NewMatch(
+	match := match.NewMatch(
 		matchID, espnEvent.GameInfo.Venue.FullName, espnEvent.Header.Competitions[0].Date,
 		note, homeCompetitor, awayCompetitor, espnEvent.Header.Competitions[0].Status.Type.Completed,
 		espnEvent.Header.Competitions[0].Status.Type.Name,

@@ -1,10 +1,12 @@
-package domain
+package match
+
+import "github.com/modasby/futeboxd-api/services/football/internal/team"
 
 type Competitor struct {
-	HomeAway string `json:"homeAway"`
-	Winner   bool   `json:"winner"`
-	Score    int32  `json:"score"`
-	Team     Team   `json:"team"`
+	HomeAway string    `json:"homeAway"`
+	Winner   bool      `json:"winner"`
+	Score    int32     `json:"score"`
+	Team     team.Team `json:"team"`
 }
 
 type Match struct {
@@ -43,7 +45,7 @@ func NewMatch(
 	}
 }
 
-func NewCompetitor(homeAway string, winner bool, score int32, team Team) *Competitor {
+func NewCompetitor(homeAway string, winner bool, score int32, team team.Team) *Competitor {
 	return &Competitor{
 		HomeAway: homeAway, Winner: winner, Score: score, Team: team,
 	}

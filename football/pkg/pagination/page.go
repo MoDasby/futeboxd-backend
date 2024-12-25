@@ -1,10 +1,10 @@
-package handler
+package pagination
 
 import (
-	"net/url"
+	"net/http"
 	"strconv"
 
-	"github.com/modasby/futeboxd-api/services/football/internal/errors"
+	"github.com/modasby/futeboxd-api/services/football/pkg/errors"
 )
 
 type Page struct {
@@ -12,9 +12,9 @@ type Page struct {
 	Index int
 }
 
-func NewPageWithQueryParam(params *url.Values) (Page, error) {
-	size := params.Get("page_size")
-	index := params.Get("page")
+func NewPageWithRequest(r *http.Request) (Page, error) {
+	size := r.URL.Query().Get("page_size")
+	index := r.URL.Query().Get("page")
 
 	sizeInt, err := strconv.ParseUint(size, 10, 64)
 	if err != nil {
