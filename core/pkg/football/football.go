@@ -44,7 +44,7 @@ func (fs *footballClient) GetMatches(matchIDs []int64) ([]Match, error) {
 
 	// TODO setar o header User-Agent pra core client
 
-	res, err := http.Post(fmt.Sprintf("%s/match/batch", fs.baseUrl), "application/json", bytes.NewBuffer(body))
+	res, err := http.Post(fmt.Sprintf("%s/matches/batch", fs.baseUrl), "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (fs *footballClient) GetMatches(matchIDs []int64) ([]Match, error) {
 }
 
 func (fs *footballClient) GetMatch(matchID int64) (*Match, error) {
-	res, err := http.Get(fmt.Sprintf("%s/match/%d", fs.baseUrl, matchID))
+	res, err := http.Get(fmt.Sprintf("%s/matches/%d", fs.baseUrl, matchID))
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (fs *footballClient) GetMatch(matchID int64) (*Match, error) {
 }
 
 func (fs *footballClient) GetTeam(teamID int64) (*Team, error) {
-	res, err := http.Get(fmt.Sprintf("%s/team/%d", fs.baseUrl, teamID))
+	res, err := http.Get(fmt.Sprintf("%s/teams/%d", fs.baseUrl, teamID))
 	if err != nil {
 		return nil, err
 	}

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/modasby/futeboxd-backend/core/internal/domain"
+	"github.com/modasby/futeboxd-backend/core/internal/user"
 	errorsTypes "github.com/modasby/futeboxd-backend/core/pkg/errors"
 )
 
@@ -15,11 +15,11 @@ type userRepository struct {
 	db *sql.DB
 }
 
-func NewUserRepository(db *sql.DB) domain.UserRepository {
+func NewUserRepository(db *sql.DB) user.Repository {
 	return &userRepository{db: db}
 }
 
-func (r *userRepository) FindBatchByID(ctx context.Context, ids []string) ([]domain.User, error) {
+func (r *userRepository) FindBatchByID(ctx context.Context, ids []string) ([]user.User, error) {
 	placeholders := make([]string, len(ids))
 	args := make([]interface{}, len(ids)) // slice de argumentos
 
@@ -41,9 +41,9 @@ func (r *userRepository) FindBatchByID(ctx context.Context, ids []string) ([]dom
 	}
 	defer rows.Close()
 
-	users := make([]domain.User, 0)
+	users := make([]user.User, 0)
 	for rows.Next() {
-		var user domain.User
+		var user user.User
 
 		if err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Email); err != nil {
 			return nil, err
@@ -55,7 +55,7 @@ func (r *userRepository) FindBatchByID(ctx context.Context, ids []string) ([]dom
 	return users, nil
 }
 
-func (r *userRepository) Update(ctx context.Context, user *domain.User) error {
+func (r *userRepository) Update(ctx context.Context, user *user.User) error {
 	query := `
 		UPDATE users
 		SET name = $1, username = $2, email = $3, password = $4, favorite_team = $5, bio = $6
@@ -69,7 +69,7 @@ func (r *userRepository) Update(ctx context.Context, user *domain.User) error {
 	return nil
 }
 
-func (r *userRepository) FindOneByIdOrUsername(ctx context.Context, identificator string) (*domain.User, error) {
+func (r *userRepository) FindOneByIdOrUsername(ctx context.Context, identificator string) (*user.User, error) {
 	query := `
 		SELECT u.id::text, u.name, u.username, u.email, u.password, u.favorite_team 
 		FROM users u
@@ -78,7 +78,7 @@ func (r *userRepository) FindOneByIdOrUsername(ctx context.Context, identificato
 
 	rows := r.db.QueryRowContext(ctx, query, identificator)
 
-	var user domain.User
+	var user user.User
 
 	if err := rows.Scan(
 		&user.ID,
@@ -102,14 +102,14 @@ func (r *userRepository) FindOneByIdOrUsername(ctx context.Context, identificato
 	return &user, nil
 }
 
-func (r *userRepository) FindOneByCredential(ctx context.Context, credential string) (*domain.User, error) {
+func (r *userRepository) FindOneByCredential(ctx context.Context, credential string) (*user.User, error) {
 	query := `
 		SELECT u.id::text, u.name, u.username, u.email, u.password FROM users u
 		WHERE LOWER(u.email) = LOWER($1) OR LOWER(u.username) = LOWER($1)
 	`
 	rows := r.db.QueryRowContext(ctx, query, credential)
 
-	var user domain.User
+	var user user.User
 
 	if err := rows.Scan(
 		&user.ID,
@@ -132,7 +132,7 @@ func (r *userRepository) FindOneByCredential(ctx context.Context, credential str
 	return &user, nil
 }
 
-func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
+func (r *userRepository) Create(ctx context.Context, user *user.User) error {
 	query := `
 		INSERT INTO users(name, username, email, password, favorite_team)
 		VALUES ($1, $2, $3, $4, $5)
@@ -163,7 +163,7 @@ func (r *userRepository) Exists(ctx context.Context, username, email string) (bo
 	return exists.Bool, nil
 }
 
-func (repo *userRepository) SaveRecoverToken(ctx context.Context, recover *domain.Recover) error {
+func (repo *userRepository) SaveRecoverToken(ctx context.Context, recover *user.Recover) error {
 	query := `
 		INSERT INTO recover_password_tokens(user_id, token)
 		VALUES ($1, $2)
@@ -174,7 +174,7 @@ func (repo *userRepository) SaveRecoverToken(ctx context.Context, recover *domai
 	return err
 }
 
-func (repo *userRepository) CheckRecoverToken(ctx context.Context, token string) (*domain.Recover, error) {
+func (repo *userRepository) CheckRecoverToken(ctx context.Context, token string) (*user.Recover, error) {
 	query := `
 		SELECT user_id, token, expires_at
 		FROM recover_password_tokens
@@ -183,7 +183,7 @@ func (repo *userRepository) CheckRecoverToken(ctx context.Context, token string)
 
 	row := repo.db.QueryRowContext(ctx, query, token)
 
-	var recover domain.Recover
+	var recover user.Recover
 
 	if err := row.Scan(&recover.UserID, &recover.Token, &recover.ExpiresAt); err != nil {
 		if err == sql.ErrNoRows {

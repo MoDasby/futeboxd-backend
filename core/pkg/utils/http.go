@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/modasby/futeboxd-backend/core/internal/domain"
-	"github.com/modasby/futeboxd-backend/core/pkg/auth"
+	"github.com/modasby/futeboxd-backend/core/internal/session"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
+	"github.com/modasby/futeboxd-backend/core/pkg/middleware"
 )
 
 func ParseIntValue(value string) (int64, error) {
@@ -24,8 +24,8 @@ func ParseIntValue(value string) (int64, error) {
 	return int64(valueInt), nil
 }
 
-func GetSessionFromCtx(ctx context.Context) (*domain.Session, error) {
-	session, ok := ctx.Value(auth.SessionKey).(*domain.Session)
+func GetSessionFromCtx(ctx context.Context) (*session.Session, error) {
+	session, ok := ctx.Value(middleware.SessionKey).(*session.Session)
 	if !ok || session == nil {
 		return nil, errors.NewHTTPErr(
 			"sessão inválida",

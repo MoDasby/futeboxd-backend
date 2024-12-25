@@ -9,19 +9,31 @@ import (
 	"github.com/modasby/futeboxd-backend/core/internal/user/repository"
 
 	"github.com/modasby/futeboxd-backend/core/database"
-	"github.com/modasby/futeboxd-backend/core/internal/comment"
+	commentHandlers "github.com/modasby/futeboxd-backend/core/internal/comment/handler"
 	commentRepository "github.com/modasby/futeboxd-backend/core/internal/comment/repository"
-	"github.com/modasby/futeboxd-backend/core/internal/match"
+	commentUC "github.com/modasby/futeboxd-backend/core/internal/comment/usecase"
+
+	matchHandlers "github.com/modasby/futeboxd-backend/core/internal/match/handler"
 	matchRepository "github.com/modasby/futeboxd-backend/core/internal/match/repository"
-	"github.com/modasby/futeboxd-backend/core/internal/profile"
+	matchUC "github.com/modasby/futeboxd-backend/core/internal/match/usecase"
+
+	profileHandlers "github.com/modasby/futeboxd-backend/core/internal/profile/handler"
 	profileRepository "github.com/modasby/futeboxd-backend/core/internal/profile/repository"
-	reviews "github.com/modasby/futeboxd-backend/core/internal/review"
+	profileUC "github.com/modasby/futeboxd-backend/core/internal/profile/usecase"
+
+	reviewHandlers "github.com/modasby/futeboxd-backend/core/internal/review/handler"
 	reviewRepository "github.com/modasby/futeboxd-backend/core/internal/review/repository"
-	"github.com/modasby/futeboxd-backend/core/internal/session"
+	reviewUC "github.com/modasby/futeboxd-backend/core/internal/review/usecase"
+
+	sessionHandlers "github.com/modasby/futeboxd-backend/core/internal/session/handler"
 	sessionRepository "github.com/modasby/futeboxd-backend/core/internal/session/repository"
-	"github.com/modasby/futeboxd-backend/core/internal/user"
-	"github.com/modasby/futeboxd-backend/core/pkg/auth"
+	sessionUC "github.com/modasby/futeboxd-backend/core/internal/session/usecase"
+
+	userHandlers "github.com/modasby/futeboxd-backend/core/internal/user/handler"
+	userUC "github.com/modasby/futeboxd-backend/core/internal/user/usecase"
+
 	"github.com/modasby/futeboxd-backend/core/pkg/football"
+	"github.com/modasby/futeboxd-backend/core/pkg/middleware"
 )
 
 func main() {
@@ -40,21 +52,21 @@ func main() {
 
 	footballClient := football.NewClient()
 
-	sessionUsecases := session.NewSessionUsecases(sessionRepo, userRepo, footballClient)
-	profileUsecases := profile.NewProfileUsecases(profileRepo, footballClient)
-	reviewUsecases := reviews.NewReviewUsecases(reviewRepo, footballClient, userRepo)
-	commentUsecases := comment.NewCommentUsecases(commentRepo, reviewRepo, userRepo)
-	matchUsecases := match.NewMatchUsecases(matchRepo, footballClient)
-	userUsecases := user.NewUsersUsecases(userRepo, footballClient)
+	sessionUsecases := sessionUC.NewSessionUsecases(sessionRepo, userRepo, footballClient)
+	profileUsecases := profileUC.NewProfileUsecases(profileRepo, footballClient)
+	reviewUsecases := reviewUC.NewReviewUsecases(reviewRepo, footballClient, userRepo)
+	commentUsecases := commentUC.NewCommentUsecases(commentRepo, reviewRepo, userRepo)
+	matchUsecases := matchUC.NewMatchUsecases(matchRepo, footballClient)
+	userUsecases := userUC.NewUsersUsecases(userRepo, footballClient)
 
-	userHandler := user.NewUserHandler(userUsecases)
-	sessionHandler := session.NewsessionHandler(sessionUsecases)
-	profileHandler := profile.NewProfileHandler(profileUsecases)
-	reviewHandler := reviews.NewReviewsHandler(reviewUsecases)
-	commentHandler := comment.NewCommentHandler(commentUsecases)
-	matchHandler := match.NewMatchHandler(matchUsecases)
+	userHandler := userHandlers.NewUserHandler(userUsecases)
+	sessionHandler := sessionHandlers.NewsessionHandler(sessionUsecases)
+	profileHandler := profileHandlers.NewProfileHandler(profileUsecases)
+	reviewHandler := reviewHandlers.NewReviewsHandler(reviewUsecases)
+	commentHandler := commentHandlers.NewCommentHandler(commentUsecases)
+	matchHandler := matchHandlers.NewMatchHandler(matchUsecases)
 
-	injectUser := auth.NewAuthMiddleware(sessionRepo)
+	injectUser := middleware.NewAuthMiddleware(sessionRepo)
 
 	router := http.NewServeMux()
 
