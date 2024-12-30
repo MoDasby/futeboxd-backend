@@ -30,7 +30,7 @@ func GetSessionFromCtx(ctx context.Context) (*session.Session, error) {
 		return nil, errors.NewHTTPErr(
 			"sessão inválida",
 			401,
-			"UTILS:GET_SESSION_FROM_CTX:INVALID_USER",
+			"UTILS:GET_SESSION_FROM_CTX:INVALID_SESSION",
 		)
 	}
 
