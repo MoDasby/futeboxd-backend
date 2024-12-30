@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS users(
     username VARCHAR(30) UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
     bio VARCHAR(160),
+    profile_picture VARCHAR(255),
     email VARCHAR(254) UNIQUE NOT NULL,
     password VARCHAR(60) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT current_timestamp,

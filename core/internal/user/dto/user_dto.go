@@ -3,10 +3,11 @@ package dto
 import "github.com/modasby/futeboxd-backend/core/pkg/json/null"
 
 type User struct {
-	ID       string      `json:"id"`
-	Name     null.String `json:"name"`
-	Username string      `json:"username"`
-	Email    string      `json:"email"`
+	ID             string      `json:"id"`
+	Name           null.String `json:"name"`
+	Username       string      `json:"username"`
+	Email          string      `json:"email"`
+	ProfilePicture null.String `json:"profile_picture"`
 }
 
 type UserInput struct {

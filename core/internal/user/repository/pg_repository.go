@@ -30,7 +30,7 @@ func (r *userRepository) FindBatchByID(ctx context.Context, ids []string) ([]use
 	placeholderStr := strings.Join(placeholders, ", ")
 
 	query := fmt.Sprintf(`
-		SELECT u.id::text, u.name, u.username, u.email
+		SELECT u.id::text, u.name, u.username, u.email, u.profile_picture
 		FROM users u 
 		WHERE u.id IN (%s)
 	`, placeholderStr)
@@ -44,9 +44,14 @@ func (r *userRepository) FindBatchByID(ctx context.Context, ids []string) ([]use
 	users := make([]user.User, 0)
 	for rows.Next() {
 		var user user.User
+		var profilePicture sql.NullString
 
-		if err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Email); err != nil {
+		if err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &profilePicture); err != nil {
 			return nil, err
+		}
+
+		if profilePicture.Valid {
+			user.ProfilePicture = profilePicture.String
 		}
 
 		users = append(users, user)
@@ -58,11 +63,22 @@ func (r *userRepository) FindBatchByID(ctx context.Context, ids []string) ([]use
 func (r *userRepository) Update(ctx context.Context, user *user.User) error {
 	query := `
 		UPDATE users
-		SET name = $1, username = $2, email = $3, password = $4, favorite_team = $5, bio = $6
-		WHERE id = $7
+		SET name = $1, username = $2, email = $3, password = $4, favorite_team = $5, bio = $6, profile_picture = $7
+		WHERE id = $8
 	`
 
-	if _, err := r.db.ExecContext(ctx, query, user.Name, user.Username, user.Email, user.Password, user.FavoriteTeamID, user.Bio, user.ID); err != nil {
+	if _, err := r.db.ExecContext(
+		ctx,
+		query,
+		user.Name,
+		user.Username,
+		user.Email,
+		user.Password,
+		user.FavoriteTeamID,
+		user.Bio,
+		user.ProfilePicture,
+		user.ID,
+	); err != nil {
 		return err
 	}
 
@@ -71,7 +87,7 @@ func (r *userRepository) Update(ctx context.Context, user *user.User) error {
 
 func (r *userRepository) FindOneByIdOrUsername(ctx context.Context, identificator string) (*user.User, error) {
 	query := `
-		SELECT u.id::text, u.name, u.username, u.email, u.password, u.favorite_team 
+		SELECT u.id::text, u.name, u.username, u.email, u.password, u.favorite_team, u.profile_picture
 		FROM users u
 		WHERE LOWER(u.username) = LOWER($1) OR u.id::text = $1
 	`
@@ -79,6 +95,7 @@ func (r *userRepository) FindOneByIdOrUsername(ctx context.Context, identificato
 	rows := r.db.QueryRowContext(ctx, query, identificator)
 
 	var user user.User
+	var profilePicture sql.NullString
 
 	if err := rows.Scan(
 		&user.ID,
@@ -87,6 +104,7 @@ func (r *userRepository) FindOneByIdOrUsername(ctx context.Context, identificato
 		&user.Email,
 		&user.Password,
 		&user.FavoriteTeamID,
+		&profilePicture,
 	); err != nil {
 		if errors.Is(sql.ErrNoRows, err) {
 			return nil, errorsTypes.NewHTTPErr(
@@ -99,17 +117,23 @@ func (r *userRepository) FindOneByIdOrUsername(ctx context.Context, identificato
 		return nil, err
 	}
 
+	if profilePicture.Valid {
+		user.ProfilePicture = profilePicture.String
+	}
+
 	return &user, nil
 }
 
 func (r *userRepository) FindOneByCredential(ctx context.Context, credential string) (*user.User, error) {
 	query := `
-		SELECT u.id::text, u.name, u.username, u.email, u.password FROM users u
+		SELECT u.id::text, u.name, u.username, u.email, u.password, u.profile_picture
+		FROM users u
 		WHERE LOWER(u.email) = LOWER($1) OR LOWER(u.username) = LOWER($1)
 	`
 	rows := r.db.QueryRowContext(ctx, query, credential)
 
 	var user user.User
+	var profilePicture sql.NullString
 
 	if err := rows.Scan(
 		&user.ID,
@@ -117,6 +141,7 @@ func (r *userRepository) FindOneByCredential(ctx context.Context, credential str
 		&user.Username,
 		&user.Email,
 		&user.Password,
+		&profilePicture,
 	); err != nil {
 		if errors.Is(sql.ErrNoRows, err) {
 			return nil, errorsTypes.NewHTTPErr(

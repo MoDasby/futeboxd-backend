@@ -23,6 +23,7 @@ type User struct {
 	Username       string
 	Name           string
 	Bio            string
+	ProfilePicture string
 	Email          string
 	Password       string
 	FavoriteTeamID int64
