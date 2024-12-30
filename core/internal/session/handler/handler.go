@@ -6,6 +6,7 @@ import (
 
 	"github.com/modasby/futeboxd-backend/core/internal/session"
 	"github.com/modasby/futeboxd-backend/core/internal/session/dto"
+	"github.com/modasby/futeboxd-backend/core/pkg/cookies"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 	"github.com/modasby/futeboxd-backend/core/pkg/middleware"
 	"github.com/modasby/futeboxd-backend/core/pkg/utils"
@@ -43,6 +44,10 @@ func (h *sessionHandler) login(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
+	cookie := cookies.CreateSessionCookie(output.Token)
+
+	http.SetCookie(w, cookie)
 
 	if err := utils.SendJSON(w, output); err != nil {
 		errors.HandleHttpError(w, err)

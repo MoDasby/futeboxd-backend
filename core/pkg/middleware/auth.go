@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/modasby/futeboxd-backend/core/internal/session"
+	"github.com/modasby/futeboxd-backend/core/pkg/cookies"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 )
 
@@ -70,6 +71,10 @@ func NewAuthMiddleware(
 					return
 				}
 
+				newCookie := cookies.DeleteSessionCookie()
+
+				http.SetCookie(w, newCookie)
+
 				err := errors.NewHTTPErr(
 					"essa sessão está expirada",
 					401,
@@ -89,6 +94,10 @@ func NewAuthMiddleware(
 
 					return
 				}
+
+				newCookie := cookies.CreateSessionCookie(session.Token)
+
+				http.SetCookie(w, newCookie)
 			}
 
 			ctx := context.WithValue(r.Context(), SessionKey, session)
