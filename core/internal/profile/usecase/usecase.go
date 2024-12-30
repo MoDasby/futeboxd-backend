@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/modasby/futeboxd-backend/core/internal/profile"
 	"github.com/modasby/futeboxd-backend/core/internal/profile/dto"
@@ -111,8 +110,6 @@ func (uc *profileUsecases) ToggleFollow(ctx context.Context, usernameToFollow st
 	if session.UserID == userToFollow.UserID {
 		return &dto.FollowStats{Following: false}, nil
 	}
-
-	fmt.Println(userToFollow.IsFollowing)
 
 	if userToFollow.IsFollowing {
 		err := uc.profileRepo.Unfollow(ctx, session.UserID, userToFollow.UserID)

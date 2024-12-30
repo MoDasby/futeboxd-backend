@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/modasby/futeboxd-backend/core/internal/session"
 	"github.com/modasby/futeboxd-backend/core/internal/session/dto"
@@ -44,9 +43,6 @@ func (uc *sessionUsecases) Login(ctx context.Context, input *dto.Login) (*dto.Se
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("criando sessão")
-	fmt.Println(session)
 
 	newSession, err := uc.sessionRepo.Create(ctx, session)
 	if err != nil {

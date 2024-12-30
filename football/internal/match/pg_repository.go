@@ -318,8 +318,6 @@ func (repo *matchRepository) List(where string, params []any, pageSize, pageInde
 			return nil, err
 		}
 
-		fmt.Println(match.Date)
-
 		matches = append(matches, match)
 	}
 
