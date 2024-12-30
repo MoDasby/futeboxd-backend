@@ -7,7 +7,7 @@ type User struct {
 	Name           null.String `json:"name"`
 	Username       string      `json:"username"`
 	Email          string      `json:"email"`
-	ProfilePicture null.String `json:"profile_picture"`
+	ProfilePicture string      `json:"profile_picture"`
 }
 
 type UserInput struct {

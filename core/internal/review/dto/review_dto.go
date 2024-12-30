@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/modasby/futeboxd-backend/core/pkg/football"
+	"github.com/modasby/futeboxd-backend/core/pkg/json/null"
 )
 
 type ReviewInput struct {
@@ -13,8 +14,10 @@ type ReviewInput struct {
 }
 
 type ContentAuthor struct {
-	ID       string `json:"id"`
-	Username string `json:"username"`
+	ID             string      `json:"id"`
+	Name           null.String `json:"name"`
+	Username       string      `json:"username"`
+	ProfilePicture string      `json:"profile_picture"`
 }
 
 type Review struct {

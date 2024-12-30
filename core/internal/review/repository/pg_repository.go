@@ -55,7 +55,7 @@ func (repo *reviewRepository) FindOneByID(ctx context.Context, requesterID strin
 	query := `
 		SELECT 
 			r.id, r.rate, r.description, 
-			r.match_id, r.created_at, u.id, u.username, u.favorite_team,
+			r.match_id, r.created_at, u.id as user_id, u.name, u.username, u.favorite_team, u.profile_picture,
 			COUNT(c.review_id) as comments_count,
 			COUNT(l.review_id) as like_count,
 			COUNT(CASE WHEN l.like_owner_id = $1 THEN 1 END) > 0 AS is_liked
@@ -129,9 +129,7 @@ func (repo *reviewRepository) ListFeed(ctx context.Context, requesterID string, 
 			rr.description, 
 			rr.match_id, 
 			rr.created_at,
-			u.id,
-			u.username, 
-			u.favorite_team,
+			u.id as user_id, u.name, u.username, u.favorite_team, u.profile_picture,
 			COUNT(c.review_id) as comments_count,
 			COUNT(l.review_id) as like_count,
 			COUNT(CASE WHEN l.like_owner_id = $1 THEN 1 END) > 0 AS is_liked
@@ -176,9 +174,7 @@ func (repo *reviewRepository) ListAll(ctx context.Context, requesterID, where st
 			r.description, 
 			r.match_id, 
 			r.created_at,
-			u.id, 
-			u.username, 
-			u.favorite_team,
+			u.id as user_id, u.name, u.username, u.favorite_team, u.profile_picture,
 			COUNT(c.review_id) as comments_count,
 			COUNT(l.review_id) as like_count,
 			COUNT(CASE WHEN l.like_owner_id = $%d THEN 1 END) > 0 AS is_liked
@@ -240,9 +236,7 @@ func (repo *reviewRepository) Search(ctx context.Context, requesterID, term stri
 			r.description, 
 			r.match_id, 
 			r.created_at,
-			u.id, 
-			u.username, 
-			u.favorite_team,
+			u.id as user_id, u.name, u.username, u.favorite_team, u.profile_picture,
 			COUNT(c.review_id) as comments_count,
 			COUNT(l.review_id) as like_count,
 			COUNT(CASE WHEN l.like_owner_id = $2 THEN 1 END) > 0 AS is_liked
@@ -262,22 +256,9 @@ func (repo *reviewRepository) Search(ctx context.Context, requesterID, term stri
 	}
 	defer rows.Close()
 
-	reviews := make([]review.Review, 0)
-
-	for rows.Next() {
-		var review review.Review
-		var user user.User
-
-		review.Author = &user
-
-		if err := rows.Scan(
-			&review.ID, &review.Rate, &review.Description, &review.MatchID, &review.CreatedAt,
-			&review.Author.ID, &review.Author.Username, &review.Author.FavoriteTeamID, &review.Likes, &review.IsLiked,
-		); err != nil {
-			return nil, err
-		}
-
-		reviews = append(reviews, review)
+	reviews, err := repo.scanReviews(rows)
+	if err != nil {
+		return nil, err
 	}
 
 	return reviews, nil
@@ -331,9 +312,9 @@ func (repo *reviewRepository) scanReview(row *sql.Row) (*review.Review, error) {
 
 	if err := row.Scan(
 		&review.ID, &review.Rate, &review.Description,
-		&review.MatchID, &review.CreatedAt, &review.Author.ID,
-		&review.Author.Username,
-		&review.Author.FavoriteTeamID,
+		&review.MatchID, &review.CreatedAt,
+		&review.Author.ID, &review.Author.Name, &review.Author.Username,
+		&review.Author.FavoriteTeamID, &review.Author.ProfilePicture,
 		&review.CommentsCount,
 		&review.Likes,
 		&review.IsLiked,
@@ -356,9 +337,9 @@ func (repo *reviewRepository) scanReviews(rows *sql.Rows) ([]review.Review, erro
 
 		if err := rows.Scan(
 			&review.ID, &review.Rate, &review.Description,
-			&review.MatchID, &review.CreatedAt, &review.Author.ID,
-			&review.Author.Username,
-			&review.Author.FavoriteTeamID,
+			&review.MatchID, &review.CreatedAt,
+			&review.Author.ID, &review.Author.Name, &review.Author.Username,
+			&review.Author.FavoriteTeamID, &review.Author.ProfilePicture,
 			&review.CommentsCount,
 			&review.Likes,
 			&review.IsLiked,

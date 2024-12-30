@@ -10,6 +10,7 @@ import (
 	"github.com/modasby/futeboxd-backend/core/internal/user"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 	"github.com/modasby/futeboxd-backend/core/pkg/football"
+	"github.com/modasby/futeboxd-backend/core/pkg/json/null"
 	"github.com/modasby/futeboxd-backend/core/pkg/pagination"
 	"github.com/modasby/futeboxd-backend/core/pkg/utils"
 )
@@ -118,8 +119,10 @@ func (uc *reviewUsecases) ListFeed(ctx context.Context, page *pagination.Page) (
 		output = append(output, dto.Review{
 			ID: review.ID,
 			Author: dto.ContentAuthor{
-				ID:       review.Author.ID,
-				Username: review.Author.Username,
+				ID:             review.Author.ID,
+				Name:           null.String(review.Author.Name),
+				Username:       review.Author.Username,
+				ProfilePicture: review.Author.ProfilePicture,
 			},
 			Rate:          review.Rate,
 			Description:   review.Description,
@@ -164,8 +167,10 @@ func (uc *reviewUsecases) ListBy(
 		output = append(output, dto.Review{
 			ID: review.ID,
 			Author: dto.ContentAuthor{
-				ID:       review.Author.ID,
-				Username: review.Author.Username,
+				ID:             review.Author.ID,
+				Name:           null.String(review.Author.Name),
+				Username:       review.Author.Username,
+				ProfilePicture: review.Author.ProfilePicture,
 			},
 			Rate:          review.Rate,
 			Description:   review.Description,
@@ -208,8 +213,10 @@ func (uc *reviewUsecases) Search(ctx context.Context, term string, page *paginat
 		output[index] = dto.Review{
 			ID: review.ID,
 			Author: dto.ContentAuthor{
-				ID:       review.Author.ID,
-				Username: review.Author.Username,
+				ID:             review.Author.ID,
+				Name:           null.String(review.Author.Name),
+				Username:       review.Author.Username,
+				ProfilePicture: review.Author.ProfilePicture,
 			},
 			Rate:          review.Rate,
 			Description:   review.Description,

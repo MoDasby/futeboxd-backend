@@ -44,14 +44,9 @@ func (r *userRepository) FindBatchByID(ctx context.Context, ids []string) ([]use
 	users := make([]user.User, 0)
 	for rows.Next() {
 		var user user.User
-		var profilePicture sql.NullString
 
-		if err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &profilePicture); err != nil {
+		if err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.ProfilePicture); err != nil {
 			return nil, err
-		}
-
-		if profilePicture.Valid {
-			user.ProfilePicture = profilePicture.String
 		}
 
 		users = append(users, user)
@@ -95,7 +90,6 @@ func (r *userRepository) FindOneByIdOrUsername(ctx context.Context, identificato
 	rows := r.db.QueryRowContext(ctx, query, identificator)
 
 	var user user.User
-	var profilePicture sql.NullString
 
 	if err := rows.Scan(
 		&user.ID,
@@ -104,7 +98,7 @@ func (r *userRepository) FindOneByIdOrUsername(ctx context.Context, identificato
 		&user.Email,
 		&user.Password,
 		&user.FavoriteTeamID,
-		&profilePicture,
+		&user.ProfilePicture,
 	); err != nil {
 		if errors.Is(sql.ErrNoRows, err) {
 			return nil, errorsTypes.NewHTTPErr(
@@ -115,10 +109,6 @@ func (r *userRepository) FindOneByIdOrUsername(ctx context.Context, identificato
 		}
 
 		return nil, err
-	}
-
-	if profilePicture.Valid {
-		user.ProfilePicture = profilePicture.String
 	}
 
 	return &user, nil
@@ -133,7 +123,6 @@ func (r *userRepository) FindOneByCredential(ctx context.Context, credential str
 	rows := r.db.QueryRowContext(ctx, query, credential)
 
 	var user user.User
-	var profilePicture sql.NullString
 
 	if err := rows.Scan(
 		&user.ID,
@@ -141,7 +130,7 @@ func (r *userRepository) FindOneByCredential(ctx context.Context, credential str
 		&user.Username,
 		&user.Email,
 		&user.Password,
-		&profilePicture,
+		&user.ProfilePicture,
 	); err != nil {
 		if errors.Is(sql.ErrNoRows, err) {
 			return nil, errorsTypes.NewHTTPErr(

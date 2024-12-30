@@ -177,7 +177,7 @@ func (uc *usersUsecases) GetCurrentUser(ctx context.Context) (*dto.User, error) 
 		Name:           null.String(user.Name),
 		Username:       user.Username,
 		Email:          user.Email,
-		ProfilePicture: null.String(user.ProfilePicture),
+		ProfilePicture: user.ProfilePicture,
 	}, nil
 }
 

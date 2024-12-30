@@ -8,6 +8,7 @@ import (
 	"github.com/modasby/futeboxd-backend/core/internal/review"
 	"github.com/modasby/futeboxd-backend/core/internal/user"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
+	"github.com/modasby/futeboxd-backend/core/pkg/json/null"
 	"github.com/modasby/futeboxd-backend/core/pkg/pagination"
 	"github.com/modasby/futeboxd-backend/core/pkg/utils"
 )
@@ -105,8 +106,10 @@ func (uc *commentUsecases) ListByReview(ctx context.Context, reviewID int64, pag
 		comment := dto.Comment{
 			ID: comment.ID,
 			Author: dto.ContentAuthor{
-				ID:       comment.Author.ID,
-				Username: comment.Author.Username,
+				ID:             comment.Author.ID,
+				Name:           null.NewString(comment.Author.Name),
+				Username:       comment.Author.Username,
+				ProfilePicture: comment.Author.ProfilePicture,
 			},
 			Content:   comment.Content,
 			LikeCount: comment.LikeCount,

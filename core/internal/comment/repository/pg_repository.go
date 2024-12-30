@@ -67,7 +67,7 @@ func (repo *CommentsRepository) ExistsByID(ctx context.Context, commentID int64)
 func (repo *CommentsRepository) FindOneByID(ctx context.Context, requesterID string, commentID int64) (*comment.Comment, error) {
 	query := `
 		SELECT 
-			c.id as comment_id, u.id as user_id, 
+			c.id as comment_id, u.id as user_id, u.name, u.username, u.favorite_team, u.profile_picture,
 			c.review_id, c.content, c.created_at,
 			COUNT(l.comment_id) as like_count,
       		COUNT(CASE WHEN l.like_owner_id = $2 THEN 1 END) > 0 AS is_liked
@@ -89,7 +89,9 @@ func (repo *CommentsRepository) FindOneByID(ctx context.Context, requesterID str
 	comment.Author = &author
 
 	if err := row.Scan(
-		&comment.ID, &comment.Author.ID, &comment.ParentID,
+		&comment.ID, &comment.Author.ID, &comment.Author.Name,
+		&comment.Author.Username, &comment.Author.FavoriteTeamID, &comment.Author.ProfilePicture,
+		&comment.ParentID,
 		&comment.Content, &comment.CreatedAt, &comment.LikeCount,
 		&comment.IsLiked,
 	); err != nil {
@@ -113,7 +115,7 @@ func (repo *CommentsRepository) ListByReview(
 ) ([]comment.Comment, error) {
 	query := `
 		SELECT 
-			u.id as user_id, u.username, u.email, u.favorite_team,
+			u.id as user_id, u.name, u.username, u.favorite_team, u.profile_picture,
 			c.id as comment_id, c.content, c.created_at,
 			COUNT(l.comment_id) as like_count,
       		COUNT(CASE WHEN l.like_owner_id = $1 THEN 1 END) > 0 AS is_liked
@@ -143,8 +145,8 @@ func (repo *CommentsRepository) ListByReview(
 		comment.Author = &author
 
 		if err := rows.Scan(
-			&comment.Author.ID, &comment.Author.Username, &comment.Author.Email,
-			&comment.Author.FavoriteTeamID, &comment.ID, &comment.Content, &comment.CreatedAt,
+			&comment.Author.ID, &comment.Author.Name, &comment.Author.Username,
+			&comment.Author.FavoriteTeamID, &comment.Author.ProfilePicture, &comment.ID, &comment.Content, &comment.CreatedAt,
 			&comment.LikeCount, &comment.IsLiked,
 		); err != nil {
 			return nil, err
