@@ -1,13 +1,18 @@
 package dto
 
-import "github.com/modasby/futeboxd-backend/core/pkg/json/null"
+import (
+	"github.com/modasby/futeboxd-backend/core/pkg/football"
+	"github.com/modasby/futeboxd-backend/core/pkg/json/null"
+)
 
 type User struct {
-	ID             string      `json:"id"`
-	Name           null.String `json:"name"`
-	Username       string      `json:"username"`
-	Email          string      `json:"email"`
-	ProfilePicture string      `json:"profile_picture"`
+	ID             string         `json:"id"`
+	Name           null.String    `json:"name"`
+	Username       string         `json:"username"`
+	Bio            null.String    `json:"bio"`
+	Email          string         `json:"email"`
+	FavoriteTeam   *football.Team `json:"favorite_team"`
+	ProfilePicture string         `json:"profile_picture"`
 }
 
 type UserInput struct {
@@ -33,7 +38,7 @@ type ChangePassword struct {
 }
 
 type RecoverPassword struct {
-	Credential string `json:"credential"`
+	Email string `json:"email"`
 }
 
 type ResetPassword struct {

@@ -14,11 +14,7 @@ FROM alpine:latest AS runner
 
 WORKDIR /root/
 
-RUN apk update && apk add postgresql-client
-
 COPY --from=builder /app/api ./api
-COPY wait-to-db-ready.sh ./
+COPY --from=builder /app/config ./config
 
-RUN chmod +x ./wait-to-db-ready.sh
-
-CMD ["sh", "-c", "./wait-to-db-ready.sh && ./api"]
+CMD ["sh", "-c", "./api"]

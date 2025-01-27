@@ -66,10 +66,6 @@ func (repo *sessionRepository) Create(ctx context.Context, session *session.Sess
 	}()
 
 	query := `
-		WITH deleted AS (
-			DELETE FROM sessions WHERE user_id = $3
-		)
-
 		INSERT INTO sessions (expires_at, token, user_id) 
 		VALUES ($1, $2, $3) 
 		RETURNING expires_at, created_at, token, user_id

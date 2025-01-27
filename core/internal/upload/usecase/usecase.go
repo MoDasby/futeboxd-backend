@@ -2,17 +2,14 @@ package usecase
 
 import (
 	"context"
-	"image"
+	"fmt"
 	"io"
 
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/modasby/futeboxd-backend/core/internal/upload"
 	"github.com/modasby/futeboxd-backend/core/internal/user"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 	"github.com/modasby/futeboxd-backend/core/pkg/utils"
-
-	_ "image/gif"
-	_ "image/jpeg"
-	_ "image/png"
 )
 
 type uploadUsecase struct {
@@ -27,7 +24,43 @@ func NewUploadUsecase(
 	return &uploadUsecase{uploadRepo: uploadRepo, userRepo: userRepo}
 }
 
-func (uc *uploadUsecase) Upload(ctx context.Context, img upload.File) error {
+var allowedTypes = map[string]bool{"image/jpeg": true, "image/png": true}
+
+func calculateSize(file io.Seeker) (int64, error) {
+	size, err := file.Seek(0, io.SeekEnd)
+	if err != nil {
+		return 0, err
+	}
+
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		return 0, err
+	}
+
+	return size, nil
+}
+
+func validateImage(file io.ReadSeeker) (*mimetype.MIME, error) {
+	mimeType, err := mimetype.DetectReader(file)
+	if err != nil {
+		return nil, err
+	}
+
+	if ok := allowedTypes[mimeType.String()]; !ok {
+		return nil, errors.NewHTTPErr(
+			"arquivo não é uma imagem válida, imagens suportadas: png, jpg",
+			400,
+			"UPLOAD:USECASE:UPLOAD_FILE:INVALID_IMAGE_TYPE",
+		)
+	}
+
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		return nil, err
+	}
+
+	return mimeType, nil
+}
+
+func (uc *uploadUsecase) Upload(ctx context.Context, fileRaw io.ReadSeeker) error {
 	session, err := utils.GetSessionFromCtx(ctx)
 	if err != nil {
 		return err
@@ -38,26 +71,24 @@ func (uc *uploadUsecase) Upload(ctx context.Context, img upload.File) error {
 		return err
 	}
 
-	_, ext, err := image.Decode(img.Content)
+	mime, err := validateImage(fileRaw)
 	if err != nil {
-		if err == image.ErrFormat {
-			return errors.NewHTTPErr(
-				"formato inválido para imagem. Formatos permitidos: png, jpg, gif",
-				400,
-				"UPLOAD:USECASE:UPLOAD_FILE:INVALID_IMAGE_TYPE",
-			)
-		}
-
 		return err
 	}
 
-	if _, err := img.Content.Seek(0, io.SeekStart); err != nil {
+	size, err := calculateSize(fileRaw)
+	if err != nil {
 		return err
 	}
 
-	img.Name = user.ID + "." + ext
+	file := &upload.File{
+		Name:        fmt.Sprintf("%s%s", user.ID, mime.Extension()),
+		Size:        size,
+		Content:     fileRaw,
+		ContentType: mime.String(),
+	}
 
-	url, err := uc.uploadRepo.Put(ctx, &img)
+	url, err := uc.uploadRepo.Put(ctx, file)
 	if err != nil {
 		return err
 	}

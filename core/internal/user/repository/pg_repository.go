@@ -44,9 +44,14 @@ func (r *userRepository) FindBatchByID(ctx context.Context, ids []string) ([]use
 	users := make([]user.User, 0)
 	for rows.Next() {
 		var user user.User
+		var name sql.NullString
 
-		if err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.ProfilePicture); err != nil {
+		if err := rows.Scan(&user.ID, &name, &user.Username, &user.Email, &user.ProfilePicture); err != nil {
 			return nil, err
+		}
+
+		if name.Valid {
+			user.Name = name.String
 		}
 
 		users = append(users, user)
@@ -82,7 +87,7 @@ func (r *userRepository) Update(ctx context.Context, user *user.User) error {
 
 func (r *userRepository) FindOneByIdOrUsername(ctx context.Context, identificator string) (*user.User, error) {
 	query := `
-		SELECT u.id::text, u.name, u.username, u.email, u.password, u.favorite_team, u.profile_picture
+		SELECT u.id::text, u.name, u.username, u.email, u.password, u.favorite_team, u.profile_picture, u.bio
 		FROM users u
 		WHERE LOWER(u.username) = LOWER($1) OR u.id::text = $1
 	`
@@ -90,15 +95,18 @@ func (r *userRepository) FindOneByIdOrUsername(ctx context.Context, identificato
 	rows := r.db.QueryRowContext(ctx, query, identificator)
 
 	var user user.User
+	var bio sql.NullString
+	var name sql.NullString
 
 	if err := rows.Scan(
 		&user.ID,
-		&user.Name,
+		&name,
 		&user.Username,
 		&user.Email,
 		&user.Password,
 		&user.FavoriteTeamID,
 		&user.ProfilePicture,
+		&bio,
 	); err != nil {
 		if errors.Is(sql.ErrNoRows, err) {
 			return nil, errorsTypes.NewHTTPErr(
@@ -109,6 +117,14 @@ func (r *userRepository) FindOneByIdOrUsername(ctx context.Context, identificato
 		}
 
 		return nil, err
+	}
+
+	if bio.Valid {
+		user.Bio = bio.String
+	}
+
+	if name.Valid {
+		user.Name = name.String
 	}
 
 	return &user, nil
@@ -123,10 +139,11 @@ func (r *userRepository) FindOneByCredential(ctx context.Context, credential str
 	rows := r.db.QueryRowContext(ctx, query, credential)
 
 	var user user.User
+	var name sql.NullString
 
 	if err := rows.Scan(
 		&user.ID,
-		&user.Name,
+		&name,
 		&user.Username,
 		&user.Email,
 		&user.Password,
@@ -143,16 +160,23 @@ func (r *userRepository) FindOneByCredential(ctx context.Context, credential str
 		return nil, err
 	}
 
+	if name.Valid {
+		user.Name = name.String
+	}
+
 	return &user, nil
 }
 
 func (r *userRepository) Create(ctx context.Context, user *user.User) error {
 	query := `
-		INSERT INTO users(name, username, email, password, favorite_team)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO users(name, username, email, password, favorite_team, profile_picture)
+		VALUES ($1, $2, $3, $4, $5, $6)
 	`
 
-	_, err := r.db.ExecContext(ctx, query, user.Name, user.Username, user.Email, user.Password, user.FavoriteTeamID)
+	_, err := r.db.ExecContext(
+		ctx, query,
+		user.Name, user.Username, user.Email, user.Password, user.FavoriteTeamID, user.ProfilePicture,
+	)
 	if err != nil {
 		return err
 	}

@@ -2,30 +2,27 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/modasby/futeboxd-backend/core/internal/session"
 	"github.com/modasby/futeboxd-backend/core/internal/session/dto"
 	"github.com/modasby/futeboxd-backend/core/internal/user"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
-	"github.com/modasby/futeboxd-backend/core/pkg/football"
 	"github.com/modasby/futeboxd-backend/core/pkg/utils"
 )
 
 type sessionUsecases struct {
-	sessionRepo    session.Repository
-	userRepo       user.Repository
-	footballClient football.Client
+	sessionRepo session.Repository
+	userRepo    user.Repository
 }
 
 func NewSessionUsecases(
 	sessionRepo session.Repository,
 	userRepo user.Repository,
-	footballClient football.Client,
 ) session.SessionUsecases {
 	return &sessionUsecases{
-		sessionRepo:    sessionRepo,
-		userRepo:       userRepo,
-		footballClient: footballClient,
+		sessionRepo: sessionRepo,
+		userRepo:    userRepo,
 	}
 }
 
@@ -35,6 +32,7 @@ func (uc *sessionUsecases) Login(ctx context.Context, input *dto.Login) (*dto.Se
 		return nil, errors.NewHTTPErr("usuário ou senha inválidos", 400, "LOGIN:USER_NOT_FOUND")
 	}
 
+	fmt.Println(user.Password, input.Password)
 	if err := user.CheckPassword(input.Password); err != nil {
 		return nil, errors.NewHTTPErr("usuário ou senha inválidos", 400, "LOGIN:WRONG_PASSWORD")
 	}

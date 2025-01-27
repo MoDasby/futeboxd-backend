@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 
+	"github.com/modasby/futeboxd-backend/core/config"
 	"github.com/modasby/futeboxd-backend/core/internal/user"
 	"github.com/modasby/futeboxd-backend/core/internal/user/dto"
 	"github.com/modasby/futeboxd-backend/core/pkg/email"
@@ -17,10 +18,22 @@ import (
 type usersUsecases struct {
 	userRepo       user.Repository
 	footballClient football.Client
+	emailClient    email.Client
+	frontendConfig config.Frontend
 }
 
-func NewUsersUsecases(userRepo user.Repository, footballClient football.Client) user.Usecases {
-	return &usersUsecases{userRepo: userRepo, footballClient: footballClient}
+func NewUsersUsecases(
+	userRepo user.Repository,
+	footballClient football.Client,
+	emailClient email.Client,
+	frontendConfig config.Frontend,
+) user.Usecases {
+	return &usersUsecases{
+		userRepo:       userRepo,
+		footballClient: footballClient,
+		emailClient:    emailClient,
+		frontendConfig: frontendConfig,
+	}
 }
 
 func (uc *usersUsecases) CreateUser(ctx context.Context, input *dto.UserInput) error {
@@ -35,6 +48,8 @@ func (uc *usersUsecases) CreateUser(ctx context.Context, input *dto.UserInput) e
 	if err != nil {
 		return err
 	}
+
+	user.ProfilePicture = "https://api.dicebear.com/9.x/initials/png?seed=" + user.Username
 
 	exists, err := uc.userRepo.Exists(ctx, user.Username, user.Email)
 	if err != nil {
@@ -172,9 +187,20 @@ func (uc *usersUsecases) GetCurrentUser(ctx context.Context) (*dto.User, error) 
 		return nil, err
 	}
 
+	var team *football.Team
+
+	if user.FavoriteTeamID > 0 {
+		team, err = uc.footballClient.GetTeam(user.FavoriteTeamID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &dto.User{
 		ID:             user.ID,
 		Name:           null.String(user.Name),
+		Bio:            null.NewString(user.Bio),
+		FavoriteTeam:   team,
 		Username:       user.Username,
 		Email:          user.Email,
 		ProfilePicture: user.ProfilePicture,
@@ -187,7 +213,7 @@ func (uc *usersUsecases) RecoverPassword(ctx context.Context, input *dto.Recover
 		return err
 	}
 
-	requester, err := uc.userRepo.FindOneByCredential(ctx, input.Credential)
+	requester, err := uc.userRepo.FindOneByCredential(ctx, input.Email)
 	if err != nil {
 		return err
 	}
@@ -201,16 +227,19 @@ func (uc *usersUsecases) RecoverPassword(ctx context.Context, input *dto.Recover
 		return err
 	}
 
-	template := templates.RecoverPasswordTemplate(requester.Username, "http://localhost"+requester.Email, token)
+	template := templates.NewRecoverPasswordTemplate(
+		requester.Username,
+		uc.frontendConfig.URL+"/recuperar/"+token,
+	)
 
-	mailOpts := email.EmailOpts{
-		ContentType: "text/html",
-		To:          requester.Email,
-		Subject:     "Recuperação de senha",
-		Body:        template,
+	mailData := email.Metadata{
+		To:        requester.Email,
+		Subject:   "Recuperação de senha",
+		Body:      template,
+		LocalPart: "support",
 	}
 
-	if err := email.SendMail(mailOpts); err != nil {
+	if err := uc.emailClient.SendMail(ctx, mailData); err != nil {
 		return err
 	}
 
@@ -226,7 +255,7 @@ func (uc *usersUsecases) ResetPassword(ctx context.Context, input *dto.ResetPass
 	if recover.IsExpired() {
 		return errors.NewHTTPErr(
 			"token vencido",
-			400,
+			403,
 			"USER:USECASE:EXPIRED_TOKEN",
 		)
 	}

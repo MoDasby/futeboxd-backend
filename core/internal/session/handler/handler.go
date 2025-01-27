@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/modasby/futeboxd-backend/core/config"
 	"github.com/modasby/futeboxd-backend/core/internal/session"
 	"github.com/modasby/futeboxd-backend/core/internal/session/dto"
 	"github.com/modasby/futeboxd-backend/core/pkg/cookies"
@@ -14,11 +15,13 @@ import (
 
 type sessionHandler struct {
 	usecase session.SessionUsecases
+	cfg     *config.Cookies
 }
 
-func NewsessionHandler(usecase session.SessionUsecases) *sessionHandler {
+func NewsessionHandler(usecase session.SessionUsecases, cfg *config.Cookies) *sessionHandler {
 	return &sessionHandler{
 		usecase: usecase,
+		cfg:     cfg,
 	}
 }
 
@@ -45,7 +48,7 @@ func (h *sessionHandler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie := cookies.CreateSessionCookie(output.Token)
+	cookie := cookies.CreateSessionCookie(h.cfg, output.Token, output.ExpiresAt)
 
 	http.SetCookie(w, cookie)
 
@@ -57,10 +60,16 @@ func (h *sessionHandler) login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *sessionHandler) logout(w http.ResponseWriter, r *http.Request) {
+
 	if err := h.usecase.Logout(r.Context()); err != nil {
 		errors.HandleHttpError(w, err)
 
 		return
 	}
 
+	cookie := cookies.DeleteSessionCookie(h.cfg)
+
+	http.SetCookie(w, cookie)
+
+	w.WriteHeader(201)
 }

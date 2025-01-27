@@ -68,6 +68,8 @@ func (h *Handler) createComment(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
+	w.WriteHeader(201)
 }
 
 func (h *Handler) deleteComment(w http.ResponseWriter, r *http.Request) {
@@ -93,6 +95,8 @@ func (h *Handler) deleteComment(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
+	w.WriteHeader(201)
 }
 
 func (h *Handler) listComments(w http.ResponseWriter, r *http.Request) {
@@ -167,4 +171,6 @@ func (h *Handler) toggleLikeComment(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
+	w.WriteHeader(201)
 }

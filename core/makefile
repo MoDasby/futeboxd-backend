@@ -1,13 +1,11 @@
 dev:
-	@export $(shell grep -v '^#' .env | xargs) && \
-	docker compose --env-file ./.env -f ./database/compose.dev.yml up -d && \
+	@docker compose -f ./database/postgres/compose.dev.yml up -d && \
 	go mod tidy && \
-	sh ./wait-to-db-ready.sh && \
-	echo "Iniciando a API do football..." && \
+	echo "Iniciando a API core..." && \
 	~/go/bin/air --build.cmd "go build -o bin/api cmd/api/main.go" --build.bin "./bin/api"
 
 stop:
-	@docker compose --env-file ./.env -f ./database/compose.dev.yml stop
+	@docker compose -f ./database/postgres/compose.dev.yml stop
 
 test:
 	@go test ./...

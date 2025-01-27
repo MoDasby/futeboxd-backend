@@ -23,27 +23,33 @@ func NewProfileRepository(db *sql.DB) profile.Repository {
 func (repo *ProfileRepository) FindOneByUsername(ctx context.Context, username, requesterID string) (*profile.Profile, error) {
 	query := `
 		SELECT 
-			u.id, u.name, u.bio, u.username, u.favorite_team,
+			u.id, u.name, u.bio, u.username, u.favorite_team, u.profile_picture,
 			(SELECT COUNT(*) FROM followers WHERE following_id = u.id) AS followers_count,
             (SELECT COUNT(*) FROM followers WHERE follower_id = u.id) AS following_count,
+			COUNT(r.id) as review_count,
             EXISTS(SELECT 1 FROM followers WHERE follower_id = $2 AND following_id = u.id) AS is_following
 		FROM users u 
+		LEFT JOIN reviews r ON r.user_id = u.id
 		WHERE u.username = $1
+		GROUP BY u.id
 	`
 
 	row := repo.db.QueryRowContext(ctx, query, username, requesterID)
 
 	var profile profile.Profile
-	var bio sql.NullString
+	var name, bio sql.NullString
+	var favoriteTeam sql.NullInt64
 
 	if err := row.Scan(
 		&profile.UserID,
-		&profile.Name,
+		&name,
 		&bio,
 		&profile.Username,
-		&profile.FavoriteTeam,
+		&favoriteTeam,
+		&profile.ProfilePicture,
 		&profile.FollowersCount,
 		&profile.FollowingCount,
+		&profile.ReviewsCount,
 		&profile.IsFollowing,
 	); err != nil {
 		if err == sql.ErrNoRows {
@@ -56,7 +62,17 @@ func (repo *ProfileRepository) FindOneByUsername(ctx context.Context, username, 
 		return nil, err
 	}
 
-	profile.Bio = bio.String
+	if bio.Valid {
+		profile.Bio = bio.String
+	}
+
+	if name.Valid {
+		profile.Name = name.String
+	}
+
+	if favoriteTeam.Valid {
+		profile.FavoriteTeam = favoriteTeam.Int64
+	}
 
 	return &profile, nil
 }
@@ -64,12 +80,15 @@ func (repo *ProfileRepository) FindOneByUsername(ctx context.Context, username, 
 func (repo *ProfileRepository) Search(ctx context.Context, requesterID, term string, page *pagination.Page) ([]profile.Profile, error) {
 	query := `
 		SELECT 
-			u.id, u.name, u.bio, u.username, u.favorite_team,
+			u.id, u.name, u.bio, u.username, u.favorite_team, u.profile_picture,
 			(SELECT COUNT(*) FROM followers WHERE following_id = u.id) AS followers_count,
             (SELECT COUNT(*) FROM followers WHERE follower_id = u.id) AS following_count,
+			COUNT(r.id) as review_count,
             EXISTS(SELECT 1 FROM followers WHERE follower_id = $2 AND following_id = u.id) AS is_following
 		FROM users u
+		LEFT JOIN reviews r ON r.user_id = u.id
 		WHERE u.username ILIKE $1
+		GROUP BY u.id
 		LIMIT $3
 		OFFSET ($4 - 1) * $3
 	`
@@ -83,22 +102,42 @@ func (repo *ProfileRepository) Search(ctx context.Context, requesterID, term str
 
 	for rows.Next() {
 		var profile profile.Profile
-		var bio sql.NullString
+		var name, bio sql.NullString
+		var favoriteTeam sql.NullInt64
 
 		if err := rows.Scan(
 			&profile.UserID,
-			&profile.Name,
+			&name,
 			&bio,
 			&profile.Username,
-			&profile.FavoriteTeam,
+			&favoriteTeam,
+			&profile.ProfilePicture,
 			&profile.FollowersCount,
 			&profile.FollowingCount,
+			&profile.ReviewsCount,
 			&profile.IsFollowing,
 		); err != nil {
+			if err == sql.ErrNoRows {
+				return nil, errors.NewHTTPErr(
+					"Perfil não encontrado",
+					404,
+					"REPOSITORY:PROFILE:FIND_ONE_BY_USERNAME:NOT_FOUND",
+				)
+			}
 			return nil, err
 		}
 
-		profile.Bio = bio.String
+		if bio.Valid {
+			profile.Bio = bio.String
+		}
+
+		if name.Valid {
+			profile.Name = name.String
+		}
+
+		if favoriteTeam.Valid {
+			profile.FavoriteTeam = favoriteTeam.Int64
+		}
 
 		profiles = append(profiles, profile)
 	}

@@ -5,8 +5,10 @@ type Profile struct {
 	Username       string
 	Name           string
 	Bio            string
+	ProfilePicture string
 	FavoriteTeam   int64
 	FollowersCount int
 	FollowingCount int
+	ReviewsCount   int
 	IsFollowing    bool
 }

@@ -1,0 +1,32 @@
+postgres:
+  user: "postgres"
+  dbname: "futeboxd-core"
+  password: "123456"
+  host: "localhost"
+  port: 5432
+
+frontend:
+  url: "http://localhost:3000"
+
+server:
+  port: 8080
+
+football:
+  url: "http://localhost:80"
+
+resend:
+  apikey: "api_key"
+
+aws:
+  key: "dummy-key"
+  secret: "dummy-secret"
+  s3endpoint: "http://localhost:4566"
+  s3DownloadEndpoint: "http://localhost:4566"
+  region: "sa-east-1"
+
+cookies:
+  name: "sid"
+  httponly: false
+  secure: false
+  samesite: "lax"
+  path: "/"

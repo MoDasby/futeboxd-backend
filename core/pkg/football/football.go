@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 
+	"github.com/modasby/futeboxd-backend/core/config"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 )
 
@@ -14,10 +14,9 @@ type footballClient struct {
 	baseUrl string
 }
 
-func NewClient() Client {
-	baseUrl := os.Getenv("FOOTBALL_URL")
+func NewClient(cfg config.Football) Client {
 	return &footballClient{
-		baseUrl: baseUrl,
+		baseUrl: cfg.Url,
 	}
 }
 

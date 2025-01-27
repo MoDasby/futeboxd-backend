@@ -19,10 +19,16 @@ func NewReviewRepository(db *sql.DB) review.Repository {
 	return &reviewRepository{db: db}
 }
 
-func (repo *reviewRepository) Create(ctx context.Context, review *review.Review) error {
+func (repo *reviewRepository) Upsert(ctx context.Context, review *review.Review) error {
 	query := `
 		INSERT INTO reviews (user_id, rate, description, match_id, home_team_id, away_team_id)
 		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (user_id, match_id) 
+		DO UPDATE SET 
+			rate = EXCLUDED.rate, 
+			description = EXCLUDED.description,
+			home_team_id = EXCLUDED.home_team_id,
+			away_team_id = EXCLUDED.away_team_id
 	`
 
 	_, err := repo.db.ExecContext(
@@ -56,13 +62,12 @@ func (repo *reviewRepository) FindOneByID(ctx context.Context, requesterID strin
 		SELECT 
 			r.id, r.rate, r.description, 
 			r.match_id, r.created_at, u.id as user_id, u.name, u.username, u.favorite_team, u.profile_picture,
-			COUNT(c.review_id) as comments_count,
+			(SELECT COUNT(*) FROM comments c WHERE c.review_id = r.id) as comments_count,
 			COUNT(l.review_id) as like_count,
 			COUNT(CASE WHEN l.like_owner_id = $1 THEN 1 END) > 0 AS is_liked
 		FROM reviews r
 		LEFT JOIN users u ON u.id = r.user_id
 		LEFT JOIN likes l ON l.review_id = r.id
-		LEFT JOIN comments c ON c.review_id = r.id
 		WHERE r.id = $2
 		GROUP BY r.id, u.id
 	`
@@ -116,11 +121,17 @@ func (repo *reviewRepository) ListFeed(ctx context.Context, requesterID string, 
 				r.created_at,
 				r.user_id,
 				r.home_team_id,
-				r.away_team_id
+				r.away_team_id,
+				(SELECT COUNT(*) FROM comments c WHERE c.review_id = r.id) as comments_count,
+				COUNT(l.review_id) as like_count,
+				COUNT(CASE WHEN l.like_owner_id = $1 THEN 1 END) > 0 AS is_liked
 			FROM reviews r
 			INNER JOIN followers f ON f.following_id = r.user_id
+			LEFT JOIN likes l ON l.review_id = r.id
 			CROSS JOIN requester req
 			WHERE f.follower_id = req.id
+			GROUP BY
+				r.id
 			LIMIT 500
 		)
 		SELECT 
@@ -130,23 +141,33 @@ func (repo *reviewRepository) ListFeed(ctx context.Context, requesterID string, 
 			rr.match_id, 
 			rr.created_at,
 			u.id as user_id, u.name, u.username, u.favorite_team, u.profile_picture,
-			COUNT(c.review_id) as comments_count,
-			COUNT(l.review_id) as like_count,
-			COUNT(CASE WHEN l.like_owner_id = $1 THEN 1 END) > 0 AS is_liked
+			rr.comments_count,
+			rr.like_count,
+			rr.is_liked
 		FROM recent_reviews rr
 		JOIN users u ON u.id = rr.user_id
 		LEFT JOIN requester req ON true
-		LEFT JOIN likes l ON l.review_id = rr.reviewID
-		LEFT JOIN comments c ON c.review_id = rr.reviewID
 		GROUP BY 
 			rr.reviewID, rr.rate, rr.description, rr.match_id, rr.created_at, 
 			u.id, u.username, u.favorite_team, req.favorite_team,
-			rr.home_team_id, rr.away_team_id
+			rr.home_team_id, rr.away_team_id, rr.comments_count, rr.like_count, rr.is_liked
 		ORDER BY
 			(CASE
-				WHEN rr.home_team_id = req.favorite_team THEN 0.6
-				WHEN rr.away_team_id = req.favorite_team THEN 0.5
+				WHEN rr.home_team_id = req.favorite_team THEN 1
+				WHEN rr.away_team_id = req.favorite_team THEN 0.7
 				ELSE 0
+			END) + (CASE
+				WHEN rr.comments_count > 0 THEN 0.2
+				WHEN rr.comments_count > 10 THEN 0.4
+				WHEN rr.comments_count > 100 THEN 0.5
+				WHEN rr.comments_count > 1000 THEN 0.8
+				WHEN rr.comments_count > 10000 THEN 1
+			END) + (CASE
+				WHEN rr.like_count > 0 THEN 0.2
+				WHEN rr.like_count > 10 THEN 0.4
+				WHEN rr.like_count > 100 THEN 0.5
+				WHEN rr.like_count > 1000 THEN 0.8
+				WHEN rr.like_count > 10000 THEN 1
 			END), rr.created_at DESC
 		LIMIT $2
 		OFFSET ($3 - 1) * $2
@@ -175,13 +196,12 @@ func (repo *reviewRepository) ListAll(ctx context.Context, requesterID, where st
 			r.match_id, 
 			r.created_at,
 			u.id as user_id, u.name, u.username, u.favorite_team, u.profile_picture,
-			COUNT(c.review_id) as comments_count,
+			(SELECT COUNT(*) FROM comments c WHERE c.review_id = r.id) as comments_count,
 			COUNT(l.review_id) as like_count,
 			COUNT(CASE WHEN l.like_owner_id = $%d THEN 1 END) > 0 AS is_liked
 		FROM reviews r
 		LEFT JOIN users u ON u.id = r.user_id
 		LEFT JOIN likes l ON l.review_id = r.id
-		LEFT JOIN comments c ON c.review_id = r.id
 		%s
 		GROUP BY r.id, u.id
 		ORDER BY r.created_at DESC
@@ -197,37 +217,6 @@ func (repo *reviewRepository) ListAll(ctx context.Context, requesterID, where st
 	return repo.scanReviews(rows)
 }
 
-func (repo *reviewRepository) ListTrendingMatches(ctx context.Context, page *pagination.Page) ([]int64, error) {
-	query := `
-		SELECT r.match_id
-		FROM reviews r
-		WHERE r.created_at >= NOW() - INTERVAL '7 days'
-		GROUP BY r.match_id
-		ORDER BY COUNT(r.match_id) DESC
-		LIMIT $1
-		OFFSET ($2 - 1) * $1
-	`
-
-	trendingMatches := make([]int64, 0)
-
-	rows, err := repo.db.QueryContext(ctx, query, page.Size, page.Index)
-	if err != nil {
-		return nil, err
-	}
-
-	for rows.Next() {
-		var matchID int64
-
-		if err := rows.Scan(&matchID); err != nil {
-			return nil, err
-		}
-
-		trendingMatches = append(trendingMatches, matchID)
-	}
-
-	return trendingMatches, nil
-}
-
 func (repo *reviewRepository) Search(ctx context.Context, requesterID, term string, page *pagination.Page) ([]review.Review, error) {
 	query := `
 		SELECT 
@@ -237,13 +226,12 @@ func (repo *reviewRepository) Search(ctx context.Context, requesterID, term stri
 			r.match_id, 
 			r.created_at,
 			u.id as user_id, u.name, u.username, u.favorite_team, u.profile_picture,
-			COUNT(c.review_id) as comments_count,
+			(SELECT COUNT(*) FROM comments c WHERE c.review_id = r.id) as comments_count,
 			COUNT(l.review_id) as like_count,
 			COUNT(CASE WHEN l.like_owner_id = $2 THEN 1 END) > 0 AS is_liked
 		FROM reviews r
 		LEFT JOIN users u ON u.id = r.user_id
 		LEFT JOIN likes l ON l.review_id = r.id
-		LEFT JOIN comments c ON c.review_id = r.id
 		WHERE r.search_vector @@ websearch_to_tsquery('portuguese', $1)
 		GROUP BY r.id, u.id
 		LIMIT $3
@@ -307,11 +295,12 @@ func (repo *reviewRepository) IsLiked(ctx context.Context, requesterID string, r
 
 func (repo *reviewRepository) scanReview(row *sql.Row) (*review.Review, error) {
 	var review review.Review
+	var description sql.NullString
 
 	review.Author = &user.User{}
 
 	if err := row.Scan(
-		&review.ID, &review.Rate, &review.Description,
+		&review.ID, &review.Rate, &description,
 		&review.MatchID, &review.CreatedAt,
 		&review.Author.ID, &review.Author.Name, &review.Author.Username,
 		&review.Author.FavoriteTeamID, &review.Author.ProfilePicture,
@@ -320,6 +309,10 @@ func (repo *reviewRepository) scanReview(row *sql.Row) (*review.Review, error) {
 		&review.IsLiked,
 	); err != nil {
 		return nil, err
+	}
+
+	if description.Valid {
+		review.Description = description.String
 	}
 
 	return &review, nil
@@ -332,11 +325,12 @@ func (repo *reviewRepository) scanReviews(rows *sql.Rows) ([]review.Review, erro
 
 	for rows.Next() {
 		var review review.Review
+		var description sql.NullString
 
 		review.Author = &user.User{}
 
 		if err := rows.Scan(
-			&review.ID, &review.Rate, &review.Description,
+			&review.ID, &review.Rate, &description,
 			&review.MatchID, &review.CreatedAt,
 			&review.Author.ID, &review.Author.Name, &review.Author.Username,
 			&review.Author.FavoriteTeamID, &review.Author.ProfilePicture,
@@ -345,6 +339,10 @@ func (repo *reviewRepository) scanReviews(rows *sql.Rows) ([]review.Review, erro
 			&review.IsLiked,
 		); err != nil {
 			return nil, err
+		}
+
+		if description.Valid {
+			review.Description = description.String
 		}
 
 		output = append(output, review)

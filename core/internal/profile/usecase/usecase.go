@@ -37,21 +37,29 @@ func (uc *profileUsecases) FindByUsername(ctx context.Context, username string) 
 		return nil, err
 	}
 
-	favoriteTeam, err := uc.footballClient.GetTeam(profile.FavoriteTeam)
-	if err != nil {
-		return nil, err
+	var favoriteTeam *football.Team
+
+	if profile.FavoriteTeam > 0 {
+		favoriteTeam, err = uc.footballClient.GetTeam(profile.FavoriteTeam)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	output := dto.Profile{
 		ID:             profile.UserID,
 		Name:           null.NewString(profile.Name),
 		Bio:            null.NewString(profile.Bio),
+		ProfilePicture: profile.ProfilePicture,
 		Username:       profile.Username,
 		FavoriteTeam:   favoriteTeam,
-		FollowersCount: profile.FollowersCount,
-		FollowingCount: profile.FollowingCount,
-		Following:      profile.IsFollowing,
-		Self:           session.UserID == profile.UserID,
+		Stats: &dto.ProfileStats{
+			FollowersCount: profile.FollowersCount,
+			FollowingCount: profile.FollowingCount,
+			Following:      profile.IsFollowing,
+			Self:           session.UserID == profile.UserID,
+			ReviewsCount:   profile.ReviewsCount,
+		},
 	}
 
 	return &output, nil
@@ -75,21 +83,29 @@ func (uc *profileUsecases) SearchByUsername(ctx context.Context, username string
 	output := make([]dto.Profile, len(profiles))
 
 	for index, profile := range profiles {
-		favoriteTeam, err := uc.footballClient.GetTeam(profile.FavoriteTeam)
-		if err != nil {
-			return nil, err
+		var favoriteTeam *football.Team
+
+		if profile.FavoriteTeam > 0 {
+			favoriteTeam, err = uc.footballClient.GetTeam(profile.FavoriteTeam)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		output[index] = dto.Profile{
 			ID:             profile.UserID,
 			Name:           null.NewString(profile.Name),
 			Bio:            null.NewString(profile.Bio),
+			ProfilePicture: profile.ProfilePicture,
 			Username:       profile.Username,
 			FavoriteTeam:   favoriteTeam,
-			FollowersCount: profile.FollowersCount,
-			FollowingCount: profile.FollowingCount,
-			Following:      profile.IsFollowing,
-			Self:           session.UserID == profile.UserID,
+			Stats: &dto.ProfileStats{
+				FollowersCount: profile.FollowersCount,
+				FollowingCount: profile.FollowingCount,
+				Following:      profile.IsFollowing,
+				Self:           session.UserID == profile.UserID,
+				ReviewsCount:   profile.ReviewsCount,
+			},
 		}
 	}
 

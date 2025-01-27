@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/modasby/futeboxd-backend/core/config"
 	"github.com/modasby/futeboxd-backend/core/internal/session"
 	"github.com/modasby/futeboxd-backend/core/pkg/cookies"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
@@ -19,7 +20,7 @@ const (
 )
 
 func NewAuthMiddleware(
-	sessionRepository session.Repository,
+	sessionRepository session.Repository, cfg *config.Cookies,
 ) AuthMiddleware {
 	return func(next http.HandlerFunc, permitAnonymous bool) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
@@ -59,6 +60,9 @@ func NewAuthMiddleware(
 
 			session, err := sessionRepository.FindOneByToken(r.Context(), token)
 			if err != nil {
+				newCookie := cookies.DeleteSessionCookie(cfg)
+
+				http.SetCookie(w, newCookie)
 				errors.HandleHttpError(w, err)
 
 				return
@@ -71,7 +75,7 @@ func NewAuthMiddleware(
 					return
 				}
 
-				newCookie := cookies.DeleteSessionCookie()
+				newCookie := cookies.DeleteSessionCookie(cfg)
 
 				http.SetCookie(w, newCookie)
 
@@ -95,7 +99,7 @@ func NewAuthMiddleware(
 					return
 				}
 
-				newCookie := cookies.CreateSessionCookie(session.Token)
+				newCookie := cookies.CreateSessionCookie(cfg, session.Token, session.ExpiresAt)
 
 				http.SetCookie(w, newCookie)
 			}

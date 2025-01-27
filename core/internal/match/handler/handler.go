@@ -19,6 +19,27 @@ func NewMatchHandler(usecase match.MatchUsecases) *MatchHandler {
 
 func (h *MatchHandler) RegisterRoutes(r *http.ServeMux) {
 	r.HandleFunc("GET /popular/matches", h.listPopularMatches)
+	r.HandleFunc("GET /popular/matches/{id}", func(w http.ResponseWriter, r *http.Request) {
+		matchID, err := utils.ParseIntValue(r.PathValue("id"))
+		if err != nil {
+			errors.HandleHttpError(w, err)
+
+			return
+		}
+
+		output, err := h.usecase.GetMatchStats(r.Context(), matchID)
+		if err != nil {
+			errors.HandleHttpError(w, err)
+
+			return
+		}
+
+		if err := utils.SendJSON(w, output); err != nil {
+			errors.HandleHttpError(w, err)
+
+			return
+		}
+	})
 }
 
 func (h *MatchHandler) listPopularMatches(w http.ResponseWriter, r *http.Request) {

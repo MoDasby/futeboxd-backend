@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS sessions(
     id SERIAL PRIMARY KEY,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT current_timestamp,
-    token VARCHAR(100) NOT NULL,
+    token VARCHAR(100) UNIQUE NOT NULL,
     user_id UUID NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );

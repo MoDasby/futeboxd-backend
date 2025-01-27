@@ -2,3 +2,4 @@ bin
 tmp
 .env
 coverage.out
+config.yml

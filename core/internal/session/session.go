@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	DEFAULT_EXPIRATION = 24 * 31 * time.Hour
+	DEFAULT_EXPIRATION = 24 * 15 * time.Hour
 )
 
 type Session struct {
@@ -32,7 +32,7 @@ func NewSession(userID string) (*Session, error) {
 		return nil, err
 	}
 
-	expiresAt := time.Now().Add(DEFAULT_EXPIRATION)
+	expiresAt := time.Now().Add(DEFAULT_EXPIRATION).UTC()
 
 	return &Session{
 		Token:     token,

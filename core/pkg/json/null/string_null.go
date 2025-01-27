@@ -14,3 +14,7 @@ func (s String) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(string(s))
 }
+
+func (s String) String() string {
+	return string(s)
+}

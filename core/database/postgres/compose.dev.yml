@@ -3,14 +3,15 @@ services:
     networks:
       - core_db
     image: postgres:latest
-    env_file:
-      - ../.env
     volumes:
       - ./migrations:/docker-entrypoint-initdb.d
     environment:
-      - PGPORT=${PGPORT}
+      - PGPORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DB=futeboxd-core
     ports:
-      - ${PGPORT}:${PGPORT}
+      - "5432:5432"
     deploy:
       resources:
         limits:

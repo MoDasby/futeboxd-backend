@@ -48,6 +48,8 @@ func (h *ReviewHandler) create(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
+	w.WriteHeader(201)
 }
 
 func (h *ReviewHandler) listFeed(w http.ResponseWriter, r *http.Request) {
@@ -130,6 +132,8 @@ func (h *ReviewHandler) delete(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
+	w.WriteHeader(201)
 }
 
 func (h *ReviewHandler) toggleLikeReview(w http.ResponseWriter, r *http.Request) {
@@ -162,4 +166,6 @@ func (h *ReviewHandler) toggleLikeReview(w http.ResponseWriter, r *http.Request)
 
 		return
 	}
+
+	w.WriteHeader(201)
 }

@@ -6,39 +6,43 @@ import (
 	goErrors "errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/modasby/futeboxd-backend/core/config"
 	"github.com/modasby/futeboxd-backend/core/internal/upload"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 )
 
 const (
-	BUCKET_NAME string = "profile-pictures"
+	BUCKET_NAME string = "futeboxd-profile-pictures"
 )
 
 type UploadRepository struct {
 	s3Client *s3.Client
+	cfg      *config.AWS
 }
 
-func NewUploadRepository(client *s3.Client) upload.Repository {
-	return &UploadRepository{s3Client: client}
+func NewUploadRepository(client *s3.Client, cfg *config.AWS) upload.Repository {
+	return &UploadRepository{s3Client: client, cfg: cfg}
 }
 
 func (repo *UploadRepository) Put(ctx context.Context, input *upload.File) (string, error) {
+	log.Print(repo.cfg.S3Endpoint != "")
 	if _, err := repo.s3Client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:      aws.String(BUCKET_NAME),
 		Key:         aws.String(input.Name),
 		Body:        input.Content,
 		ContentType: aws.String(input.ContentType),
-		ACL:         types.ObjectCannedACLPublicRead,
+		//ACL:         types.ObjectCannedACLPublicRead,
 	}); err != nil {
 		return "", err
 	}
 
-	url := fmt.Sprintf("http://localhost:4566/%s/%s", BUCKET_NAME, input.Name)
+	url := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", BUCKET_NAME, repo.cfg.Region, input.Name)
 
 	return url, nil
 }

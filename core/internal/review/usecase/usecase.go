@@ -61,7 +61,7 @@ func (uc *reviewUsecases) Create(ctx context.Context, input *dto.ReviewInput) er
 		return err
 	}
 
-	err = uc.reviewRepo.Create(ctx, review)
+	err = uc.reviewRepo.Upsert(ctx, review)
 	if err != nil {
 		return err
 	}

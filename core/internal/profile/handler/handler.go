@@ -60,6 +60,8 @@ func (h *profileHandler) toggleFollow(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
+	w.WriteHeader(201)
 }
 
 func (h *profileHandler) searchProfiles(w http.ResponseWriter, r *http.Request) {

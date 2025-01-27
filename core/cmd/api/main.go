@@ -1,19 +1,15 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/modasby/futeboxd-backend/core/config"
+	"github.com/modasby/futeboxd-backend/core/database/aws"
+	"github.com/modasby/futeboxd-backend/core/database/postgres"
 	"github.com/modasby/futeboxd-backend/core/internal/user/repository"
 
-	"github.com/modasby/futeboxd-backend/core/database"
 	commentHandlers "github.com/modasby/futeboxd-backend/core/internal/comment/handler"
 	commentRepository "github.com/modasby/futeboxd-backend/core/internal/comment/repository"
 	commentUC "github.com/modasby/futeboxd-backend/core/internal/comment/usecase"
@@ -41,31 +37,27 @@ import (
 	uploadRepository "github.com/modasby/futeboxd-backend/core/internal/upload/repository"
 	uploadUC "github.com/modasby/futeboxd-backend/core/internal/upload/usecase"
 
+	"github.com/modasby/futeboxd-backend/core/pkg/email"
 	"github.com/modasby/futeboxd-backend/core/pkg/football"
 	"github.com/modasby/futeboxd-backend/core/pkg/middleware"
 )
 
 func main() {
-	db, err := database.InitDatabase()
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		panic(err)
+	}
+
+	db, err := postgres.InitDatabase(cfg.Postgres)
 	if err != nil {
 		panic(err)
 	}
 	defer db.Close()
 
-	cfg, err := config.LoadDefaultConfig(
-		context.TODO(),
-		config.WithCredentialsProvider(
-			credentials.NewStaticCredentialsProvider("dummy-sla", "dummy-secret", ""),
-		),
-	)
+	s3Client, err := aws.NewS3Client(&cfg.AWS)
 	if err != nil {
 		panic(err)
 	}
-
-	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
-		o.BaseEndpoint = aws.String("http://localhost:4566")
-		o.UsePathStyle = true
-	})
 
 	sessionRepo := sessionRepository.NewSessionRepository(db)
 	userRepo := repository.NewUserRepository(db)
@@ -73,27 +65,28 @@ func main() {
 	reviewRepo := reviewRepository.NewReviewRepository(db)
 	commentRepo := commentRepository.NewCommentsRepository(db)
 	matchRepo := matchRepository.NewMatchRepository(db)
-	uploadRepo := uploadRepository.NewUploadRepository(client)
+	uploadRepo := uploadRepository.NewUploadRepository(s3Client, &cfg.AWS)
 
-	footballClient := football.NewClient()
+	footballClient := football.NewClient(cfg.Football)
+	emailClient := email.NewResendClient(cfg.Resend)
 
-	sessionUsecases := sessionUC.NewSessionUsecases(sessionRepo, userRepo, footballClient)
+	sessionUsecases := sessionUC.NewSessionUsecases(sessionRepo, userRepo)
 	profileUsecases := profileUC.NewProfileUsecases(profileRepo, footballClient)
 	reviewUsecases := reviewUC.NewReviewUsecases(reviewRepo, footballClient, userRepo)
 	commentUsecases := commentUC.NewCommentUsecases(commentRepo, reviewRepo, userRepo)
 	matchUsecases := matchUC.NewMatchUsecases(matchRepo, footballClient)
-	userUsecases := userUC.NewUsersUsecases(userRepo, footballClient)
+	userUsecases := userUC.NewUsersUsecases(userRepo, footballClient, emailClient, cfg.Frontend)
 	uploadUsecases := uploadUC.NewUploadUsecase(uploadRepo, userRepo)
 
 	userHandler := userHandlers.NewUserHandler(userUsecases)
-	sessionHandler := sessionHandlers.NewsessionHandler(sessionUsecases)
+	sessionHandler := sessionHandlers.NewsessionHandler(sessionUsecases, &cfg.Cookies)
 	profileHandler := profileHandlers.NewProfileHandler(profileUsecases)
 	reviewHandler := reviewHandlers.NewReviewsHandler(reviewUsecases)
 	commentHandler := commentHandlers.NewCommentHandler(commentUsecases)
 	matchHandler := matchHandlers.NewMatchHandler(matchUsecases)
 	uploadHandler := uploadHandlers.NewUploadHandler(uploadUsecases)
 
-	injectUser := middleware.NewAuthMiddleware(sessionRepo)
+	injectUser := middleware.NewAuthMiddleware(sessionRepo, &cfg.Cookies)
 
 	router := http.NewServeMux()
 
@@ -105,7 +98,6 @@ func main() {
 	matchHandler.RegisterRoutes(router)
 	uploadHandler.RegisterRoutes(router, injectUser)
 
-	port := os.Getenv("PORT")
-	log.Printf("Iniciando servidor na porta: %s", port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), router))
+	log.Printf("Iniciando servidor na porta: %d", cfg.Server.Port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.Server.Port), router))
 }
