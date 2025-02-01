@@ -37,32 +37,7 @@ func (uc *profileUsecases) FindByUsername(ctx context.Context, username string) 
 		return nil, err
 	}
 
-	var favoriteTeam *football.Team
-
-	if profile.FavoriteTeam > 0 {
-		favoriteTeam, err = uc.footballClient.GetTeam(profile.FavoriteTeam)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	output := dto.Profile{
-		ID:             profile.UserID,
-		Name:           null.NewString(profile.Name),
-		Bio:            null.NewString(profile.Bio),
-		ProfilePicture: profile.ProfilePicture,
-		Username:       profile.Username,
-		FavoriteTeam:   favoriteTeam,
-		Stats: &dto.ProfileStats{
-			FollowersCount: profile.FollowersCount,
-			FollowingCount: profile.FollowingCount,
-			Following:      profile.IsFollowing,
-			Self:           session.UserID == profile.UserID,
-			ReviewsCount:   profile.ReviewsCount,
-		},
-	}
-
-	return &output, nil
+	return uc.toDto(profile, session.UserID)
 }
 
 func (uc *profileUsecases) SearchByUsername(ctx context.Context, username string, page *pagination.Page) ([]dto.Profile, error) {
@@ -80,36 +55,7 @@ func (uc *profileUsecases) SearchByUsername(ctx context.Context, username string
 		return nil, err
 	}
 
-	output := make([]dto.Profile, len(profiles))
-
-	for index, profile := range profiles {
-		var favoriteTeam *football.Team
-
-		if profile.FavoriteTeam > 0 {
-			favoriteTeam, err = uc.footballClient.GetTeam(profile.FavoriteTeam)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		output[index] = dto.Profile{
-			ID:             profile.UserID,
-			Name:           null.NewString(profile.Name),
-			Bio:            null.NewString(profile.Bio),
-			ProfilePicture: profile.ProfilePicture,
-			Username:       profile.Username,
-			FavoriteTeam:   favoriteTeam,
-			Stats: &dto.ProfileStats{
-				FollowersCount: profile.FollowersCount,
-				FollowingCount: profile.FollowingCount,
-				Following:      profile.IsFollowing,
-				Self:           session.UserID == profile.UserID,
-				ReviewsCount:   profile.ReviewsCount,
-			},
-		}
-	}
-
-	return output, nil
+	return uc.toDtoList(profiles, session.UserID)
 }
 
 func (uc *profileUsecases) ToggleFollow(ctx context.Context, usernameToFollow string) (*dto.FollowStats, error) {
@@ -141,4 +87,93 @@ func (uc *profileUsecases) ToggleFollow(ctx context.Context, usernameToFollow st
 	}
 
 	return &dto.FollowStats{Following: true}, nil
+}
+
+func (uc *profileUsecases) ListFollowers(ctx context.Context, username string, page *pagination.Page) ([]dto.Profile, error) {
+	session, err := utils.GetSessionFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	profiles, err := uc.profileRepo.ListFollowers(ctx, session.UserID, username, page)
+	if err != nil {
+		return nil, err
+	}
+
+	return uc.toDtoList(profiles, session.UserID)
+}
+
+func (uc *profileUsecases) ListFollowing(ctx context.Context, username string, page *pagination.Page) ([]dto.Profile, error) {
+	session, err := utils.GetSessionFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	profiles, err := uc.profileRepo.ListFollowing(ctx, session.UserID, username, page)
+	if err != nil {
+		return nil, err
+	}
+
+	return uc.toDtoList(profiles, session.UserID)
+}
+
+func (uc *profileUsecases) ListPopularProfiles(ctx context.Context, page *pagination.Page) ([]dto.Profile, error) {
+	session, err := utils.GetSessionFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	profiles, err := uc.profileRepo.ListPopularProfiles(ctx, session.UserID, page)
+	if err != nil {
+		return nil, err
+	}
+
+	return uc.toDtoList(profiles, session.UserID)
+}
+
+func (uc *profileUsecases) toDto(profile *profile.Profile, requesterID string) (*dto.Profile, error) {
+	var team *football.Team
+	var err error
+
+	if profile.FavoriteTeam > 0 {
+		team, err = uc.footballClient.GetTeam(profile.FavoriteTeam)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	profileDto := dto.Profile{
+		ID:             profile.UserID,
+		Name:           null.String(profile.Name),
+		Bio:            null.String(profile.Bio),
+		ProfilePicture: profile.ProfilePicture,
+		Username:       profile.Username,
+		FavoriteTeam:   team,
+		Stats: &dto.ProfileStats{
+			FollowersCount: profile.FollowersCount,
+			FollowingCount: profile.FollowingCount,
+			Following:      profile.IsFollowing,
+			ReviewsCount:   profile.ReviewsCount,
+			Self:           profile.UserID == requesterID,
+		},
+	}
+
+	return &profileDto, nil
+}
+
+func (uc *profileUsecases) toDtoList(profiles []profile.Profile, requesterID string) ([]dto.Profile, error) {
+	output := make([]dto.Profile, len(profiles))
+
+	for i := range output {
+		profile := profiles[i]
+
+		profileDto, err := uc.toDto(&profile, requesterID)
+		if err != nil {
+			return nil, err
+		}
+
+		output[i] = *profileDto
+	}
+
+	return output, nil
 }

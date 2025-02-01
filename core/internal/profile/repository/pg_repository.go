@@ -186,3 +186,195 @@ func (r *ProfileRepository) IsFollowing(ctx context.Context, followerID, followi
 
 	return exists, nil
 }
+
+func (repo *ProfileRepository) ListFollowers(ctx context.Context, requesterID, username string, page *pagination.Page) ([]profile.Profile, error) {
+	query := `
+		SELECT 
+			u.id, u.name, u.bio, u.username, u.favorite_team, u.profile_picture,
+			(SELECT COUNT(*) FROM followers WHERE following_id = u.id) AS followers_count,
+            (SELECT COUNT(*) FROM followers WHERE follower_id = u.id) AS following_count,
+            CASE WHEN f.following_id = $1 THEN TRUE ELSE FALSE END AS is_following
+		FROM followers f
+		LEFT JOIN users u ON u.id = f.follower_id
+		WHERE f.following_id = (select id from users where username = $2)
+		GROUP BY f.following_id, u.id
+		LIMIT $3
+		OFFSET ($4 - 1) * $3
+	`
+
+	rows, err := repo.db.QueryContext(ctx, query, requesterID, username, page.Size, page.Index)
+	if err != nil {
+		return nil, err
+	}
+
+	profiles := make([]profile.Profile, 0)
+
+	for rows.Next() {
+		var profile profile.Profile
+		var name, bio sql.NullString
+		var favoriteTeam sql.NullInt64
+
+		if err := rows.Scan(
+			&profile.UserID,
+			&name,
+			&bio,
+			&profile.Username,
+			&favoriteTeam,
+			&profile.ProfilePicture,
+			&profile.FollowersCount,
+			&profile.FollowingCount,
+			&profile.IsFollowing,
+		); err != nil {
+			if err == sql.ErrNoRows {
+				return nil, errors.NewHTTPErr(
+					"Perfil não encontrado",
+					404,
+					"REPOSITORY:PROFILE:FIND_ONE_BY_USERNAME:NOT_FOUND",
+				)
+			}
+			return nil, err
+		}
+
+		if bio.Valid {
+			profile.Bio = bio.String
+		}
+
+		if name.Valid {
+			profile.Name = name.String
+		}
+
+		if favoriteTeam.Valid {
+			profile.FavoriteTeam = favoriteTeam.Int64
+		}
+
+		profiles = append(profiles, profile)
+	}
+
+	return profiles, nil
+}
+
+func (repo *ProfileRepository) ListFollowing(ctx context.Context, requesterID, username string, page *pagination.Page) ([]profile.Profile, error) {
+	query := `
+		SELECT 
+			u.id, u.name, u.bio, u.username, u.favorite_team, u.profile_picture,
+			(SELECT COUNT(*) FROM followers WHERE following_id = u.id) AS followers_count,
+            (SELECT COUNT(*) FROM followers WHERE follower_id = u.id) AS following_count,
+            CASE WHEN following_id = $1 THEN TRUE ELSE FALSE END AS is_following
+		FROM followers f
+		LEFT JOIN users u ON u.id = f.following_id
+		WHERE f.follower_id = (select id from users where username = $2)
+		GROUP BY f.following_id, u.id
+		LIMIT $3
+		OFFSET ($4 - 1) * $3
+	`
+
+	rows, err := repo.db.QueryContext(ctx, query, requesterID, username, page.Size, page.Index)
+	if err != nil {
+		return nil, err
+	}
+
+	profiles := make([]profile.Profile, 0)
+
+	for rows.Next() {
+		var profile profile.Profile
+		var name, bio sql.NullString
+		var favoriteTeam sql.NullInt64
+
+		if err := rows.Scan(
+			&profile.UserID,
+			&name,
+			&bio,
+			&profile.Username,
+			&favoriteTeam,
+			&profile.ProfilePicture,
+			&profile.FollowersCount,
+			&profile.FollowingCount,
+			&profile.IsFollowing,
+		); err != nil {
+			if err == sql.ErrNoRows {
+				return nil, errors.NewHTTPErr(
+					"Perfil não encontrado",
+					404,
+					"REPOSITORY:PROFILE:FIND_ONE_BY_USERNAME:NOT_FOUND",
+				)
+			}
+			return nil, err
+		}
+
+		if bio.Valid {
+			profile.Bio = bio.String
+		}
+
+		if name.Valid {
+			profile.Name = name.String
+		}
+
+		if favoriteTeam.Valid {
+			profile.FavoriteTeam = favoriteTeam.Int64
+		}
+
+		profiles = append(profiles, profile)
+	}
+
+	return profiles, nil
+}
+
+func (repo *ProfileRepository) ListPopularProfiles(ctx context.Context, requesterID string, page *pagination.Page) ([]profile.Profile, error) {
+	query := `
+		SELECT 
+			u.id, u.name, u.bio, u.username, u.favorite_team, u.profile_picture,
+			(SELECT COUNT(*) FROM followers WHERE following_id = u.id) AS followers_count,
+            (SELECT COUNT(*) FROM followers WHERE follower_id = u.id) AS following_count,
+            CASE WHEN following_id = $1 THEN TRUE ELSE FALSE END AS is_following
+		FROM followers f
+		LEFT JOIN users u ON u.id = f.following_id
+		WHERE f.created_at >= NOW() - INTERVAL '3 day'
+		GROUP BY f.following_id, u.id
+		ORDER BY following_count DESC
+		LIMIT $2
+		OFFSET ($3 - 1) * $2
+	`
+
+	rows, err := repo.db.QueryContext(ctx, query, requesterID, page.Size, page.Index)
+	if err != nil {
+		return nil, err
+	}
+
+	profiles := make([]profile.Profile, 0)
+
+	for rows.Next() {
+		var profile profile.Profile
+		var name, bio sql.NullString
+		var favoriteTeam sql.NullInt64
+
+		if err := rows.Scan(
+			&profile.UserID,
+			&name,
+			&bio,
+			&profile.Username,
+			&favoriteTeam,
+			&profile.ProfilePicture,
+			&profile.FollowersCount,
+			&profile.FollowingCount,
+			&profile.IsFollowing,
+		); err != nil {
+			return nil, err
+		}
+
+		if bio.Valid {
+			profile.Bio = bio.String
+		}
+
+		if name.Valid {
+			profile.Name = name.String
+		}
+
+		if favoriteTeam.Valid {
+			profile.FavoriteTeam = favoriteTeam.Int64
+		}
+
+		profiles = append(profiles, profile)
+	}
+
+	return profiles, nil
+}

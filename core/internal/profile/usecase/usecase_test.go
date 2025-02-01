@@ -184,3 +184,44 @@ func TestToggleFollow(t *testing.T) {
 		assert.Nil(t, result)
 	})
 }
+
+func TestListPopularProfiles(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := profileMock.NewMockRepository(ctrl)
+	mockFootballClient := footballClientMock.NewMockClient(ctrl)
+
+	uc := NewProfileUsecases(mockRepo, mockFootballClient)
+
+	ctx := context.WithValue(context.Background(), middleware.SessionKey, &session.Session{UserID: "123"})
+
+	page := pagination.Page{Size: 50, Index: 1}
+
+	t.Run("test sucessfull list popular profiles", func(t *testing.T) {
+		mockRepo.EXPECT().ListPopularProfiles(ctx, "123", &page).Return([]profile.Profile{
+			{
+				UserID:       "123",
+				Name:         "John Doe",
+				Bio:          "A bio",
+				Username:     "john_doe",
+				FavoriteTeam: 42,
+			},
+		}, nil)
+
+		mockFootballClient.EXPECT().GetTeam(gomock.Any()).Return(&football.Team{
+			ID:           7632,
+			Name:         "Atlético-MG",
+			Abbreviation: "CAM",
+			Color:        "#000000",
+			Logo:         "logourl",
+		}, nil)
+
+		output, err := uc.ListPopularProfiles(ctx, &page)
+
+		assert.NoError(t, err)
+		assert.Len(t, output, 1)
+		assert.Equal(t, output[0].ID, "123")
+		assert.NotNil(t, output[0].FavoriteTeam)
+	})
+}

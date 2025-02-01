@@ -80,6 +80,51 @@ func (mr *MockRepositoryMockRecorder) IsFollowing(ctx, followerID, followingID i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFollowing", reflect.TypeOf((*MockRepository)(nil).IsFollowing), ctx, followerID, followingID)
 }
 
+// ListFollowers mocks base method.
+func (m *MockRepository) ListFollowers(ctx context.Context, requesterID, username string, page *pagination.Page) ([]profile.Profile, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListFollowers", ctx, requesterID, username, page)
+	ret0, _ := ret[0].([]profile.Profile)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListFollowers indicates an expected call of ListFollowers.
+func (mr *MockRepositoryMockRecorder) ListFollowers(ctx, requesterID, username, page interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFollowers", reflect.TypeOf((*MockRepository)(nil).ListFollowers), ctx, requesterID, username, page)
+}
+
+// ListFollowing mocks base method.
+func (m *MockRepository) ListFollowing(ctx context.Context, requesterID, username string, page *pagination.Page) ([]profile.Profile, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListFollowing", ctx, requesterID, username, page)
+	ret0, _ := ret[0].([]profile.Profile)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListFollowing indicates an expected call of ListFollowing.
+func (mr *MockRepositoryMockRecorder) ListFollowing(ctx, requesterID, username, page interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFollowing", reflect.TypeOf((*MockRepository)(nil).ListFollowing), ctx, requesterID, username, page)
+}
+
+// ListPopularProfiles mocks base method.
+func (m *MockRepository) ListPopularProfiles(ctx context.Context, requesterID string, page *pagination.Page) ([]profile.Profile, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPopularProfiles", ctx, requesterID, page)
+	ret0, _ := ret[0].([]profile.Profile)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListPopularProfiles indicates an expected call of ListPopularProfiles.
+func (mr *MockRepositoryMockRecorder) ListPopularProfiles(ctx, requesterID, page interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPopularProfiles", reflect.TypeOf((*MockRepository)(nil).ListPopularProfiles), ctx, requesterID, page)
+}
+
 // Search mocks base method.
 func (m *MockRepository) Search(ctx context.Context, requesterID, term string, page *pagination.Page) ([]profile.Profile, error) {
 	m.ctrl.T.Helper()
