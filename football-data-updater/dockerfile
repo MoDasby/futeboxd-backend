@@ -1,0 +1,39 @@
+# Etapa 1: Build Stage
+FROM node:22.12-alpine AS build
+
+# Definir o diretório de trabalho
+WORKDIR /usr/src/app
+
+# Copiar o código-fonte para o contêiner
+COPY . /usr/src/app/
+
+# Instalar as dependências (incluindo devDependencies)
+RUN npm install
+
+# Instalar pacotes necessários (como dumb-init)
+RUN apk update && apk add --no-cache dumb-init
+
+# Compilar o código (geralmente, TypeScript)
+RUN npm run build
+
+# Etapa 2: Production Stage
+FROM node:22.12-alpine AS production
+
+# Definir o diretório de trabalho
+WORKDIR /usr/src/app
+
+# Copiar somente as dependências de produção da etapa anterior
+COPY --from=build /usr/src/app/package*.json ./
+RUN npm install --only=production
+
+# Copiar o código compilado da etapa de build
+COPY --from=build /usr/src/app/build /usr/src/app/build
+
+# Instalar o dumb-init (novamente, caso seja necessário para produção)
+RUN apk update && apk add --no-cache dumb-init
+
+# Definir o usuário para rodar o app (opcional, mas recomendado)
+USER node
+
+# Comando para rodar a aplicação
+CMD ["dumb-init", "node", "build/main.js"]

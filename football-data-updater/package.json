@@ -1,0 +1,28 @@
+{
+  "name": "football-data-updater",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "ts-node-dev -r tsconfig-paths/register src/main.ts",
+    "build": "tsc --project ./tsconfig.json",
+    "start": "node build/main.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/cheerio": "^0.22.35",
+    "@types/node-schedule": "^2.1.7",
+    "@types/pg": "^8.11.11",
+    "ts-node-dev": "^2.0.0",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "dotenv": "^16.4.7",
+    "node-schedule": "^2.1.1",
+    "pg": "^8.13.1"
+  }
+}
