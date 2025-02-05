@@ -166,6 +166,4 @@ func (h *ReviewHandler) toggleLikeReview(w http.ResponseWriter, r *http.Request)
 
 		return
 	}
-
-	w.WriteHeader(201)
 }

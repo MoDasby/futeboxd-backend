@@ -171,6 +171,4 @@ func (h *Handler) toggleLikeComment(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-
-	w.WriteHeader(201)
 }
