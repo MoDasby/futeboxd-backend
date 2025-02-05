@@ -12,6 +12,12 @@ football() {
     make -C football $1
 }
 
+football-data-updater() {
+    if [ "$1" = "dev" ]; then
+        cd football-data-updater && npm run dev
+    fi
+}
+
 cleanup() {
     core stop
     football stop
@@ -27,6 +33,7 @@ set -e
 
 core dev &
 football dev &
+football-data-updater dev &
 
 wait 
 
