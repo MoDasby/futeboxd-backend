@@ -32,7 +32,7 @@ func (h *Handler) ListByName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	teams, err := h.repo.FindAll(name, page.Size, page.Index)
+	teams, err := h.repo.FindByName(name, page.Size, page.Index)
 	if err != nil {
 		errors.HandleHttpError(w, err)
 
@@ -48,7 +48,7 @@ func (h *Handler) ListByName(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) FindByID(w http.ResponseWriter, r *http.Request) {
-	teamID, err := strconv.ParseUint(r.PathValue("teamID"), 10, 64)
+	teamID, err := strconv.ParseUint(r.PathValue("ID"), 10, 64)
 	if err != nil {
 		errors.HandleHttpError(w, errors.NewHTTPErr(
 			"valor inválido para o id do time",

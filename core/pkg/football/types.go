@@ -15,14 +15,20 @@ type Competitor struct {
 	Team     Team   `json:"team"`
 }
 
+type League struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+	Logo string `json:"logo"`
+}
+
 type Match struct {
-	ID              int64      `json:"id"`
-	Venue           string     `json:"venue"`
-	Date            string     `json:"date"`
-	Note            string     `json:"note"`
-	Completed       bool       `json:"completed"`
-	StatusName      string     `json:"status_name"`
-	CompetitionName string     `json:"competition_name"`
-	HomeCompetitor  Competitor `json:"home_competitor"`
-	AwayCompetitor  Competitor `json:"away_competitor"`
+	ID             int64      `json:"id"`
+	Venue          string     `json:"venue"`
+	Date           string     `json:"date"`
+	Note           string     `json:"note"`
+	Completed      bool       `json:"completed"`
+	StatusName     string     `json:"status_name"`
+	League         League     `json:"league"`
+	HomeCompetitor Competitor `json:"home_competitor"`
+	AwayCompetitor Competitor `json:"away_competitor"`
 }

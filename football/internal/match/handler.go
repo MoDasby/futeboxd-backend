@@ -48,6 +48,8 @@ func (h *Handler) GetMatchSummary(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(output); err != nil {
 		errors.HandleHttpError(w, err)
+
+		return
 	}
 }
 
@@ -115,7 +117,7 @@ func (h *Handler) ListMatches(w http.ResponseWriter, r *http.Request) {
 
 	year, err := strconv.Atoi(r.URL.Query().Get("year"))
 	if err != nil {
-		year = 2024
+		year = 0
 	}
 
 	status := r.URL.Query().Get("status")

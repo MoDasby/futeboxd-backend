@@ -15,17 +15,6 @@ func NewTeamRepository(db *sql.DB) Repository {
 	return &teamRepository{db: db}
 }
 
-/* // Create insere um novo time na tabela de teams.
-func (repo *teamRepository) Create(team *domain.Team) error {
-	query := `
-		INSERT INTO teams (id, name, abbreviation, color, logo)
-		VALUES ($1, $2, $3, $4, $5)
-	`
-
-	_, err := repo.db.Exec(query, team.ID, team.Name, team.Abbreviation, team.Color, team.Logo)
-	return err
-} */
-
 func (repo *teamRepository) FindOneById(ID int64) (*Team, error) {
 	query := `
 		SELECT t.id, t.name, t.abbreviation, t.color, t.logo
@@ -56,15 +45,15 @@ func (repo *teamRepository) FindOneById(ID int64) (*Team, error) {
 	return team, nil
 }
 
-func (repo *teamRepository) FindAll(name string, pageSize, pageIndex int) ([]Team, error) {
+func (repo *teamRepository) FindByName(name string, pageSize, pageIndex int) ([]Team, error) {
 	query := `
 	SELECT t.id, t.name, t.abbreviation, t.color, t.logo, t.mandatory
-	FROM teams t 
-	WHERE LOWER(t.name) LIKE $1 AND mandatory
+	FROM teams t
+	WHERE unaccent(t.name) ILIKE unaccent($1) AND t.mandatory
 	ORDER BY t.name
 	LIMIT $2
 	OFFSET (($3 - 1) * $2)
-`
+	`
 
 	rows, err := repo.db.Query(query, strings.ToLower("%"+name+"%"), pageSize, pageIndex)
 	if err != nil {

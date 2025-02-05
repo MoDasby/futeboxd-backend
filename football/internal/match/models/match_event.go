@@ -1,11 +1,10 @@
-package match
+package models
 
 type Event struct {
 	Type struct {
 		ID   string `json:"id"`
 		Text string `json:"text"`
 	} `json:"type"`
-	Text            string `json:"text"`
 	ClockValue      int    `json:"clock_value"`
 	TeamID          int    `json:"team_id,omitempty"`
 	ParticipantName string `json:"participant_name,omitempty"`
@@ -13,8 +12,7 @@ type Event struct {
 
 func NewEvent(
 	typeID,
-	typeText,
-	text string,
+	typeText string,
 	clockValue int,
 	teamID int,
 	participantName string,
@@ -26,7 +24,6 @@ func NewEvent(
 		}{
 			ID: typeID, Text: typeText,
 		},
-		Text:            text,
 		ClockValue:      clockValue,
 		TeamID:          teamID,
 		ParticipantName: participantName,
