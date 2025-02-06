@@ -29,7 +29,7 @@ export async function getDaySchedule(league: League): Promise<Match[]> {
 
             const competitor: Competitor = {
                 team,
-                score: Number.parseInt(espnCompetitor.score),
+                score: Number.parseInt(espnCompetitor.score) || Number.parseInt(espnCompetitor.order),
                 winner: espnCompetitor.winner,
             };
 
@@ -63,7 +63,7 @@ async function getMatchSummary(matchId: number): Promise<MatchEvent[]> {
     const data = await res.json();
 
     if (!data.keyEvents) return [];
-    
+
     const matchEvents: MatchEvent[] = []
 
     for (const event of data.keyEvents) {
@@ -83,8 +83,65 @@ async function getMatchSummary(matchId: number): Promise<MatchEvent[]> {
     return matchEvents
 }
 
+async function getTeamSchedule(teamId: number, season: number, leagues: League[]): Promise<Match[]> {
+    const res = await fetch(`${BASE_URL}/sports/soccer/all/teams/${teamId}/schedule?lang=pt&season=${season}`)
+    const data = await res.json();
+
+    const output: Match[] = []
+
+    for (const espnMatch of data.events) {
+        const league = leagues.find(l => l.espn_id === espnMatch.league.slug)
+
+        if (league) {
+            const matchEvents: MatchEvent[] = [];
+
+            let homeCompetitor: Competitor | undefined = undefined
+            let awayCompetitor: Competitor | undefined = undefined
+
+            for (const espnCompetitor of espnMatch.competitions[0].competitors) {
+                const team: Team = {
+                    id: espnCompetitor.team.id,
+                    name: espnCompetitor.team.displayName,
+                    color: espnCompetitor.team.color || "000000",
+                    abbreviation: espnCompetitor.team.abbreviation || (espnCompetitor.team.displayName as string).substring(0, 3),
+                    logo: espnCompetitor.team.logo || ""
+                };
+
+                const competitor: Competitor = {
+                    team,
+                    score: Number.parseInt(espnCompetitor.score) || Number.parseInt(espnCompetitor.score.value),
+                    winner: espnCompetitor.winner,
+                };
+
+                if (espnCompetitor.homeAway === "home") homeCompetitor = competitor
+                if (espnCompetitor.homeAway === "away") awayCompetitor = competitor
+            }
+
+            if (!homeCompetitor || !awayCompetitor) throw new Error("Home competitor ou away competitor está nulo");
+
+            const matchEvent: Match = {
+                id: espnMatch.id,
+                venue: espnMatch.competitions[0].venue?.fullName || "",
+                date: espnMatch.date,
+                note: espnMatch.competitions[0].notes[0]?.headline || null,
+                homeCompetitor: homeCompetitor,
+                awayCompetitor: awayCompetitor,
+                completed: espnMatch.competitions[0].status.type.completed,
+                statusName: espnMatch.competitions[0].status.type.name,
+                events: matchEvents,
+                league: league,
+            };
+
+            output.push(matchEvent);
+        }
+    }
+
+    return output
+}
+
 export const espnMatchUpdater: MatchDataUpdater = {
     getDaySchedule,
     getMatch: () => (new Promise(() => ({} as Match))),
-    getMatchSummary
+    getMatchSummary,
+    getTeamSchedule,
 }

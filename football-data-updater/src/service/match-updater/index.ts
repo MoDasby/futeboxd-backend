@@ -5,4 +5,5 @@ export default interface MatchDataUpdater {
     getDaySchedule(league: League): Promise<Match[]>
     getMatch(matchId: number): Promise<Match>
     getMatchSummary(matchId: number): Promise<MatchEvent[]>
+    getTeamSchedule(teamId: number, season: number, leagues: League[]): Promise<Match[]>
 }

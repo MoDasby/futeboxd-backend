@@ -39,3 +39,19 @@ export async function isAnyMandatory(teams: Team[]): Promise<boolean> {
 
     return false;
 }
+
+export async function getMandatoryTeams(): Promise<Team[]> {
+    const query = `
+        SELECT id, name, logo, abbreviation, color
+        FROM teams
+        WHERE mandatory
+    `;
+
+    try {
+        const result = await client.query<Team>(query);
+        return result.rows; // Retorna os times mandatórios encontrados
+    } catch (err) {
+        console.log(`Erro ao buscar times mandatórios: ${err}`);
+        return []; // Retorna um array vazio em caso de erro
+    }
+}

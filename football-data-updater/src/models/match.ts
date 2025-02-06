@@ -97,7 +97,7 @@ function scheduleNextProcessing(time: Date, league: League, gateway: MatchDataUp
     schedule(time, league, () => processDaySchedule(league, gateway));
 }
 
-async function upsertMatch(match: Match) {
+export async function upsertMatch(match: Match) {
 
 
     const query = `
