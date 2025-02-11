@@ -1,5 +1,10 @@
+import dotenv from "dotenv"
+
+const output = dotenv.config()
+
+if (output.error) throw new Error(output.error.message);
+
 import { Client } from 'pg';
-import 'dotenv/config'
 
 // Configuração do cliente PostgreSQL
 export const client = new Client({
