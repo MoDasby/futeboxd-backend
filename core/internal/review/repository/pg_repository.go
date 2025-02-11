@@ -153,21 +153,21 @@ func (repo *reviewRepository) ListFeed(ctx context.Context, requesterID string, 
 			rr.home_team_id, rr.away_team_id, rr.comments_count, rr.like_count, rr.is_liked
 		ORDER BY
 			(CASE
-				WHEN rr.home_team_id = req.favorite_team THEN 1
-				WHEN rr.away_team_id = req.favorite_team THEN 0.7
+				WHEN rr.home_team_id = req.favorite_team THEN 1.1
+				WHEN rr.away_team_id = req.favorite_team THEN 1
 				ELSE 0
-			END) + (CASE
-				WHEN rr.comments_count > 0 THEN 0.2
-				WHEN rr.comments_count > 10 THEN 0.4
-				WHEN rr.comments_count > 100 THEN 0.5
-				WHEN rr.comments_count > 1000 THEN 0.8
-				WHEN rr.comments_count > 10000 THEN 1
-			END) + (CASE
-				WHEN rr.like_count > 0 THEN 0.2
-				WHEN rr.like_count > 10 THEN 0.4
-				WHEN rr.like_count > 100 THEN 0.5
-				WHEN rr.like_count > 1000 THEN 0.8
-				WHEN rr.like_count > 10000 THEN 1
+			END) * (CASE
+				WHEN rr.comments_count > 0 THEN 1.2
+				WHEN rr.comments_count > 10 THEN 1.4
+				WHEN rr.comments_count > 100 THEN 1.5
+				WHEN rr.comments_count > 1000 THEN 1.8
+				WHEN rr.comments_count > 10000 THEN 2
+			END) * (CASE
+				WHEN rr.like_count > 0 THEN 1.2
+				WHEN rr.like_count > 10 THEN 1.4
+				WHEN rr.like_count > 100 THEN 1.5
+				WHEN rr.like_count > 1000 THEN 1.8
+				WHEN rr.like_count > 10000 THEN 2
 			END), rr.created_at DESC
 		LIMIT $2
 		OFFSET ($3 - 1) * $2
