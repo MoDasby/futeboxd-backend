@@ -68,6 +68,8 @@ export async function processDaySchedule(league: League, gateway: MatchDataUpdat
 
         if (matchStarted(m)) {
             const fiveMinutesLater = new Date();
+            fiveMinutesLater.setSeconds(0)
+            fiveMinutesLater.setMilliseconds(0)
             fiveMinutesLater.setMinutes(fiveMinutesLater.getMinutes() + 5);
             scheduleNextProcessing(fiveMinutesLater, league, gateway);
             return;
@@ -82,6 +84,13 @@ export async function processDaySchedule(league: League, gateway: MatchDataUpdat
             scheduleNextProcessing(matchDate, league, gateway);
 
             return
+        }
+
+        if (!matchStarted(m)) {
+            const fiveMinutesLater = new Date();
+            fiveMinutesLater.setMinutes(fiveMinutesLater.getMinutes() + 10);
+            scheduleNextProcessing(fiveMinutesLater, league, gateway);
+            return;
         }
     })
 }
