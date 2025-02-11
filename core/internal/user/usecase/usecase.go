@@ -254,7 +254,7 @@ func (uc *usersUsecases) ResetPassword(ctx context.Context, input *dto.ResetPass
 
 	if recover.IsExpired() {
 		return errors.NewHTTPErr(
-			"token vencido",
+			"O token de recuperação informado está expirado ou não existe. Solicite uma nova recuperação de senha.",
 			403,
 			"USER:USECASE:EXPIRED_TOKEN",
 		)

@@ -226,7 +226,7 @@ func (repo *userRepository) CheckRecoverToken(ctx context.Context, token string)
 	if err := row.Scan(&recover.UserID, &recover.Token, &recover.ExpiresAt); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errorsTypes.NewHTTPErr(
-				"token inválido",
+				"O token de recuperação informado está expirado ou não existe. Solicite uma nova recuperação de senha.",
 				404,
 				"REPOSITORY:USER:CHECK_RECOVER_TOKEN:TOKEN_NOT_FOUND",
 			)
