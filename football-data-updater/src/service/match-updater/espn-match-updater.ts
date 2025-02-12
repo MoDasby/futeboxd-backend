@@ -27,9 +27,14 @@ export async function getDaySchedule(league: League): Promise<Match[]> {
                 logo: espnCompetitor.team.logo || ""
             };
 
+            const parsedScore = Number.parseInt(espnCompetitor.score);
+            const parsedValue = Number.parseInt(espnCompetitor.score?.value);
+
             const competitor: Competitor = {
                 team,
-                score: Number.parseInt(espnCompetitor.score) || Number.parseInt(espnCompetitor.order),
+                score: !Number.isNaN(parsedScore) ? parsedScore
+                    : !Number.isNaN(parsedValue) ? parsedValue
+                        : 0,
                 winner: espnCompetitor.winner,
             };
 
@@ -107,9 +112,14 @@ async function getTeamSchedule(teamId: number, season: number, leagues: League[]
                     logo: espnCompetitor.team.logo || ""
                 };
 
+                const parsedScore = Number.parseInt(espnCompetitor.score);
+                const parsedValue = Number.parseInt(espnCompetitor.score?.value);
+
                 const competitor: Competitor = {
                     team,
-                    score: Number.parseInt(espnCompetitor.score) || Number.parseInt(espnCompetitor.score.value),
+                    score: !Number.isNaN(parsedScore) ? parsedScore
+                        : !Number.isNaN(parsedValue) ? parsedValue
+                            : 0,
                     winner: espnCompetitor.winner,
                 };
 
