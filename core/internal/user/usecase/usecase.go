@@ -163,7 +163,7 @@ func (uc *usersUsecases) ChangePassword(ctx context.Context, input *dto.ChangePa
 
 	if err := user.CheckPassword(input.CurrentPassword); err != nil {
 		return errors.NewHTTPErr(
-			"senhas não conferem",
+			"Senha incorreta",
 			401,
 			"USER:USECASE:CHANGE_PASSWORD:WRONG_PASSWORD",
 		)
