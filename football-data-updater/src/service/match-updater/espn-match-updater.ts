@@ -71,18 +71,22 @@ async function getMatchSummary(matchId: number): Promise<MatchEvent[]> {
 
     const matchEvents: MatchEvent[] = []
 
-    for (const event of data.keyEvents) {
-        if (/gol|goal/i.test(event.type.text as string)) {
-            matchEvents.push({
-                clock_value: Number.parseInt(event.clock.value),
-                participant_name: event.participants[0].athlete.displayName,
-                team_id: Number.parseInt(event.team.id),
-                type: {
-                    id: event.type.id,
-                    text: event.type.text
-                }
-            })
+    try {
+        for (const event of data.keyEvents) {
+            if (/gol|goal/i.test(event.type.text as string)) {
+                matchEvents.push({
+                    clock_value: Number.parseInt(event.clock.value),
+                    participant_name: event.participants[0].athlete.displayName,
+                    team_id: Number.parseInt(event.team.id),
+                    type: {
+                        id: event.type.id,
+                        text: event.type.text
+                    }
+                })
+            }
         }
+    } catch {
+        return []
     }
 
     return matchEvents
