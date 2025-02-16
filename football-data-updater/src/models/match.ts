@@ -92,6 +92,8 @@ export async function processDaySchedule(league: League, gateway: MatchDataUpdat
             scheduleNextProcessing(fiveMinutesLater, league, gateway);
             return;
         }
+
+        scheduleProcessNextDay(league, gateway)
     })
 }
 
