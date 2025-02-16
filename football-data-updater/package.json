@@ -23,7 +23,11 @@
     "cheerio": "^1.0.0",
     "commander": "^13.1.0",
     "dotenv": "^16.4.7",
+    "module-alias": "^2.2.3",
     "node-schedule": "^2.1.1",
     "pg": "^8.13.1"
+  },
+  "_moduleAliases": {
+    "@": "./build"
   }
 }

@@ -1,3 +1,4 @@
+require('module-alias/register');
 import { waitForDbReady } from "@/db"
 import { listLeagues } from "./models/league"
 import { processDaySchedule } from "./models/match"
