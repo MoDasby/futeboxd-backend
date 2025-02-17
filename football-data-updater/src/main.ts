@@ -16,7 +16,7 @@ async function main() {
         await processDaySchedule(league, espnMatchUpdater)
     })
 
-    processNews(geScrapper);
+    await processNews(geScrapper);
     scheduleJob("0 10,15 * * *", () => {
         processNews(geScrapper)
     })

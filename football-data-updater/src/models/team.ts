@@ -1,4 +1,4 @@
-import { client } from "../db";
+import { getClient } from "@/db";
 
 export type Team = {
     id: string;
@@ -9,6 +9,8 @@ export type Team = {
 }
 
 export async function insertTeamIfNotExists(team: Team) { // TODO precisa baixar a logo e colocar no s3
+    const client = getClient()
+
     const query = `
         INSERT INTO teams(id, name, logo, abbreviation, color)
         VALUES ($1, $2, $3, $4, $5)
@@ -23,6 +25,8 @@ export async function insertTeamIfNotExists(team: Team) { // TODO precisa baixar
 }
 
 export async function isAnyMandatory(teams: Team[]): Promise<boolean> {
+    const client = getClient()
+
     const query = `
         SELECT COALESCE(BOOL_OR(mandatory), FALSE) AS has_mandatory
         FROM teams
@@ -41,6 +45,8 @@ export async function isAnyMandatory(teams: Team[]): Promise<boolean> {
 }
 
 export async function getMandatoryTeams(): Promise<Team[]> {
+    const client = getClient()
+    
     const query = `
         SELECT id, name, logo, abbreviation, color
         FROM teams

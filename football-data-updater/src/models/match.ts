@@ -1,10 +1,8 @@
-
 import { League } from "./league";
 import { insertTeamIfNotExists, isAnyMandatory, Team } from "./team";
 import { schedule } from "./scheduler";
-import { client } from "@/db";
 import MatchDataUpdater from "@/service/match-updater";
-
+import { getClient } from "@/db";
 
 const statusNameValues = ["STATUS_FINAL_PEN", "STATUS_SCHEDULED", "STATUS_FULL_TIME", "STATUS_SECOND_HALF", "STATUS_HALFTIME", "STATUS_FIRST_HALF", "STATUS_UNKNOWN", "STATUS_POSTPONED"]
 
@@ -86,7 +84,7 @@ export async function processDaySchedule(league: League, gateway: MatchDataUpdat
             return
         }
 
-        if (!matchStarted(m)) {
+        if (!m.completed) {
             const fiveMinutesLater = new Date();
             fiveMinutesLater.setMinutes(fiveMinutesLater.getMinutes() + 10);
             scheduleNextProcessing(fiveMinutesLater, league, gateway);
@@ -109,7 +107,7 @@ function scheduleNextProcessing(time: Date, league: League, gateway: MatchDataUp
 }
 
 export async function upsertMatch(match: Match) {
-
+    const client = getClient()
 
     const query = `
         INSERT INTO matches (

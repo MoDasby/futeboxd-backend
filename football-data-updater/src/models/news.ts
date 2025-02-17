@@ -1,4 +1,4 @@
-import { client } from "@/db"
+import { getClient } from "@/db"
 import NewsScrapper from "@/service/news-scrapper"
 
 export type News = {
@@ -17,6 +17,8 @@ export async function processNews(scrapper: NewsScrapper) {
 }
 
 async function insertIfNotExists(news: News) {
+    const client = getClient()
+    
     const query = `
         INSERT INTO news (title, description, link, image_link)
         VALUES ($1, $2, $3, $4)
