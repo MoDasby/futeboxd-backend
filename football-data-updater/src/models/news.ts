@@ -16,6 +16,22 @@ export async function processNews(scrapper: NewsScrapper) {
     await Promise.all(news.map(n => insertIfNotExists(n)))
 }
 
+export async function deleteOldNews(): Promise<void> {
+    const client = getClient()
+
+    const query = `
+        DELETE FROM news WHERE created_at >= NOW() - INTERVAL '3 day'
+    `
+
+    console.info("Deletando notícias antigas")
+
+    try {
+        await client.query(query)
+    } catch(err) {
+        console.error(`Erro ao deletar noticias antigas: ${err}`)
+    }
+}
+
 async function insertIfNotExists(news: News) {
     const client = getClient()
     
