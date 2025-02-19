@@ -9,7 +9,10 @@ const config: PoolConfig = {
     password: process.env.POSTGRES_PASSWORD,
     database: process.env.POSTGRES_DB,
     port: Number.parseInt(process.env.PGPORT || "5432"),
-    max: 3
+    max: 3,
+    min: 1,
+    idleTimeoutMillis: 20000,
+    allowExitOnIdle: true
 }
 
 const pool = new Pool(config)
