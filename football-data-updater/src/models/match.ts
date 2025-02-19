@@ -2,9 +2,14 @@ import { League } from "./league";
 import { insertTeamIfNotExists, isAnyMandatory, Team } from "./team";
 import { schedule } from "./scheduler";
 import MatchDataUpdater from "@/service/match-updater";
-import { getClient } from "@/db";
+import logger from "@/util/logger";
+import db from "@/db";
 
-const statusNameValues = ["STATUS_FINAL_PEN", "STATUS_SCHEDULED", "STATUS_FULL_TIME", "STATUS_SECOND_HALF", "STATUS_HALFTIME", "STATUS_FIRST_HALF", "STATUS_UNKNOWN", "STATUS_POSTPONED"]
+const statusNameValues = [
+    "STATUS_FINAL_PEN", "STATUS_SCHEDULED", "STATUS_FULL_TIME",
+    "STATUS_SECOND_HALF", "STATUS_HALFTIME", "STATUS_FIRST_HALF",
+    "STATUS_UNKNOWN", "STATUS_POSTPONED"
+]
 
 export type Competitor = {
     winner: boolean;
@@ -44,9 +49,12 @@ export async function processDaySchedule(league: League, gateway: MatchDataUpdat
         return
     }
 
-    daySchedule.forEach(async m => {
+    for (const m of daySchedule) {
         if (!(await isAnyMandatory([m.homeCompetitor.team, m.awayCompetitor.team]))) {
-            console.info(`Nenhum time mandátorio em ${getFormattedMatchName(m)}, pulando`)
+            logger.info(`Nenhum time mandátorio, pulando`, {
+                match: m.id
+            })
+
             return;
         }
 
@@ -58,7 +66,9 @@ export async function processDaySchedule(league: League, gateway: MatchDataUpdat
 
         m.events = matchSummary
 
-        console.info(`Processando partida ${getFormattedMatchName(m)}`);
+        logger.info(`Processando partida`, {
+            match: m.id
+        });
 
         await insertTeamIfNotExists(m.homeCompetitor.team)
         await insertTeamIfNotExists(m.awayCompetitor.team)
@@ -85,21 +95,24 @@ export async function processDaySchedule(league: League, gateway: MatchDataUpdat
         }
 
         if (!m.completed) {
-            const fiveMinutesLater = new Date();
-            fiveMinutesLater.setMinutes(fiveMinutesLater.getMinutes() + 10);
-            scheduleNextProcessing(fiveMinutesLater, league, gateway);
+            const date = new Date();
+            date.setMinutes(date.getMinutes() + 5);
+            date.setSeconds(0);
+            date.setMilliseconds(0);
+            scheduleNextProcessing(date, league, gateway);
+
             return;
         }
 
         scheduleProcessNextDay(league, gateway)
-    })
+    }
 }
 
-export function scheduleProcessNextDay(league: League, gateway: MatchDataUpdater) {
+function scheduleProcessNextDay(league: League, gateway: MatchDataUpdater) {
     const nextDayAt10AM = new Date();
     nextDayAt10AM.setHours(10, 0, 0, 0);
     nextDayAt10AM.setDate(nextDayAt10AM.getDate() + 1);
-    schedule(nextDayAt10AM, league, () => processDaySchedule(league, gateway));
+    scheduleNextProcessing(nextDayAt10AM, league, gateway);
 }
 
 function scheduleNextProcessing(time: Date, league: League, gateway: MatchDataUpdater) {
@@ -107,8 +120,6 @@ function scheduleNextProcessing(time: Date, league: League, gateway: MatchDataUp
 }
 
 export async function upsertMatch(match: Match) {
-    const client = getClient()
-
     const query = `
         INSERT INTO matches (
 		id, match_date, venue, home_team_score, home_team_id,
@@ -131,18 +142,20 @@ export async function upsertMatch(match: Match) {
     `
 
     try {
-        await client.query(query, [
+        await db.query(query, [
             match.id, match.date, match.venue, match.homeCompetitor.score, match.homeCompetitor.team.id,
             match.awayCompetitor.score, match.awayCompetitor.team.id, match.note, match.completed, match.statusName,
             match.league.id, JSON.stringify(match.events)
         ]);
+        logger.info("Partida inserida ou atualizada", {
+            match: match.id
+        })
     } catch (err) {
-        console.error(`erro ao inserir partida: ${err}`);
+        logger.error(`erro ao inserir partida`, {
+            match: match.id,
+            err
+        });
     }
-}
-
-function getFormattedMatchName(match: Match): string {
-    return `liga: ${match.league.name} ${match.id}: ${match.homeCompetitor.team.name} ${match.homeCompetitor.score} x ${match.awayCompetitor.score} ${match.awayCompetitor.team.name}`;
 }
 
 function matchStarted(match: Match): boolean {

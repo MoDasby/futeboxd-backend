@@ -1,4 +1,4 @@
-import { getClient } from "@/db"
+import db from "@/db"
 
 export type League = {
     id: number
@@ -8,9 +8,7 @@ export type League = {
 }
 
 export async function listLeagues(): Promise<League[]> {
-    const client = getClient()
-
-    const result = await client.query<League>(`
+    const result = await db.query<League>(`
         SELECT id, name, logo, espn_id FROM leagues;    
     `);
 

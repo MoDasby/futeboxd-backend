@@ -1,5 +1,6 @@
 import { getClient } from "@/db"
 import NewsScrapper from "@/service/news-scrapper"
+import logger from "@/util/logger"
 
 export type News = {
     title: string
@@ -17,8 +18,6 @@ export async function processNews(scrapper: NewsScrapper) {
 }
 
 export async function deleteOldNews(): Promise<void> {
-    const client = getClient()
-
     const query = `
         DELETE FROM news WHERE created_at >= NOW() - INTERVAL '3 day'
     `
@@ -26,9 +25,9 @@ export async function deleteOldNews(): Promise<void> {
     console.info("Deletando notícias antigas")
 
     try {
-        await client.query(query)
+        await db.query(query)
     } catch(err) {
-        console.error(`Erro ao deletar noticias antigas: ${err}`)
+        logger.error(`Erro ao deletar noticias antigas: ${err}`)
     }
 }
 

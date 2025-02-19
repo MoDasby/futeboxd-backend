@@ -8,7 +8,7 @@ import { scheduleJob } from "node-schedule"
 import { espnMatchUpdater } from "./service/match-updater/espn-match-updater"
 
 async function main() {
-    await waitForDbReady()
+    await database.waitForDbReady()
 
     const leagues = await listLeagues()
 
