@@ -1,4 +1,4 @@
-import { getClient } from "@/db"
+import db from "@/db"
 import NewsScrapper from "@/service/news-scrapper"
 import logger from "@/util/logger"
 
@@ -10,7 +10,7 @@ export type News = {
 }
 
 export async function processNews(scrapper: NewsScrapper) {
-    console.log("processando notícias")
+    logger.info("processando notícias")
 
     const news = await scrapper.getNews()
 
@@ -22,7 +22,7 @@ export async function deleteOldNews(): Promise<void> {
         DELETE FROM news WHERE created_at >= NOW() - INTERVAL '3 day'
     `
 
-    console.info("Deletando notícias antigas")
+    logger.info("Deletando notícias antigas")
 
     try {
         await db.query(query)
@@ -32,8 +32,6 @@ export async function deleteOldNews(): Promise<void> {
 }
 
 async function insertIfNotExists(news: News) {
-    const client = getClient()
-    
     const query = `
         INSERT INTO news (title, description, link, image_link)
         VALUES ($1, $2, $3, $4)
@@ -41,8 +39,8 @@ async function insertIfNotExists(news: News) {
     `
 
     try {
-        await client.query(query, [news.title, news.description, news.link, news.imageLink]);
+        await db.query(query, [news.title, news.description, news.link, news.imageLink]);
     } catch(err) {
-        console.error(`ocorreu um erro ao inserir notícia: ${news}`)
+        logger.error(`ocorreu um erro ao inserir notícia: ${news}`)
     }
 }
