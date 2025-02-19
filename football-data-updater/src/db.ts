@@ -1,46 +1,52 @@
-import dotenv from "dotenv"
-
-const output = dotenv.config()
-
-if (output.error) throw new Error(output.error.message);
-
-import { Client } from 'pg';
+import { Pool, PoolClient, PoolConfig, QueryResultRow } from 'pg';
+import logger from "./util/logger";
 
 let isConnected = false;
 
-const client = new Client({
+const config: PoolConfig = {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.POSTGRES_PASSWORD,
     database: process.env.POSTGRES_DB,
     port: Number.parseInt(process.env.PGPORT || "5432"),
-});
+    max: 3
+}
 
-function getClient(): Client {
+const pool = new Pool(config)
+
+async function query<T extends QueryResultRow>(query: string, params?: any[]) {
+    const client = await pool.connect()
+
+    try {
+        const result = client.query<T>(query, params)
+
+        return result
+    } finally {
+        client.release()
+    }
+}
+
+async function getClient(): Promise<PoolClient> {
     if (!isConnected) {
         throw new Error("Banco de dados não está conectado")
     }
+
+    const client = await pool.connect()
 
     return client
 }
 
 async function waitForDbReady(maxRetries: number = 5, delay: number = 2000) {
-    if (isConnected) {
-        console.log('Banco de dados pronto!');
-
-        return
-    }
-
+    
     let retries = 0;
     while (retries < maxRetries) {
         try {
-            await client.connect(); // Conecta ao banco de dados
-            await client.query('SELECT 1'); // Executa uma query simples para verificar a conexão
-            console.log('Banco de dados pronto!');
+            const client = await pool.connect()
+            logger.info('Banco de dados pronto!');
             isConnected = true;
             return;
         } catch (err) {
-            console.log(`Banco de dados não está pronto, tentando de novo... (${retries + 1}/${maxRetries})`);
+            logger.info(`Banco de dados não está pronto, tentando de novo... (${retries + 1}/${maxRetries})`);
             retries++;
             await new Promise(resolve => setTimeout(resolve, delay));
         }
@@ -48,6 +54,6 @@ async function waitForDbReady(maxRetries: number = 5, delay: number = 2000) {
     throw new Error('Banco de dados não está pronto');
 };
 
-export {
-    getClient, waitForDbReady
+export default {
+    getClient, query, waitForDbReady
 }
