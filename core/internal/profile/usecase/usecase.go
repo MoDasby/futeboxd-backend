@@ -37,7 +37,7 @@ func (uc *profileUsecases) FindByUsername(ctx context.Context, username string) 
 		return nil, err
 	}
 
-	return uc.toDto(profile, session.UserID)
+	return uc.toDto(ctx, profile, session.UserID)
 }
 
 func (uc *profileUsecases) SearchByUsername(ctx context.Context, username string, page *pagination.Page) ([]dto.Profile, error) {
@@ -55,7 +55,7 @@ func (uc *profileUsecases) SearchByUsername(ctx context.Context, username string
 		return nil, err
 	}
 
-	return uc.toDtoList(profiles, session.UserID)
+	return uc.toDtoList(ctx, profiles, session.UserID)
 }
 
 func (uc *profileUsecases) ToggleFollow(ctx context.Context, usernameToFollow string) (*dto.FollowStats, error) {
@@ -100,7 +100,7 @@ func (uc *profileUsecases) ListFollowers(ctx context.Context, username string, p
 		return nil, err
 	}
 
-	return uc.toDtoList(profiles, session.UserID)
+	return uc.toDtoList(ctx, profiles, session.UserID)
 }
 
 func (uc *profileUsecases) ListFollowing(ctx context.Context, username string, page *pagination.Page) ([]dto.Profile, error) {
@@ -114,7 +114,7 @@ func (uc *profileUsecases) ListFollowing(ctx context.Context, username string, p
 		return nil, err
 	}
 
-	return uc.toDtoList(profiles, session.UserID)
+	return uc.toDtoList(ctx, profiles, session.UserID)
 }
 
 func (uc *profileUsecases) ListPopularProfiles(ctx context.Context, page *pagination.Page) ([]dto.Profile, error) {
@@ -128,15 +128,15 @@ func (uc *profileUsecases) ListPopularProfiles(ctx context.Context, page *pagina
 		return nil, err
 	}
 
-	return uc.toDtoList(profiles, session.UserID)
+	return uc.toDtoList(ctx, profiles, session.UserID)
 }
 
-func (uc *profileUsecases) toDto(profile *profile.Profile, requesterID string) (*dto.Profile, error) {
+func (uc *profileUsecases) toDto(ctx context.Context, profile *profile.Profile, requesterID string) (*dto.Profile, error) {
 	var team *football.Team
 	var err error
 
 	if profile.FavoriteTeam > 0 {
-		team, err = uc.footballClient.GetTeam(profile.FavoriteTeam)
+		team, err = uc.footballClient.GetTeam(ctx, profile.FavoriteTeam)
 		if err != nil {
 			return nil, err
 		}
@@ -161,13 +161,13 @@ func (uc *profileUsecases) toDto(profile *profile.Profile, requesterID string) (
 	return &profileDto, nil
 }
 
-func (uc *profileUsecases) toDtoList(profiles []profile.Profile, requesterID string) ([]dto.Profile, error) {
+func (uc *profileUsecases) toDtoList(ctx context.Context, profiles []profile.Profile, requesterID string) ([]dto.Profile, error) {
 	output := make([]dto.Profile, len(profiles))
 
 	for i := range output {
 		profile := profiles[i]
 
-		profileDto, err := uc.toDto(&profile, requesterID)
+		profileDto, err := uc.toDto(ctx, &profile, requesterID)
 		if err != nil {
 			return nil, err
 		}

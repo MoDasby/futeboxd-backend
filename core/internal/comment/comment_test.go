@@ -1,6 +1,7 @@
 package comment
 
 import (
+	"context"
 	"testing"
 
 	"github.com/modasby/futeboxd-backend/core/internal/user"
@@ -14,7 +15,7 @@ func TestComment(t *testing.T) {
 	}
 
 	t.Run("should create a comment", func(t *testing.T) {
-		comment, err := NewComment(author, 1, "partida bacana")
+		comment, err := NewComment(context.Background(), author, 1, "partida bacana")
 
 		assert.NoError(t, err)
 		assert.Equal(t, comment.Author, author)
@@ -22,12 +23,12 @@ func TestComment(t *testing.T) {
 	})
 
 	t.Run("should return an error when comment is invalid", func(t *testing.T) {
-		comment, err := NewComment(author, 1, "")
+		comment, err := NewComment(context.Background(), author, 1, "")
 
 		assert.Error(t, err)
 		assert.Nil(t, comment)
 
-		comment, err = NewComment(author, 0, "partida legal")
+		comment, err = NewComment(context.Background(), author, 0, "partida legal")
 
 		assert.Error(t, err)
 		assert.Nil(t, comment)

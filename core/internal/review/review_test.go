@@ -29,7 +29,8 @@ func TestReview(t *testing.T) {
 
 	t.Run("check validations", func(t *testing.T) {
 		review := &Review{
-			Rate: 10,
+			Rate:   10,
+			Author: author,
 		}
 
 		err := review.Validate()

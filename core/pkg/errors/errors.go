@@ -2,28 +2,30 @@ package errors
 
 import (
 	"fmt"
-
-	"github.com/google/uuid"
+	"time"
 )
 
 type HTTPErr struct {
-	Msg       string
-	Code      int
-	Context   string
-	ErrorCode string
+	Msg        string
+	Code       int
+	StackTrace string
+	Context    string
+	ErrorCode  string
+	Timestamp  time.Time
+	Original   error
 }
 
 func (err HTTPErr) Error() string {
-	return fmt.Sprintf("Error: %s, HttpCode: %d, Context: %s, ErrorCode: %s\n", err.Msg, err.Code, err.Context, err.ErrorCode)
-}
+	var originalErr error
 
-func NewHTTPErr(msg string, code int, context string) *HTTPErr {
-	return &HTTPErr{
-		Msg:       msg,
-		Code:      code,
-		Context:   context,
-		ErrorCode: uuid.NewString(),
+	if err.Original != nil {
+		originalErr = err.Original
 	}
+
+	return fmt.Sprintf("Error: %s, HttpCode: %d, Context: %s, ErrorCode: %s, StackTrace: %s, Timestamp: %s, Original: %s\n",
+		err.Msg, err.Code, err.Context, err.ErrorCode,
+		err.StackTrace, err.Timestamp.String(), originalErr,
+	)
 }
 
 /* type ErrNotFound struct {

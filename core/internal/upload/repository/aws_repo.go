@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -15,6 +16,7 @@ import (
 	"github.com/modasby/futeboxd-backend/core/config"
 	"github.com/modasby/futeboxd-backend/core/internal/upload"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
+	"github.com/modasby/futeboxd-backend/core/pkg/utils"
 )
 
 const (
@@ -55,11 +57,15 @@ func (repo *UploadRepository) Get(ctx context.Context, filename string) (*upload
 	if err != nil {
 		var noSuchKey *types.NoSuchKey
 		if goErrors.As(err, &noSuchKey) {
-			return nil, errors.NewHTTPErr(
-				"imagem não encontrada",
-				http.StatusNotFound,
-				"UPLOAD:USECASE:GET_PROFILE_IMAGE:NOT_FOUND",
-			)
+			return nil, &errors.HTTPErr{
+				Msg:        "Imagem não encontrada",
+				Code:       http.StatusNotFound,
+				Context:    "UPLOAD:REPOSITORY:GET:IMAGE_NOT_FOUND",
+				StackTrace: errors.CaptureStackTrace(),
+				ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+				Timestamp:  time.Now().UTC(),
+				Original:   err,
+			}
 		}
 
 		return nil, err

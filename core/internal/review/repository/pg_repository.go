@@ -4,11 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/http"
+	"time"
 
 	"github.com/modasby/futeboxd-backend/core/internal/review"
 	"github.com/modasby/futeboxd-backend/core/internal/user"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 	"github.com/modasby/futeboxd-backend/core/pkg/pagination"
+	"github.com/modasby/futeboxd-backend/core/pkg/utils"
 )
 
 type reviewRepository struct {
@@ -77,11 +80,14 @@ func (repo *reviewRepository) FindOneByID(ctx context.Context, requesterID strin
 	review, err := repo.scanReview(row)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.NewHTTPErr(
-				"review não encontrada",
-				404,
-				"REVIEW_REPOSITORY:FIND_REVIEW_BY_ID:REVIEW_NOT_FOUND",
-			)
+			return nil, &errors.HTTPErr{
+				Msg:        "review não encontrada",
+				Code:       http.StatusNotFound,
+				Context:    "REVIEW:REPOSITORY:FIND_REVIEW_BY_ID:REVIEW_NOT_FOUND",
+				StackTrace: errors.CaptureStackTrace(),
+				ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+				Timestamp:  time.Now().UTC(),
+			}
 		}
 		return nil, err
 	}

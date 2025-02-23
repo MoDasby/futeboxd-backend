@@ -1,8 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/modasby/futeboxd-backend/core/config"
@@ -39,12 +40,19 @@ import (
 
 	"github.com/modasby/futeboxd-backend/core/pkg/email"
 	"github.com/modasby/futeboxd-backend/core/pkg/football"
+	"github.com/modasby/futeboxd-backend/core/pkg/log"
 	"github.com/modasby/futeboxd-backend/core/pkg/middleware"
 )
 
 func main() {
+	ctx := context.Background()
+
 	cfg, err := config.LoadConfig()
 	if err != nil {
+		panic(err)
+	}
+
+	if err := log.InitLogger(cfg.Axiom); err != nil {
 		panic(err)
 	}
 
@@ -98,6 +106,9 @@ func main() {
 	matchHandler.RegisterRoutes(router)
 	uploadHandler.RegisterRoutes(router, injectUser)
 
-	log.Printf("Iniciando servidor na porta: %d", cfg.Server.Port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.Server.Port), router))
+	slog.DebugContext(ctx, fmt.Sprintf("Iniciando servidor na porta: %d", cfg.Server.Port))
+
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.Server.Port), middleware.LoggerMiddleware(ctx, router.ServeHTTP)); err != nil {
+		slog.ErrorContext(ctx, err.Error())
+	}
 }

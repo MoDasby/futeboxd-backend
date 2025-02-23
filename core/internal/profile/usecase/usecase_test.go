@@ -43,7 +43,7 @@ func TestFindByUsername(t *testing.T) {
 			ReviewsCount:   3,
 		}, nil)
 
-		mockFootballClient.EXPECT().GetTeam(int64(42)).Return(&football.Team{ID: 42, Name: "Team A"}, nil)
+		mockFootballClient.EXPECT().GetTeam(ctx, int64(42)).Return(&football.Team{ID: 42, Name: "Team A"}, nil)
 
 		result, err := uc.FindByUsername(ctx, username)
 
@@ -113,7 +113,7 @@ func TestSearchByUsername(t *testing.T) {
 			},
 		}, nil)
 
-		mockFootballClient.EXPECT().GetTeam(int64(42)).Return(&football.Team{ID: 42, Name: "Team A"}, nil)
+		mockFootballClient.EXPECT().GetTeam(ctx, int64(42)).Return(&football.Team{ID: 42, Name: "Team A"}, nil)
 
 		result, err := uc.SearchByUsername(ctx, username, page)
 
@@ -209,7 +209,7 @@ func TestListPopularProfiles(t *testing.T) {
 			},
 		}, nil)
 
-		mockFootballClient.EXPECT().GetTeam(gomock.Any()).Return(&football.Team{
+		mockFootballClient.EXPECT().GetTeam(ctx, int64(42)).Return(&football.Team{
 			ID:           7632,
 			Name:         "Atlético-MG",
 			Abbreviation: "CAM",

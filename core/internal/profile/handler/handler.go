@@ -34,19 +34,19 @@ func (h *profileHandler) RegisterRoutes(r *http.ServeMux, injectUser middleware.
 func (h *profileHandler) ListPopularProfiles(w http.ResponseWriter, r *http.Request) {
 	page, err := pagination.WithRequest(r)
 	if err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 		return
 	}
 
 	output, err := h.usecase.ListPopularProfiles(r.Context(), page)
 	if err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
 
 	if err := utils.SendJSON(w, output); err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
@@ -57,20 +57,20 @@ func (h *profileHandler) ListFollowing(w http.ResponseWriter, r *http.Request) {
 
 	page, err := pagination.WithRequest(r)
 	if err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
 
 	profiles, err := h.usecase.ListFollowing(r.Context(), username, page)
 	if err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
 
 	if err := utils.SendJSON(w, profiles); err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
@@ -81,20 +81,20 @@ func (h *profileHandler) ListFollowers(w http.ResponseWriter, r *http.Request) {
 
 	page, err := pagination.WithRequest(r)
 	if err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
 
 	profiles, err := h.usecase.ListFollowers(r.Context(), username, page)
 	if err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
 
 	if err := utils.SendJSON(w, profiles); err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
@@ -105,13 +105,13 @@ func (h *profileHandler) findByUsername(w http.ResponseWriter, r *http.Request) 
 
 	output, err := h.usecase.FindByUsername(r.Context(), username)
 	if err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
 
 	if err := utils.SendJSON(w, output); err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
@@ -122,13 +122,13 @@ func (h *profileHandler) toggleFollow(w http.ResponseWriter, r *http.Request) {
 
 	output, err := h.usecase.ToggleFollow(r.Context(), followingUsername)
 	if err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
 
 	if err := utils.SendJSON(w, output); err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
@@ -137,12 +137,9 @@ func (h *profileHandler) toggleFollow(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *profileHandler) searchProfiles(w http.ResponseWriter, r *http.Request) {
-	page, err := pagination.WithPage(
-		r.URL.Query().Get("page_size"),
-		r.URL.Query().Get("page"),
-	)
+	page, err := pagination.WithRequest(r)
 	if err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
@@ -151,13 +148,13 @@ func (h *profileHandler) searchProfiles(w http.ResponseWriter, r *http.Request) 
 
 	output, err := h.usecase.SearchByUsername(r.Context(), username, page)
 	if err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
 
 	if err := utils.SendJSON(w, output); err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}

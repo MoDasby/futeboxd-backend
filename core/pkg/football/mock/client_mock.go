@@ -5,6 +5,7 @@
 package mock
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,61 +36,61 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 }
 
 // GetMatch mocks base method.
-func (m *MockClient) GetMatch(matchID int64) (*football.Match, error) {
+func (m *MockClient) GetMatch(ctx context.Context, matchID int64) (*football.Match, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMatch", matchID)
+	ret := m.ctrl.Call(m, "GetMatch", ctx, matchID)
 	ret0, _ := ret[0].(*football.Match)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetMatch indicates an expected call of GetMatch.
-func (mr *MockClientMockRecorder) GetMatch(matchID interface{}) *gomock.Call {
+func (mr *MockClientMockRecorder) GetMatch(ctx, matchID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMatch", reflect.TypeOf((*MockClient)(nil).GetMatch), matchID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMatch", reflect.TypeOf((*MockClient)(nil).GetMatch), ctx, matchID)
 }
 
 // GetMatches mocks base method.
-func (m *MockClient) GetMatches(matchIDs []int64) ([]football.Match, error) {
+func (m *MockClient) GetMatches(ctx context.Context, matchIDs []int64) ([]football.Match, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMatches", matchIDs)
+	ret := m.ctrl.Call(m, "GetMatches", ctx, matchIDs)
 	ret0, _ := ret[0].([]football.Match)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetMatches indicates an expected call of GetMatches.
-func (mr *MockClientMockRecorder) GetMatches(matchIDs interface{}) *gomock.Call {
+func (mr *MockClientMockRecorder) GetMatches(ctx, matchIDs interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMatches", reflect.TypeOf((*MockClient)(nil).GetMatches), matchIDs)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMatches", reflect.TypeOf((*MockClient)(nil).GetMatches), ctx, matchIDs)
 }
 
 // GetMatchesMap mocks base method.
-func (m *MockClient) GetMatchesMap(matchIDs []int64) (map[int64]football.Match, error) {
+func (m *MockClient) GetMatchesMap(ctx context.Context, matchIDs []int64) (map[int64]football.Match, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMatchesMap", matchIDs)
+	ret := m.ctrl.Call(m, "GetMatchesMap", ctx, matchIDs)
 	ret0, _ := ret[0].(map[int64]football.Match)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetMatchesMap indicates an expected call of GetMatchesMap.
-func (mr *MockClientMockRecorder) GetMatchesMap(matchIDs interface{}) *gomock.Call {
+func (mr *MockClientMockRecorder) GetMatchesMap(ctx, matchIDs interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMatchesMap", reflect.TypeOf((*MockClient)(nil).GetMatchesMap), matchIDs)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMatchesMap", reflect.TypeOf((*MockClient)(nil).GetMatchesMap), ctx, matchIDs)
 }
 
 // GetTeam mocks base method.
-func (m *MockClient) GetTeam(teamID int64) (*football.Team, error) {
+func (m *MockClient) GetTeam(ctx context.Context, teamID int64) (*football.Team, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTeam", teamID)
+	ret := m.ctrl.Call(m, "GetTeam", ctx, teamID)
 	ret0, _ := ret[0].(*football.Team)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetTeam indicates an expected call of GetTeam.
-func (mr *MockClientMockRecorder) GetTeam(teamID interface{}) *gomock.Call {
+func (mr *MockClientMockRecorder) GetTeam(ctx, teamID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTeam", reflect.TypeOf((*MockClient)(nil).GetTeam), teamID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTeam", reflect.TypeOf((*MockClient)(nil).GetTeam), ctx, teamID)
 }

@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"net/http"
 	"time"
 
 	"github.com/modasby/futeboxd-backend/core/internal/session"
 	errorsTypes "github.com/modasby/futeboxd-backend/core/pkg/errors"
+	"github.com/modasby/futeboxd-backend/core/pkg/utils"
 )
 
 type sessionRepository struct {
@@ -32,11 +34,15 @@ func (repo *sessionRepository) FindOneByToken(ctx context.Context, token string)
 
 	if err := row.Scan(&ID, &sessionToken, &userID, &expiresAt, &createdAt); err != nil {
 		if errors.Is(sql.ErrNoRows, err) {
-			return nil, errorsTypes.NewHTTPErr(
-				"sessão inválida",
-				401,
-				"REPOSITORY:SESSION:FIND_ONE_BY_TOKEN:NOT_FOUND",
-			)
+			return nil, errorsTypes.HTTPErr{
+				Msg:        "Sessão inválida",
+				Code:       http.StatusUnauthorized,
+				Context:    "SESSION:REPOSITORY:FIND_ONE_BY_TOKEN:NOT_FOUND",
+				StackTrace: errorsTypes.CaptureStackTrace(),
+				ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+				Timestamp:  time.Now().UTC(),
+				Original:   err,
+			}
 		}
 
 		return nil, err

@@ -1,10 +1,13 @@
 package comment
 
 import (
+	"context"
+	"net/http"
 	"time"
 
 	"github.com/modasby/futeboxd-backend/core/internal/user"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
+	"github.com/modasby/futeboxd-backend/core/pkg/utils"
 )
 
 type Comment struct {
@@ -18,6 +21,7 @@ type Comment struct {
 }
 
 func NewComment(
+	ctx context.Context,
 	author *user.User,
 	parentID int64,
 	content string,
@@ -28,20 +32,33 @@ func NewComment(
 		Content:  content,
 	}
 
-	if err := comment.Validate(); err != nil {
+	if err := comment.Validate(ctx); err != nil {
 		return nil, err
 	}
 
 	return comment, nil
 }
 
-func (c *Comment) Validate() error {
+func (c *Comment) Validate(ctx context.Context) error {
 	if c.ParentID == 0 {
-		return errors.NewHTTPErr("review inválida", 400, "DOMAIN:COMMENT:VALIDATE:INVALID_PARENT_ID")
+		return &errors.HTTPErr{
+			Msg:        "Review inválida",
+			Code:       http.StatusBadRequest,
+			Context:    "COMMENT:DOMAIN:VALIDATE:INVALID_PARENT_ID",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+		}
 	}
-
 	if c.Content == "" {
-		return errors.NewHTTPErr("não pode fazer um comentário vazio", 400, "DOMAIN:COMMENT:VALIDATE:NO_CONTENT")
+		return &errors.HTTPErr{
+			Msg:        "Não pode fazer um comentário vazio",
+			Code:       http.StatusBadRequest,
+			Context:    "COMMENT:DOMAIN:VALIDATE:NO_CONTENT",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+		}
 	}
 
 	return nil

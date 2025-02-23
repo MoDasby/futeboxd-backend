@@ -5,10 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
+	"time"
 
 	"github.com/modasby/futeboxd-backend/core/internal/user"
 	errorsTypes "github.com/modasby/futeboxd-backend/core/pkg/errors"
+	"github.com/modasby/futeboxd-backend/core/pkg/utils"
 )
 
 type userRepository struct {
@@ -109,11 +112,17 @@ func (r *userRepository) FindOneByIdOrUsername(ctx context.Context, identificato
 		&bio,
 	); err != nil {
 		if errors.Is(sql.ErrNoRows, err) {
-			return nil, errorsTypes.NewHTTPErr(
-				"usuário não encontrado",
-				404,
-				"REPOSITORY:USER:FIND_ONE_BY_ID_OR_USERNAME:NOT_FOUND",
-			)
+			httpErr := errorsTypes.HTTPErr{
+				Msg:        "Usuário não encontrado",
+				Code:       http.StatusNotFound,
+				StackTrace: errorsTypes.CaptureStackTrace(),
+				Context:    "USER:REPOSITORY:FIND_ONE_BY_ID_OR_USERNAME:NOT_FOUND",
+				ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+				Timestamp:  time.Now().UTC(),
+				Original:   err,
+			}
+
+			return nil, httpErr
 		}
 
 		return nil, err
@@ -150,11 +159,17 @@ func (r *userRepository) FindOneByCredential(ctx context.Context, credential str
 		&user.ProfilePicture,
 	); err != nil {
 		if errors.Is(sql.ErrNoRows, err) {
-			return nil, errorsTypes.NewHTTPErr(
-				"usuário não encontrado",
-				404,
-				"REPOSITORY:USER:FIND_ONE_BY_CREDENTIAL:NOT_FOUND",
-			)
+			httpErr := errorsTypes.HTTPErr{
+				Msg:        "Usuário não encontrado",
+				Code:       http.StatusNotFound,
+				StackTrace: errorsTypes.CaptureStackTrace(),
+				Context:    "USER:REPOSITORY:FIND_ONE_BY_CREDENTIAL:NOT_FOUND",
+				ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+				Timestamp:  time.Now().UTC(),
+				Original:   err,
+			}
+
+			return nil, httpErr
 		}
 
 		return nil, err
@@ -225,11 +240,17 @@ func (repo *userRepository) CheckRecoverToken(ctx context.Context, token string)
 
 	if err := row.Scan(&recover.UserID, &recover.Token, &recover.ExpiresAt); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errorsTypes.NewHTTPErr(
-				"O token de recuperação informado está expirado ou não existe. Solicite uma nova recuperação de senha.",
-				404,
-				"REPOSITORY:USER:CHECK_RECOVER_TOKEN:TOKEN_NOT_FOUND",
-			)
+			httpErr := errorsTypes.HTTPErr{
+				Msg:        "O token de recuperação informado está expirado ou não existe. Solicite uma nova recuperação de senha.",
+				Code:       http.StatusNotFound,
+				StackTrace: errorsTypes.CaptureStackTrace(),
+				Context:    "USER:REPOSITORY:CHECK_RECOVER_TOKEN:TOKEN_NOT_FOUND",
+				ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+				Timestamp:  time.Now().UTC(),
+				Original:   err,
+			}
+
+			return nil, httpErr
 		}
 		return nil, err
 	}

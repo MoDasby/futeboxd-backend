@@ -38,7 +38,7 @@ func TestCreateReview_Success(t *testing.T) {
 		Description: "Great match!",
 	}
 
-	mockFootballClient.EXPECT().GetMatch(input.MatchID).Return(&football.Match{
+	mockFootballClient.EXPECT().GetMatch(ctx, input.MatchID).Return(&football.Match{
 		ID:             1,
 		HomeCompetitor: football.Competitor{Team: football.Team{ID: 7632}},
 		AwayCompetitor: football.Competitor{Team: football.Team{ID: 7632}},

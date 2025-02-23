@@ -82,7 +82,7 @@ func TestCommentUsecases_Create(t *testing.T) {
 
 		// Verifica o erro
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "review especificada não existe")
+		assert.Contains(t, err.Error(), "Review especificada não existe")
 	})
 
 	// Cenário 3: Erro ao buscar o autor
@@ -158,7 +158,7 @@ func TestCommentUsecases_Delete(t *testing.T) {
 
 		// Verifica o erro
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "você não pode executar essa ação")
+		assert.Contains(t, err.Error(), "Você não pode executar essa ação")
 	})
 }
 

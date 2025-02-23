@@ -37,7 +37,7 @@ func TestCreateUser_Success(t *testing.T) {
 	}
 
 	mockRepo.EXPECT().Exists(context.Background(), input.Username, input.Email).Return(false, nil)
-	footballClientMock.EXPECT().GetTeam(input.FavoriteTeamID).Return(nil, nil)
+	footballClientMock.EXPECT().GetTeam(context.Background(), input.FavoriteTeamID).Return(nil, nil)
 	mockRepo.EXPECT().Create(context.Background(), gomock.Any()).Return(nil)
 
 	err := uc.CreateUser(context.Background(), input)
@@ -90,7 +90,7 @@ func TestCreateUser_FavoriteTeamNotFound(t *testing.T) {
 	// Expectation for checking if user exists
 	mockRepo.EXPECT().Exists(context.Background(), input.Username, input.Email).Return(false, nil)
 	// Expectation for fetching the favorite team
-	footballClientMock.EXPECT().GetTeam(input.FavoriteTeamID).Return(nil, errors.New("team not found"))
+	footballClientMock.EXPECT().GetTeam(context.Background(), input.FavoriteTeamID).Return(nil, errors.New("team not found"))
 
 	err := uc.CreateUser(context.Background(), input)
 	assert.Error(t, err)
@@ -118,7 +118,7 @@ func TestCreateUser_ErrorOnCreateUser(t *testing.T) {
 	// Expectation for checking if user exists
 	mockRepo.EXPECT().Exists(context.Background(), input.Username, input.Email).Return(false, nil)
 	// Expectation for fetching the favorite team
-	footballClientMock.EXPECT().GetTeam(input.FavoriteTeamID).Return(nil, nil)
+	footballClientMock.EXPECT().GetTeam(context.Background(), input.FavoriteTeamID).Return(nil, nil)
 	// Expectation for creating the user
 	mockRepo.EXPECT().Create(context.Background(), gomock.Any()).Return(errors.New("failed to create user"))
 
@@ -167,7 +167,7 @@ func TestEditUser_Success(t *testing.T) {
 	mockRepo.EXPECT().Exists(ctx, input.Username, "").Return(false, nil)
 
 	// Expectation for fetching the team
-	footballClientMock.EXPECT().GetTeam(input.FavoriteTeamID).Return(&football.Team{ID: input.FavoriteTeamID}, nil)
+	footballClientMock.EXPECT().GetTeam(gomock.Any(), input.FavoriteTeamID).Return(&football.Team{ID: input.FavoriteTeamID}, nil)
 
 	// Expectation for updating the user
 	mockRepo.EXPECT().Update(ctx, gomock.Any()).Return(nil)
@@ -275,7 +275,7 @@ func TestEditUser_TeamNotFound(t *testing.T) {
 	mockRepo.EXPECT().FindOneByIdOrUsername(ctx, session.UserID).Return(mockUser, nil)
 
 	// Expectation for fetching the team
-	footballClientMock.EXPECT().GetTeam(input.FavoriteTeamID).Return(nil, errors.New("team not found"))
+	footballClientMock.EXPECT().GetTeam(gomock.Any(), input.FavoriteTeamID).Return(nil, errors.New("team not found"))
 
 	err := uc.EditUser(ctx, input)
 	assert.Error(t, err)

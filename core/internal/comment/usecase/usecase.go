@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"context"
+	"net/http"
+	"time"
 
 	"github.com/modasby/futeboxd-backend/core/internal/comment"
 	"github.com/modasby/futeboxd-backend/core/internal/comment/dto"
@@ -39,11 +41,14 @@ func (uc *commentUsecases) Create(ctx context.Context, input *dto.CommentInput) 
 	}
 
 	if !reviewExists {
-		return errors.NewHTTPErr(
-			"review especificada não existe",
-			400,
-			"USECASE:CREATE_COMMENT:REVIEW_NOT_FOUND",
-		)
+		return &errors.HTTPErr{
+			Msg:        "Review especificada não existe",
+			Code:       http.StatusBadRequest,
+			Context:    "COMMENT:USECASE:CREATE:REVIEW_NOT_FOUND",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+		}
 	}
 
 	author, err := uc.userRepo.FindOneByIdOrUsername(ctx, session.UserID)
@@ -51,7 +56,7 @@ func (uc *commentUsecases) Create(ctx context.Context, input *dto.CommentInput) 
 		return err
 	}
 
-	comment, err := comment.NewComment(author, input.ParentID, input.Content)
+	comment, err := comment.NewComment(ctx, author, input.ParentID, input.Content)
 	if err != nil {
 		return err
 	}
@@ -75,11 +80,14 @@ func (uc *commentUsecases) Delete(ctx context.Context, commentID int64) error {
 	}
 
 	if session.UserID != comment.Author.ID {
-		return errors.NewHTTPErr(
-			"você não pode executar essa ação",
-			403,
-			"USECASE:REVIEWS:DELETE_COMMENT:FORBIDDEN",
-		)
+		return &errors.HTTPErr{
+			Msg:        "Você não pode executar essa ação",
+			Code:       http.StatusForbidden,
+			Context:    "COMMENT:USECASE:DELETE:FORBIDDEN",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+		}
 	}
 
 	if err := uc.commentRepo.Delete(ctx, commentID); err != nil {

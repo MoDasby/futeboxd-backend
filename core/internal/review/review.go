@@ -1,6 +1,7 @@
 package review
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/modasby/futeboxd-backend/core/internal/user"
@@ -47,11 +48,14 @@ func NewReview(
 
 func (r *Review) Validate() error {
 	if r.Rate < 0 || r.Rate > 5 {
-		return errors.NewHTTPErr(
-			"a nota deve estar no intervalo entre 0 e 5",
-			400,
-			"DOMAIN:REVIEW:INVALID_RATE",
-		)
+		return &errors.HTTPErr{
+			Msg:        "A nota deve estar no intervalo entre 0 e 5",
+			Code:       http.StatusBadRequest,
+			Context:    "REVIEW:DOMAIN:INVALID_RATE",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  r.Author.ID,
+			Timestamp:  time.Now().UTC(),
+		}
 	}
 
 	return nil

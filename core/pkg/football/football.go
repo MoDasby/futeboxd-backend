@@ -2,12 +2,15 @@ package football
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/modasby/futeboxd-backend/core/config"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
+	"github.com/modasby/futeboxd-backend/core/pkg/utils"
 )
 
 type footballClient struct {
@@ -20,8 +23,8 @@ func NewClient(cfg config.Football) Client {
 	}
 }
 
-func (fs *footballClient) GetMatchesMap(matchIDs []int64) (map[int64]Match, error) {
-	matches, err := fs.GetMatches(matchIDs)
+func (fs *footballClient) GetMatchesMap(ctx context.Context, matchIDs []int64) (map[int64]Match, error) {
+	matches, err := fs.GetMatches(ctx, matchIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +38,7 @@ func (fs *footballClient) GetMatchesMap(matchIDs []int64) (map[int64]Match, erro
 	return matchesMap, nil
 }
 
-func (fs *footballClient) GetMatches(matchIDs []int64) ([]Match, error) {
+func (fs *footballClient) GetMatches(ctx context.Context, matchIDs []int64) ([]Match, error) {
 	body, err := json.Marshal(matchIDs)
 	if err != nil {
 		return nil, err
@@ -56,7 +59,15 @@ func (fs *footballClient) GetMatches(matchIDs []int64) ([]Match, error) {
 			return nil, err
 		}
 
-		return nil, errors.NewHTTPErr(body.Msg, res.StatusCode, "CLIENT:FOOTBALL:GET_MATCHES")
+		return nil, &errors.HTTPErr{
+			Msg:        body.Msg,
+			Code:       res.StatusCode,
+			Context:    "FOOTBALL:CLIENT:GET_MATCHES",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+			Original:   err,
+		}
 	}
 
 	matches := make([]Match, 0)
@@ -68,7 +79,7 @@ func (fs *footballClient) GetMatches(matchIDs []int64) ([]Match, error) {
 	return matches, err
 }
 
-func (fs *footballClient) GetMatch(matchID int64) (*Match, error) {
+func (fs *footballClient) GetMatch(ctx context.Context, matchID int64) (*Match, error) {
 	res, err := http.Get(fmt.Sprintf("%s/matches/%d", fs.baseUrl, matchID))
 	if err != nil {
 		return nil, err
@@ -82,9 +93,16 @@ func (fs *footballClient) GetMatch(matchID int64) (*Match, error) {
 			return nil, err
 		}
 
-		return nil, errors.NewHTTPErr(body.Msg, res.StatusCode, "CLIENT:FOOTBALL:GET_MATCH")
+		return nil, &errors.HTTPErr{
+			Msg:        body.Msg,
+			Code:       res.StatusCode,
+			Context:    "FOOTBALL:CLIENT:GET_MATCH",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+			Original:   err,
+		}
 	}
-
 	var match Match
 
 	if err := json.NewDecoder(res.Body).Decode(&match); err != nil {
@@ -94,7 +112,7 @@ func (fs *footballClient) GetMatch(matchID int64) (*Match, error) {
 	return &match, err
 }
 
-func (fs *footballClient) GetTeam(teamID int64) (*Team, error) {
+func (fs *footballClient) GetTeam(ctx context.Context, teamID int64) (*Team, error) {
 	res, err := http.Get(fmt.Sprintf("%s/teams/%d", fs.baseUrl, teamID))
 	if err != nil {
 		return nil, err
@@ -108,9 +126,16 @@ func (fs *footballClient) GetTeam(teamID int64) (*Team, error) {
 			return nil, err
 		}
 
-		return nil, errors.NewHTTPErr(body.Msg, res.StatusCode, "CLIENT:FOOTBALL:GET_TEAM")
+		return nil, &errors.HTTPErr{
+			Msg:        body.Msg,
+			Code:       res.StatusCode,
+			Context:    "FOOTBALL:CLIENT:GET_TEAM",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+			Original:   err,
+		}
 	}
-
 	var team Team
 
 	if err := json.NewDecoder(res.Body).Decode(&team); err != nil {

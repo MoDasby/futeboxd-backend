@@ -30,11 +30,11 @@ func (uc *matchUsecases) ListPopularMatches(ctx context.Context, page *paginatio
 		return nil, err
 	}
 
-	return uc.footballClient.GetMatches(popularMatchesIds)
+	return uc.footballClient.GetMatches(ctx, popularMatchesIds)
 }
 
 func (uc *matchUsecases) GetMatchStats(ctx context.Context, matchID int64) (*dto.MatchStats, error) {
-	match, err := uc.footballClient.GetMatch(matchID)
+	match, err := uc.footballClient.GetMatch(ctx, matchID)
 	if err != nil {
 		return nil, err
 	}

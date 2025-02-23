@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/modasby/futeboxd-backend/core/config"
 	"github.com/modasby/futeboxd-backend/core/internal/session"
@@ -34,16 +35,22 @@ func (h *sessionHandler) login(w http.ResponseWriter, r *http.Request) {
 	var loginInput dto.Login
 
 	if err := json.NewDecoder(r.Body).Decode(&loginInput); err != nil {
-		err = errors.NewHTTPErr(
-			"corpo de requisição inválido",
-			400,
-			"HANDLER:USER:LOGIN:INVALID_BODY",
-		)
+		err = &errors.HTTPErr{
+			Msg:        "Corpo de requisição inválido",
+			Code:       http.StatusBadRequest,
+			Context:    "SESSION:HANDLER:LOGIN:INVALID_BODY",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  r.Context().Value("traceID").(string),
+			Timestamp:  time.Now().UTC(),
+			Original:   err,
+		}
+
+		errors.HandleHttpError(r.Context(), w, err)
 	}
 
 	output, err := h.usecase.Login(r.Context(), &loginInput)
 	if err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
@@ -53,7 +60,7 @@ func (h *sessionHandler) login(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, cookie)
 
 	if err := utils.SendJSON(w, output); err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
@@ -62,7 +69,7 @@ func (h *sessionHandler) login(w http.ResponseWriter, r *http.Request) {
 func (h *sessionHandler) logout(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.usecase.Logout(r.Context()); err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}

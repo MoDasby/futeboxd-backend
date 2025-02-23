@@ -3,7 +3,9 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
+	"time"
 
 	"github.com/modasby/futeboxd-backend/core/internal/review"
 	"github.com/modasby/futeboxd-backend/core/internal/review/dto"
@@ -39,7 +41,7 @@ func (uc *reviewUsecases) Create(ctx context.Context, input *dto.ReviewInput) er
 		return err
 	}
 
-	match, err := uc.footballClient.GetMatch(input.MatchID)
+	match, err := uc.footballClient.GetMatch(ctx, input.MatchID)
 	if err != nil {
 		return err
 	}
@@ -81,11 +83,14 @@ func (uc *reviewUsecases) Delete(ctx context.Context, reviewID int64) error {
 	}
 
 	if review.Author.ID != session.UserID {
-		return errors.NewHTTPErr(
-			"você não pode executar essa ação",
-			403,
-			"USECASE:REVIEWS:DELETE_REVIEW:FORBIDDEN",
-		)
+		return &errors.HTTPErr{
+			Msg:        "você não pode executar essa ação",
+			Code:       http.StatusForbidden,
+			Context:    "REVIEW:USECASE:DELETE_REVIEW:FORBIDDEN",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+		}
 	}
 
 	if err := uc.reviewRepo.Delete(ctx, reviewID); err != nil {
@@ -106,7 +111,7 @@ func (uc *reviewUsecases) ListFeed(ctx context.Context, page *pagination.Page) (
 		return nil, err
 	}
 
-	matches, err := uc.getMatchesByReview(uc.footballClient, reviews)
+	matches, err := uc.getMatchesByReview(ctx, uc.footballClient, reviews)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +159,7 @@ func (uc *reviewUsecases) ListBy(
 		return nil, err
 	}
 
-	matches, err := uc.getMatchesByReview(uc.footballClient, reviews)
+	matches, err := uc.getMatchesByReview(ctx, uc.footballClient, reviews)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +204,7 @@ func (uc *reviewUsecases) Search(ctx context.Context, term string, page *paginat
 	matches := make(map[int64]football.Match, 0)
 
 	if len(reviews) > 0 {
-		matches, err = uc.getMatchesByReview(uc.footballClient, reviews)
+		matches, err = uc.getMatchesByReview(ctx, uc.footballClient, reviews)
 		if err != nil {
 			return nil, err
 		}
@@ -243,11 +248,16 @@ func (uc *reviewUsecases) ToggleLike(ctx context.Context, reviewID int64) (*dto.
 	}
 
 	if !reviewExists {
-		return nil, errors.NewHTTPErr(
-			"essa review não existe",
-			404,
-			"USECASE:TOGGLE_LIKE_REVIEW:REVIEW_NOT_FOUND",
-		)
+		httpErr := &errors.HTTPErr{
+			Msg:        "essa review não existe",
+			Code:       http.StatusNotFound,
+			Context:    "REVIEW:USECASE:TOGGLE_LIKE_REVIEW:REVIEW_NOT_FOUND",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+		}
+
+		return nil, httpErr
 	}
 
 	isLiked, err := uc.reviewRepo.IsLiked(ctx, session.UserID, reviewID)
@@ -270,14 +280,14 @@ func (uc *reviewUsecases) ToggleLike(ctx context.Context, reviewID int64) (*dto.
 	return &dto.LikeStats{Like: true}, nil
 }
 
-func (uc *reviewUsecases) getMatchesByReview(footballClient football.Client, reviews []review.Review) (map[int64]football.Match, error) {
+func (uc *reviewUsecases) getMatchesByReview(ctx context.Context, footballClient football.Client, reviews []review.Review) (map[int64]football.Match, error) {
 	matchIDs := make([]int64, len(reviews))
 
 	for i, review := range reviews {
 		matchIDs[i] = review.MatchID
 	}
 
-	return footballClient.GetMatchesMap(matchIDs)
+	return footballClient.GetMatchesMap(ctx, matchIDs)
 }
 
 func (uc *reviewUsecases) buildWhereClause(options review.ListReviewsOptions) (string, []any) {

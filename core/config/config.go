@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/spf13/viper"
@@ -15,6 +16,11 @@ type Config struct {
 	Frontend Frontend
 	AWS      AWS
 	Cookies  Cookies
+	Axiom    Axiom
+}
+
+type Axiom struct {
+	ApiKey string
 }
 
 type Cookies struct {
@@ -84,7 +90,7 @@ func parseConfig(v *viper.Viper) (*Config, error) {
 
 	err := v.Unmarshal(&c)
 	if err != nil {
-		fmt.Printf("unable to decode into struct, %v", err)
+		slog.Error(fmt.Sprintf("unable to decode into struct, %v", err))
 		return nil, err
 	}
 

@@ -30,3 +30,6 @@ cookies:
   secure: false
   samesite: "lax"
   path: "/"
+
+axiom:
+  apikey: "apitoken"

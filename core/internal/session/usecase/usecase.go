@@ -2,7 +2,8 @@ package usecase
 
 import (
 	"context"
-	"fmt"
+	"net/http"
+	"time"
 
 	"github.com/modasby/futeboxd-backend/core/internal/session"
 	"github.com/modasby/futeboxd-backend/core/internal/session/dto"
@@ -29,12 +30,27 @@ func NewSessionUsecases(
 func (uc *sessionUsecases) Login(ctx context.Context, input *dto.Login) (*dto.Session, error) {
 	user, err := uc.userRepo.FindOneByCredential(ctx, input.Credential)
 	if err != nil {
-		return nil, errors.NewHTTPErr("usuário ou senha inválidos", 400, "LOGIN:USER_NOT_FOUND")
+		return nil, &errors.HTTPErr{
+			Msg:        "Usuário ou senha inválidos",
+			Code:       http.StatusBadRequest,
+			Context:    "SESSION:USECASE:LOGIN:USER_NOT_FOUND",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+			Original:   err,
+		}
 	}
 
-	fmt.Println(user.Password, input.Password)
-	if err := user.CheckPassword(input.Password); err != nil {
-		return nil, errors.NewHTTPErr("usuário ou senha inválidos", 400, "LOGIN:WRONG_PASSWORD")
+	if err := user.CheckPassword(ctx, input.Password); err != nil {
+		return nil, &errors.HTTPErr{
+			Msg:        "Usuário ou senha inválidos",
+			Code:       http.StatusBadRequest,
+			Context:    "SESSION:USECASE:LOGIN:WRONG_PASSWORD",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+			Original:   err,
+		}
 	}
 
 	session, err := session.NewSession(user.ID)

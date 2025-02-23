@@ -1,10 +1,12 @@
 package errors
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
+	"runtime"
+	"time"
 )
 
 type ResponseBody struct {
@@ -24,25 +26,58 @@ func sendResponse(w http.ResponseWriter, err *HTTPErr) {
 	json.NewEncoder(w).Encode(body)
 }
 
-func HandleHttpError(w http.ResponseWriter, err error) {
+func CaptureStackTrace() string {
+	stackBuf := make([]byte, 1024)
+	stackLen := runtime.Stack(stackBuf, false)
+	return string(stackBuf[:stackLen])
+}
 
+func LogError(ctx context.Context, err *HTTPErr) {
+	originalErrMsg := ""
+
+	if err.Original != nil {
+		originalErrMsg = err.Original.Error()
+	}
+
+	slog.ErrorContext(
+		ctx,
+		err.Msg,
+		"code", err.Code,
+		"stackTrace", err.StackTrace,
+		"context", err.Context,
+		"traceID", err.ErrorCode,
+		"timestamp", err.Timestamp,
+		"originalError", originalErrMsg,
+	)
+}
+
+func HandleHttpError(ctx context.Context, w http.ResponseWriter, err error) {
 	if e, ok := err.(*HTTPErr); ok {
 		sendResponse(w, e)
 
-		log.Printf("CORE: %s", err.Error())
+		LogError(ctx, e)
 
 		return
 	}
 
-	httpErr := NewHTTPErr(
-		"ocorreu um erro desconhecido",
-		500,
-		fmt.Sprintf("CORE: INTERNAL_SERVER_ERROR: %s", err.Error()),
-	)
+	traceID, ok := ctx.Value("traceID").(string)
+	if !ok {
+		traceID = ""
+	}
+
+	httpErr := &HTTPErr{
+		Msg:        "Ocorreu um erro desconhecido",
+		Code:       http.StatusInternalServerError,
+		StackTrace: CaptureStackTrace(),
+		Context:    "UNKNOWN_ERROR",
+		ErrorCode:  traceID,
+		Timestamp:  time.Now().UTC(),
+		Original:   err,
+	}
 
 	sendResponse(w, httpErr)
 
-	log.Println(httpErr.Error())
+	LogError(ctx, httpErr)
 
 	/* switch err.(type) {
 	case *ErrNotFound:

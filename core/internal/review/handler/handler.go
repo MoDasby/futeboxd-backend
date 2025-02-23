@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/modasby/futeboxd-backend/core/internal/review"
 	"github.com/modasby/futeboxd-backend/core/internal/review/dto"
@@ -32,19 +33,22 @@ func (h *ReviewHandler) create(w http.ResponseWriter, r *http.Request) {
 	var input dto.ReviewInput
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		httpErr := errors.NewHTTPErr(
-			"corpo de requisição inválido",
-			400,
-			"HANDLER:REVIEW:CREATE:INVALID_BODY",
-		)
+		httpErr := &errors.HTTPErr{
+			Msg:        "corpo de requisição inválido",
+			Code:       http.StatusBadRequest,
+			Context:    "REVIEW:HANDLER:CREATE:INVALID_BODY",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  r.Context().Value("traceID").(string),
+			Timestamp:  time.Now().UTC(),
+		}
 
-		errors.HandleHttpError(w, httpErr)
+		errors.HandleHttpError(r.Context(), w, httpErr)
 
 		return
 	}
 
 	if err := h.usecase.Create(r.Context(), &input); err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
@@ -53,37 +57,31 @@ func (h *ReviewHandler) create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ReviewHandler) listFeed(w http.ResponseWriter, r *http.Request) {
-	page, err := pagination.WithPage(
-		r.URL.Query().Get("page_size"),
-		r.URL.Query().Get("page"),
-	)
+	page, err := pagination.WithRequest(r)
 	if err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
 
 	output, err := h.usecase.ListFeed(r.Context(), page)
 	if err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
 
 	if err := utils.SendJSON(w, output); err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
 }
 
 func (h *ReviewHandler) listAll(w http.ResponseWriter, r *http.Request) {
-	page, err := pagination.WithPage(
-		r.URL.Query().Get("page_size"),
-		r.URL.Query().Get("page"),
-	)
+	page, err := pagination.WithRequest(r)
 	if err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
@@ -97,38 +95,41 @@ func (h *ReviewHandler) listAll(w http.ResponseWriter, r *http.Request) {
 
 	output, err := h.usecase.ListBy(r.Context(), options, page)
 	if err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
 
 	if err := utils.SendJSON(w, output); err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
 }
 
 func (h *ReviewHandler) delete(w http.ResponseWriter, r *http.Request) {
-	reviewID, err := utils.ParseIntValue(r.PathValue("reviewID"))
+	reviewID, err := utils.ParseIntValue(r.Context(), r.PathValue("reviewID"))
 	if err != nil {
 		httpErr, ok := err.(*errors.HTTPErr)
 
 		if ok {
-			err = errors.NewHTTPErr(
-				httpErr.Msg+"para review_id",
-				httpErr.Code,
-				httpErr.Context+"INVALID_REVIEW_ID",
-			)
+			err = &errors.HTTPErr{
+				Msg:        httpErr.Msg + "para review_id",
+				Code:       httpErr.Code,
+				Context:    httpErr.Context + "INVALID_REVIEW_ID",
+				StackTrace: errors.CaptureStackTrace(),
+				ErrorCode:  r.Context().Value("traceID").(string),
+				Timestamp:  time.Now().UTC(),
+			}
 		}
 
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
 
 	if err := h.usecase.Delete(r.Context(), reviewID); err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
@@ -137,32 +138,35 @@ func (h *ReviewHandler) delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ReviewHandler) toggleLikeReview(w http.ResponseWriter, r *http.Request) {
-	reviewID, err := utils.ParseIntValue(r.PathValue("reviewID"))
+	reviewID, err := utils.ParseIntValue(r.Context(), r.PathValue("reviewID"))
 	if err != nil {
 		httpErr, ok := err.(*errors.HTTPErr)
 
 		if ok {
-			err = errors.NewHTTPErr(
-				httpErr.Msg+"para review_id",
-				httpErr.Code,
-				httpErr.Context+"INVALID_REVIEW_ID",
-			)
+			err = &errors.HTTPErr{
+				Msg:        httpErr.Msg + "para review_id",
+				Code:       httpErr.Code,
+				Context:    httpErr.Context + "INVALID_REVIEW_ID",
+				StackTrace: errors.CaptureStackTrace(),
+				ErrorCode:  r.Context().Value("traceID").(string),
+				Timestamp:  time.Now().UTC(),
+			}
 		}
 
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
 
 	output, err := h.usecase.ToggleLike(r.Context(), reviewID)
 	if err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
 
 	if err := utils.SendJSON(w, output); err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}

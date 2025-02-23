@@ -1,8 +1,10 @@
 package football
 
+import "context"
+
 type Client interface {
-	GetMatch(matchID int64) (*Match, error)
-	GetMatches(matchIDs []int64) ([]Match, error)
-	GetMatchesMap(matchIDs []int64) (map[int64]Match, error)
-	GetTeam(teamID int64) (*Team, error)
+	GetMatch(ctx context.Context, matchID int64) (*Match, error)
+	GetMatches(ctx context.Context, matchIDs []int64) ([]Match, error)
+	GetMatchesMap(ctx context.Context, matchIDs []int64) (map[int64]Match, error)
+	GetTeam(ctx context.Context, teamID int64) (*Team, error)
 }

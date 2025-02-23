@@ -3,8 +3,11 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"net/http"
+	"time"
 
 	"github.com/modasby/futeboxd-backend/core/pkg/pagination"
+	"github.com/modasby/futeboxd-backend/core/pkg/utils"
 
 	"github.com/modasby/futeboxd-backend/core/internal/profile"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
@@ -53,11 +56,14 @@ func (repo *ProfileRepository) FindOneByUsername(ctx context.Context, username, 
 		&profile.IsFollowing,
 	); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.NewHTTPErr(
-				"perfil "+username+" não encontrado",
-				404,
-				"REPOSITORY:PROFILE:FIND_ONE_BY_USERNAME:NOT_FOUND",
-			)
+			return nil, &errors.HTTPErr{
+				Msg:        "perfil " + username + " não encontrado",
+				Code:       http.StatusNotFound,
+				Context:    "PROFILE:REPOSITORY:FIND_ONE_BY_USERNAME:NOT_FOUND",
+				StackTrace: errors.CaptureStackTrace(),
+				ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+				Timestamp:  time.Now().UTC(),
+			}
 		}
 		return nil, err
 	}
@@ -118,11 +124,14 @@ func (repo *ProfileRepository) Search(ctx context.Context, requesterID, term str
 			&profile.IsFollowing,
 		); err != nil {
 			if err == sql.ErrNoRows {
-				return nil, errors.NewHTTPErr(
-					"Perfil não encontrado",
-					404,
-					"REPOSITORY:PROFILE:FIND_ONE_BY_USERNAME:NOT_FOUND",
-				)
+				return nil, &errors.HTTPErr{
+					Msg:        "Perfil não encontrado",
+					Code:       http.StatusNotFound,
+					Context:    "PROFILE:REPOSITORY:SEARCH:NOT_FOUND",
+					StackTrace: errors.CaptureStackTrace(),
+					ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+					Timestamp:  time.Now().UTC(),
+				}
 			}
 			return nil, err
 		}
@@ -226,11 +235,14 @@ func (repo *ProfileRepository) ListFollowers(ctx context.Context, requesterID, u
 			&profile.IsFollowing,
 		); err != nil {
 			if err == sql.ErrNoRows {
-				return nil, errors.NewHTTPErr(
-					"Perfil não encontrado",
-					404,
-					"REPOSITORY:PROFILE:FIND_ONE_BY_USERNAME:NOT_FOUND",
-				)
+				return nil, &errors.HTTPErr{
+					Msg:        "Perfil não encontrado",
+					Code:       http.StatusNotFound,
+					Context:    "PROFILE:REPOSITORY:LIST_FOLLOWERS:NOT_FOUND",
+					StackTrace: errors.CaptureStackTrace(),
+					ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+					Timestamp:  time.Now().UTC(),
+				}
 			}
 			return nil, err
 		}
@@ -292,11 +304,14 @@ func (repo *ProfileRepository) ListFollowing(ctx context.Context, requesterID, u
 			&profile.IsFollowing,
 		); err != nil {
 			if err == sql.ErrNoRows {
-				return nil, errors.NewHTTPErr(
-					"Perfil não encontrado",
-					404,
-					"REPOSITORY:PROFILE:FIND_ONE_BY_USERNAME:NOT_FOUND",
-				)
+				return nil, &errors.HTTPErr{
+					Msg:        "Perfil não encontrado",
+					Code:       http.StatusNotFound,
+					Context:    "PROFILE:REPOSITORY:LIST_FOLLOWING:NOT_FOUND",
+					StackTrace: errors.CaptureStackTrace(),
+					ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+					Timestamp:  time.Now().UTC(),
+				}
 			}
 			return nil, err
 		}

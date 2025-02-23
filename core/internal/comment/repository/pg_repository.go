@@ -3,11 +3,14 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"net/http"
+	"time"
 
 	"github.com/modasby/futeboxd-backend/core/internal/comment"
 	"github.com/modasby/futeboxd-backend/core/internal/user"
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 	"github.com/modasby/futeboxd-backend/core/pkg/pagination"
+	"github.com/modasby/futeboxd-backend/core/pkg/utils"
 )
 
 type CommentsRepository struct {
@@ -96,11 +99,14 @@ func (repo *CommentsRepository) FindOneByID(ctx context.Context, requesterID str
 		&comment.IsLiked,
 	); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.NewHTTPErr(
-				"comentário não encontrado",
-				404,
-				"COMMENT_REPOSITORY:FIND_COMMENT_BY_ID:COMMENT_NOT_FOUND",
-			)
+			return nil, &errors.HTTPErr{
+				Msg:        "Comentário não encontrado",
+				Code:       http.StatusNotFound,
+				Context:    "COMMENT:REPOSITORY:FIND_COMMENT_BY_ID:COMMENT_NOT_FOUND",
+				StackTrace: errors.CaptureStackTrace(),
+				ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+				Timestamp:  time.Now().UTC(),
+			}
 		}
 		return nil, err
 	}

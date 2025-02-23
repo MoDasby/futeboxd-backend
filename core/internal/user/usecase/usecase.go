@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"context"
+	"net/http"
+	"time"
 
 	"github.com/modasby/futeboxd-backend/core/config"
 	"github.com/modasby/futeboxd-backend/core/internal/user"
@@ -38,6 +40,7 @@ func NewUsersUsecases(
 
 func (uc *usersUsecases) CreateUser(ctx context.Context, input *dto.UserInput) error {
 	user, err := user.NewUser(
+		ctx,
 		input.Username,
 		input.Name,
 		input.Bio,
@@ -57,15 +60,20 @@ func (uc *usersUsecases) CreateUser(ctx context.Context, input *dto.UserInput) e
 	}
 
 	if exists {
-		return errors.NewHTTPErr(
-			"já existe uma conta com esses dados",
-			400,
-			"USECASE:CREATE_USER:DUPLICATE",
-		)
+		httpErr := &errors.HTTPErr{
+			Msg:        "Já existe uma conta com esses dados",
+			Code:       http.StatusConflict,
+			StackTrace: errors.CaptureStackTrace(),
+			Context:    "USER:USECASE:CREATE_USER:DUPLICATE",
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+			Original:   err,
+		}
+		return httpErr
 	}
 
 	if input.FavoriteTeamID != 0 {
-		_, err = uc.footballClient.GetTeam(input.FavoriteTeamID)
+		_, err = uc.footballClient.GetTeam(ctx, input.FavoriteTeamID)
 		if err != nil {
 			return err
 		}
@@ -96,11 +104,16 @@ func (uc *usersUsecases) EditUser(ctx context.Context, input *dto.EditUser) erro
 		}
 
 		if emailExists && input.Email != user.Email {
-			return errors.NewHTTPErr(
-				"esse email já existe",
-				409,
-				"USECASE:USER:EDIT:EMAIL_ALREADY_EXISTS",
-			)
+			httpErr := &errors.HTTPErr{
+				Msg:        "Esse email já existe",
+				Code:       http.StatusConflict,
+				StackTrace: errors.CaptureStackTrace(),
+				Context:    "USER:USECASE:EDIT:EMAIL_ALREADY_EXISTS",
+				ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+				Timestamp:  time.Now().UTC(),
+				Original:   err,
+			}
+			return httpErr
 		}
 		user.Email = input.Email
 	}
@@ -112,18 +125,24 @@ func (uc *usersUsecases) EditUser(ctx context.Context, input *dto.EditUser) erro
 		}
 
 		if usernameExists && input.Username != user.Username {
-			return errors.NewHTTPErr(
-				"esse username já existe",
-				409,
-				"USECASE:USER:EDIT:USERNAME_ALREADY_EXISTS",
-			)
+			httpErr := &errors.HTTPErr{
+				Msg:        "Esse username já existe",
+				Code:       http.StatusConflict,
+				Context:    "USER:USECASE:EDIT:USERNAME_ALREADY_EXISTS",
+				StackTrace: errors.CaptureStackTrace(),
+				ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+				Timestamp:  time.Now().UTC(),
+				Original:   nil,
+			}
+
+			return httpErr
 		}
 
 		user.Username = input.Username
 	}
 
 	if input.FavoriteTeamID > 0 {
-		team, err := uc.footballClient.GetTeam(input.FavoriteTeamID)
+		team, err := uc.footballClient.GetTeam(ctx, input.FavoriteTeamID)
 		if err != nil {
 			return err
 		}
@@ -139,7 +158,7 @@ func (uc *usersUsecases) EditUser(ctx context.Context, input *dto.EditUser) erro
 		user.Name = input.Name
 	}
 
-	if err := user.Validate(); err != nil {
+	if err := user.Validate(ctx); err != nil {
 		return err
 	}
 
@@ -161,15 +180,21 @@ func (uc *usersUsecases) ChangePassword(ctx context.Context, input *dto.ChangePa
 		return err
 	}
 
-	if err := user.CheckPassword(input.CurrentPassword); err != nil {
-		return errors.NewHTTPErr(
-			"Senha incorreta",
-			401,
-			"USER:USECASE:CHANGE_PASSWORD:WRONG_PASSWORD",
-		)
+	if err := user.CheckPassword(ctx, input.CurrentPassword); err != nil {
+		httpErr := &errors.HTTPErr{
+			Msg:        "Senha incorreta",
+			Code:       http.StatusUnauthorized,
+			StackTrace: errors.CaptureStackTrace(),
+			Context:    "USER:USECASE:CHANGE_PASSWORD:CHECK_PASSWORD:WRONG_PASSWORD",
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+			Original:   err,
+		}
+
+		return httpErr
 	}
 
-	if err := user.UpdatePassword(input.NewPassword); err != nil {
+	if err := user.UpdatePassword(ctx, input.NewPassword); err != nil {
 		return err
 	}
 
@@ -190,7 +215,7 @@ func (uc *usersUsecases) GetCurrentUser(ctx context.Context) (*dto.User, error) 
 	var team *football.Team
 
 	if user.FavoriteTeamID > 0 {
-		team, err = uc.footballClient.GetTeam(user.FavoriteTeamID)
+		team, err = uc.footballClient.GetTeam(ctx, user.FavoriteTeamID)
 		if err != nil {
 			return nil, err
 		}
@@ -253,11 +278,16 @@ func (uc *usersUsecases) ResetPassword(ctx context.Context, input *dto.ResetPass
 	}
 
 	if recover.IsExpired() {
-		return errors.NewHTTPErr(
-			"O token de recuperação informado está expirado ou não existe. Solicite uma nova recuperação de senha.",
-			403,
-			"USER:USECASE:EXPIRED_TOKEN",
-		)
+		httpErr := &errors.HTTPErr{
+			Msg:        "O token de recuperação informado está expirado ou não existe. Solicite uma nova recuperação de senha.",
+			Code:       http.StatusForbidden,
+			StackTrace: errors.CaptureStackTrace(),
+			Context:    "USER:USECASE:RESET_PASSWORD:EXPIRED_TOKEN",
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+			Original:   nil,
+		}
+		return httpErr
 	}
 
 	user, err := uc.userRepo.FindOneByIdOrUsername(ctx, recover.UserID)
@@ -265,7 +295,7 @@ func (uc *usersUsecases) ResetPassword(ctx context.Context, input *dto.ResetPass
 		return err
 	}
 
-	if err := user.UpdatePassword(input.Password); err != nil {
+	if err := user.UpdatePassword(ctx, input.Password); err != nil {
 		return err
 	}
 

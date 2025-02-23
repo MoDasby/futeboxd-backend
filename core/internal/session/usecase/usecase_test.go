@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -31,7 +32,7 @@ func TestLogin_Success(t *testing.T) {
 		Password:   "password123",
 	}
 
-	mockUser, _ := user.NewUser("test_user", "", "", "user@email.com", "password123", 0)
+	mockUser, _ := user.NewUser(context.Background(), "test_user", "", "", "user@email.com", "password123", 0)
 
 	mockUserRepo.EXPECT().FindOneByCredential(context.Background(), input.Credential).Return(mockUser, nil)
 
@@ -64,7 +65,15 @@ func TestLogin_InvalidCredentials(t *testing.T) {
 		Password:   "wrong_password",
 	}
 
-	mockUserRepo.EXPECT().FindOneByCredential(context.Background(), input.Credential).Return(nil, errors.NewHTTPErr("usuário ou senha inválidos", 400, "LOGIN:USER_NOT_FOUND"))
+	mockUserRepo.EXPECT().FindOneByCredential(context.Background(), input.Credential).Return(nil, &errors.HTTPErr{
+		Msg:        "Usuário ou senha inválidos",
+		Code:       http.StatusBadRequest,
+		Context:    "SESSION:USECASE:LOGIN:USER_NOT_FOUND",
+		StackTrace: errors.CaptureStackTrace(),
+		ErrorCode:  "trace",
+		Timestamp:  time.Now().UTC(),
+		Original:   nil,
+	})
 
 	output, err := uc.Login(context.Background(), input)
 	assert.Error(t, err)

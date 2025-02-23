@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
+	"time"
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/modasby/futeboxd-backend/core/internal/upload"
@@ -39,18 +41,22 @@ func calculateSize(file io.Seeker) (int64, error) {
 	return size, nil
 }
 
-func validateImage(file io.ReadSeeker) (*mimetype.MIME, error) {
+func validateImage(ctx context.Context, file io.ReadSeeker) (*mimetype.MIME, error) {
 	mimeType, err := mimetype.DetectReader(file)
 	if err != nil {
 		return nil, err
 	}
 
 	if ok := allowedTypes[mimeType.String()]; !ok {
-		return nil, errors.NewHTTPErr(
-			"arquivo não é uma imagem válida, imagens suportadas: png, jpg",
-			400,
-			"UPLOAD:USECASE:UPLOAD_FILE:INVALID_IMAGE_TYPE",
-		)
+		return nil, &errors.HTTPErr{
+			Msg:        "Arquivo não é uma imagem válida, imagens suportadas: png, jpg",
+			Code:       http.StatusBadRequest,
+			StackTrace: errors.CaptureStackTrace(),
+			Context:    "UPLOAD:USECASE:UPLOAD_FILE:INVALID_IMAGE_TYPE",
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+			Original:   nil,
+		}
 	}
 
 	if _, err := file.Seek(0, io.SeekStart); err != nil {
@@ -71,7 +77,7 @@ func (uc *uploadUsecase) Upload(ctx context.Context, fileRaw io.ReadSeeker) erro
 		return err
 	}
 
-	mime, err := validateImage(fileRaw)
+	mime, err := validateImage(ctx, fileRaw)
 	if err != nil {
 		return err
 	}

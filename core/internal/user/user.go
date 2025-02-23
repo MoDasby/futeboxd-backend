@@ -1,15 +1,19 @@
 package user
 
 import (
+	"context"
+	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
+	"github.com/modasby/futeboxd-backend/core/pkg/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
 const (
-	passwordCost int = 10
+	passwordCost int = 1
 )
 
 var (
@@ -29,7 +33,7 @@ type User struct {
 	FavoriteTeamID int64
 }
 
-func NewUser(username, name, bio, email, password string, favoriteTeamID int64) (*User, error) {
+func NewUser(ctx context.Context, username, name, bio, email, password string, favoriteTeamID int64) (*User, error) {
 	user := &User{
 		Username:       strings.ToLower(username),
 		Name:           name,
@@ -39,7 +43,7 @@ func NewUser(username, name, bio, email, password string, favoriteTeamID int64) 
 		FavoriteTeamID: favoriteTeamID,
 	}
 
-	if err := user.Validate(); err != nil {
+	if err := user.Validate(ctx); err != nil {
 		return nil, err
 	}
 
@@ -50,18 +54,24 @@ func NewUser(username, name, bio, email, password string, favoriteTeamID int64) 
 	return user, nil
 }
 
-func (u *User) UpdatePassword(newPassword string) error {
-	if err := u.CheckPassword(newPassword); err == nil {
-		return errors.NewHTTPErr(
-			"a nova senha não pode ser igual a senha antiga",
-			400,
-			"DOMAIN:USER:CHANGE_PASSWORD:SAME_PASSWORD",
-		)
+func (u *User) UpdatePassword(ctx context.Context, newPassword string) error {
+	if err := u.CheckPassword(ctx, newPassword); err == nil {
+		httpErr := &errors.HTTPErr{
+			Msg:        "A nova senha não pode ser igual a senha antiga",
+			Code:       http.StatusBadRequest,
+			StackTrace: errors.CaptureStackTrace(),
+			Context:    "USER:DOMAIN:CHANGE_PASSWORD:SAME_PASSWORD",
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+			Original:   err,
+		}
+
+		return httpErr
 	}
 
 	u.Password = newPassword
 
-	if err := u.Validate(); err != nil {
+	if err := u.Validate(ctx); err != nil {
 		return err
 	}
 
@@ -72,7 +82,7 @@ func (u *User) UpdatePassword(newPassword string) error {
 	return nil
 }
 
-func (u *User) Validate() error {
+func (u *User) Validate(ctx context.Context) error {
 
 	usernameValid, err := regexp.MatchString("^[a-zA-Z0-9_-]+$", u.Username)
 	if err != nil {
@@ -80,19 +90,29 @@ func (u *User) Validate() error {
 	}
 
 	if !usernameValid {
-		return errors.NewHTTPErr(
-			"username inválido",
-			400,
-			"DOMAIN:USER:VALIDATE:INVALID_USERNAME",
-		)
+		httpErr := &errors.HTTPErr{
+			Msg:        "username inválido",
+			Code:       http.StatusBadRequest,
+			StackTrace: errors.CaptureStackTrace(),
+			Context:    "USER:DOMAIN:VALIDATE:INVALID_USERNAME",
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+		}
+
+		return httpErr
 	}
 
 	if bannedUsernames[u.Username] {
-		return errors.NewHTTPErr(
-			"nome de usuário não está disponível",
-			400,
-			"DOMAIN:USER:VALIDADE:BANNED_USERNAME",
-		)
+		httpErr := &errors.HTTPErr{
+			Msg:        "nome de usuário não está disponível",
+			Code:       http.StatusBadRequest,
+			StackTrace: errors.CaptureStackTrace(),
+			Context:    "USER:DOMAIN:VALIDATE:BANNED_USERNAME",
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+		}
+
+		return httpErr
 	}
 
 	matched, err := regexp.MatchString("^[\\w-.]+@([\\w-]+\\.)+[\\w-]{2,4}$", u.Email)
@@ -101,15 +121,29 @@ func (u *User) Validate() error {
 	}
 
 	if !matched {
-		return errors.NewHTTPErr("email inválido", 400, "DOMAIN:USER:VALIDATE:INVALID_EMAIL")
+		httpErr := &errors.HTTPErr{
+			Msg:        "Email inválido",
+			Code:       http.StatusBadRequest,
+			StackTrace: errors.CaptureStackTrace(),
+			Context:    "USER:DOMAIN:VALIDATE:INVALID_EMAIL",
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+		}
+
+		return httpErr
 	}
 
 	if len(u.Password) <= 5 {
-		return errors.NewHTTPErr(
-			"senha deve ter pelo menos 5 caracteres",
-			400,
-			"DOMAIN:USER:VALIDATE:INVALID_PASSWORD",
-		)
+		httpErr := &errors.HTTPErr{
+			Msg:        "senha deve ter pelo menos 5 caracteres",
+			Code:       http.StatusBadRequest,
+			StackTrace: errors.CaptureStackTrace(),
+			Context:    "USER:DOMAIN:VALIDATE:INVALID_PASSWORD",
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+		}
+
+		return httpErr
 	}
 
 	return nil
@@ -126,13 +160,18 @@ func (u *User) HashPassword() error {
 	return nil
 }
 
-func (u *User) CheckPassword(providedPassword string) error {
+func (u *User) CheckPassword(ctx context.Context, providedPassword string) error {
 	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(providedPassword)); err != nil {
-		return errors.NewHTTPErr(
-			"senha não confere",
-			400,
-			"DOMAIN:USER:CHECK_PASSWORD:WRONG_PASSWORD",
-		)
+		httpErr := &errors.HTTPErr{
+			Msg:        "senha não confere",
+			Code:       http.StatusBadRequest,
+			StackTrace: errors.CaptureStackTrace(),
+			Context:    "USER:DOMAIN:CHECK_PASSWORD:WRONG_PASSWORD",
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+		}
+
+		return httpErr
 	}
 
 	return nil

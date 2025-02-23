@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/modasby/futeboxd-backend/core/internal/user"
 	"github.com/modasby/futeboxd-backend/core/internal/user/dto"
@@ -32,13 +33,13 @@ func (h *Handler) getCurrentUser(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.usecases.GetCurrentUser(r.Context())
 	if err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
 
 	if err := utils.SendJSON(w, user); err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
@@ -48,13 +49,22 @@ func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
 	var input dto.UserInput
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		errors.HandleHttpError(w, errors.NewHTTPErr("corpo de requisição inválido", 400, "HANDLER:USER:CREATE:INVALID_BODY"))
+		httpErr := &errors.HTTPErr{
+			Msg:        "Corpo de requisição inválido",
+			Code:       http.StatusBadRequest,
+			Context:    "USER:HANDLER:CREATE:INVALID_BODY",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  r.Context().Value("traceID").(string),
+			Timestamp:  time.Now().UTC(),
+			Original:   err,
+		}
+		errors.HandleHttpError(r.Context(), w, httpErr)
 
 		return
 	}
 
 	if err := h.usecases.CreateUser(r.Context(), &input); err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
@@ -66,13 +76,22 @@ func (h *Handler) editUser(w http.ResponseWriter, r *http.Request) {
 	var input dto.EditUser
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		errors.HandleHttpError(w, errors.NewHTTPErr("corpo de requisição inválido", 400, "HANDLER:USER:EDIT:INVALID_BODY"))
+		httpErr := &errors.HTTPErr{
+			Msg:        "Corpo de requisição inválido",
+			Code:       http.StatusBadRequest,
+			Context:    "USER:HANDLER:EDIT:INVALID_BODY",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  r.Context().Value("traceID").(string),
+			Timestamp:  time.Now().UTC(),
+			Original:   err,
+		}
+		errors.HandleHttpError(r.Context(), w, httpErr)
 
 		return
 	}
 
 	if err := h.usecases.EditUser(r.Context(), &input); err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
@@ -84,19 +103,23 @@ func (h *Handler) changePassword(w http.ResponseWriter, r *http.Request) {
 	var input dto.ChangePassword
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		err = errors.NewHTTPErr(
-			"corpo de requisição inválido",
-			400,
-			"HANDLER:UPDATE_PASSWORD:INVALID_BODY",
-		)
+		httpErr := &errors.HTTPErr{
+			Msg:        "Corpo de requisição inválido",
+			Code:       http.StatusBadRequest,
+			Context:    "USER:HANDLER:CHANGE_PASSWORD:INVALID_BODY",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  r.Context().Value("traceID").(string),
+			Timestamp:  time.Now().UTC(),
+			Original:   err,
+		}
 
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, httpErr)
 
 		return
 	}
 
 	if err := h.usecases.ChangePassword(r.Context(), &input); err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
@@ -108,18 +131,22 @@ func (h *Handler) recoverPassword(w http.ResponseWriter, r *http.Request) {
 	var body dto.RecoverPassword
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		err = errors.NewHTTPErr(
-			"corpo de requisição inválido",
-			400,
-			"HANDLER:USER:RECOVER:INVALID_BODY",
-		)
+		httpErr := &errors.HTTPErr{
+			Msg:        "Corpo de requisição inválido",
+			Code:       http.StatusBadRequest,
+			Context:    "USER:HANDLER:RECOVER:INVALID_BODY",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  r.Context().Value("traceID").(string),
+			Timestamp:  time.Now().UTC(),
+			Original:   err,
+		}
 
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, httpErr)
 		return
 	}
 
 	if err := h.usecases.RecoverPassword(r.Context(), &body); err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
@@ -131,18 +158,22 @@ func (h *Handler) resetPassword(w http.ResponseWriter, r *http.Request) {
 	var body dto.ResetPassword
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		err = errors.NewHTTPErr(
-			"corpo de requisição inválido",
-			400,
-			"HANDLER:USER:RESET_PASSWORD:INVALID_BODY",
-		)
+		httpErr := &errors.HTTPErr{
+			Msg:        "Corpo de requisição inválido",
+			Code:       http.StatusBadRequest,
+			Context:    "USER:HANDLER:RESET_PASSWORD:INVALID_BODY",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  r.Context().Value("traceID").(string),
+			Timestamp:  time.Now().UTC(),
+			Original:   err,
+		}
 
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, httpErr)
 		return
 	}
 
 	if err := h.usecases.ResetPassword(r.Context(), &body); err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}

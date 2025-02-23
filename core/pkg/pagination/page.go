@@ -1,10 +1,13 @@
 package pagination
 
 import (
+	"context"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
+	"github.com/modasby/futeboxd-backend/core/pkg/utils"
 )
 
 type Page struct {
@@ -12,7 +15,7 @@ type Page struct {
 	Index int
 }
 
-func WithPage(size, index string) (*Page, error) {
+func WithPage(ctx context.Context, size, index string) (*Page, error) {
 
 	sizeInt, err := strconv.ParseUint(size, 10, 64)
 	if err != nil {
@@ -25,11 +28,14 @@ func WithPage(size, index string) (*Page, error) {
 	}
 
 	if sizeInt > 100 {
-		return nil, errors.NewHTTPErr(
-			"tamanho da página não pode ser maior que 100",
-			400,
-			"PAGINATION:PAGE_SIZE_TOO_BIG",
-		)
+		return nil, &errors.HTTPErr{
+			Msg:        "tamanho da página não pode ser maior que 100",
+			Code:       400,
+			Context:    "PAGINATION:PAGE_SIZE_TOO_BIG",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+		}
 	}
 
 	return &Page{
@@ -40,6 +46,7 @@ func WithPage(size, index string) (*Page, error) {
 
 func WithRequest(r *http.Request) (*Page, error) {
 	return WithPage(
+		r.Context(),
 		r.URL.Query().Get("page_size"),
 		r.URL.Query().Get("page"),
 	)

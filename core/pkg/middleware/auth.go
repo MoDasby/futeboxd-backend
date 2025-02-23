@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -43,17 +44,22 @@ func NewAuthMiddleware(
 
 					ctx := context.WithValue(r.Context(), SessionKey, session)
 
+					slog.InfoContext(ctx, "permitindo acesso anônimo", "clientIP", r.RemoteAddr)
+
 					next.ServeHTTP(w, r.WithContext(ctx))
 
 					return
 				}
 
-				err := errors.NewHTTPErr(
-					"sessão inválida",
-					401,
-					"MIDDLEWARE:AUTHENTICATION:INVALID_TOKEN",
-				)
-				errors.HandleHttpError(w, err)
+				err := &errors.HTTPErr{
+					Msg:        "Sessão inválida",
+					Code:       http.StatusUnauthorized,
+					Context:    "MIDDLEWARE:AUTHENTICATION:INVALID_TOKEN",
+					StackTrace: errors.CaptureStackTrace(),
+					ErrorCode:  r.Context().Value("traceID").(string),
+					Timestamp:  time.Now().UTC(),
+				}
+				errors.HandleHttpError(r.Context(), w, err)
 
 				return
 			}
@@ -63,14 +69,14 @@ func NewAuthMiddleware(
 				newCookie := cookies.DeleteSessionCookie(cfg)
 
 				http.SetCookie(w, newCookie)
-				errors.HandleHttpError(w, err)
+				errors.HandleHttpError(r.Context(), w, err)
 
 				return
 			}
 
 			if !session.IsValid() {
 				if err := sessionRepository.Delete(r.Context(), session.ID); err != nil {
-					errors.HandleHttpError(w, err)
+					errors.HandleHttpError(r.Context(), w, err)
 
 					return
 				}
@@ -79,12 +85,15 @@ func NewAuthMiddleware(
 
 				http.SetCookie(w, newCookie)
 
-				err := errors.NewHTTPErr(
-					"essa sessão está expirada",
-					401,
-					"MIDDLEWARE:AUTHENTICATION:EXPIRED_TOKEN",
-				)
-				errors.HandleHttpError(w, err)
+				err := &errors.HTTPErr{
+					Msg:        "Essa sessão está expirada",
+					Code:       http.StatusUnauthorized,
+					Context:    "MIDDLEWARE:AUTHENTICATION:EXPIRED_TOKEN",
+					StackTrace: errors.CaptureStackTrace(),
+					ErrorCode:  r.Context().Value("traceID").(string),
+					Timestamp:  time.Now().UTC(),
+				}
+				errors.HandleHttpError(r.Context(), w, err)
 
 				return
 			}
@@ -94,7 +103,7 @@ func NewAuthMiddleware(
 				session.ExpiresAt = time.Now().Add(session.DefaultExpiration())
 
 				if err := sessionRepository.Update(r.Context(), session); err != nil {
-					errors.HandleHttpError(w, err)
+					errors.HandleHttpError(r.Context(), w, err)
 
 					return
 				}
@@ -103,6 +112,12 @@ func NewAuthMiddleware(
 
 				http.SetCookie(w, newCookie)
 			}
+
+			slog.Info(
+				"Requisição autenticada",
+				"sessionID", session.ID,
+				"userID", session.UserID,
+			)
 
 			ctx := context.WithValue(r.Context(), SessionKey, session)
 

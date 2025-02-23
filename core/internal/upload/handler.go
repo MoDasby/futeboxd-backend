@@ -22,13 +22,13 @@ func (h *UploadHandler) RegisterRoutes(r *http.ServeMux, injectUser middleware.A
 func (h *UploadHandler) UploadProfilePicture(w http.ResponseWriter, r *http.Request) {
 	formFile, _, err := r.FormFile("profile_picture")
 	if err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
 
 	if err := h.usecase.Upload(r.Context(), formFile); err != nil {
-		errors.HandleHttpError(w, err)
+		errors.HandleHttpError(r.Context(), w, err)
 
 		return
 	}
