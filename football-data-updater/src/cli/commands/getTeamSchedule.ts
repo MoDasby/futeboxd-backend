@@ -1,4 +1,4 @@
-import { waitForDbReady } from "@/db";
+import db from "@/db";
 import { League, listLeagues } from "@/models/league";
 import { upsertMatch } from "@/models/match";
 import { getMandatoryTeams, insertTeamIfNotExists } from "@/models/team";
@@ -19,7 +19,7 @@ program
         const from = Number(options.from)
         const to = Number(options.to) || new Date().getFullYear()
 
-        await waitForDbReady()
+        await db.waitForDbReady()
 
         const leagues = await listLeagues()
 

@@ -12,9 +12,15 @@ export type News = {
 export async function processNews(scrapper: NewsScrapper) {
     logger.info("processando notícias")
 
-    const news = await scrapper.getNews()
+    try {
+        const news = await scrapper.getNews()
 
-    await Promise.all(news.map(n => insertIfNotExists(n)))
+        await Promise.all(news.map(n => insertIfNotExists(n)))
+    } catch (err) {
+        logger.info("Erro ao processar notícias", {
+            err: (err as Error).message
+        })
+    }
 }
 
 export async function deleteOldNews(): Promise<void> {
@@ -26,8 +32,10 @@ export async function deleteOldNews(): Promise<void> {
 
     try {
         await db.query(query)
-    } catch(err) {
-        logger.error(`Erro ao deletar noticias antigas: ${err}`)
+    } catch (err) {
+        logger.error(`Erro ao deletar noticias antigas`, {
+            err: (err as Error).message
+        })
     }
 }
 
@@ -40,7 +48,9 @@ async function insertIfNotExists(news: News) {
 
     try {
         await db.query(query, [news.title, news.description, news.link, news.imageLink]);
-    } catch(err) {
-        logger.error(`ocorreu um erro ao inserir notícia: ${news}`)
+    } catch (err) {
+        logger.error(`ocorreu um erro ao inserir notícia`, {
+            err: (err as Error).message
+        })
     }
 }

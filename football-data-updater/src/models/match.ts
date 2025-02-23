@@ -41,70 +41,92 @@ export type MatchEvent = {
 }
 
 export async function processDaySchedule(league: League, gateway: MatchDataUpdater): Promise<void> {
-    const daySchedule = await gateway.getDaySchedule(league);
+    try {
+        logger.info("Processando schedule", {
+            league: league.espn_id
+        })
+        const start = performance.now()
+        const daySchedule = await gateway.getDaySchedule(league);
 
-    if (daySchedule.length === 0) {
-        scheduleProcessNextDay(league, gateway);
-
-        return
-    }
-
-    for (const m of daySchedule) {
-        if (!(await isAnyMandatory([m.homeCompetitor.team, m.awayCompetitor.team]))) {
-            logger.info(`Nenhum time mandátorio, pulando`, {
-                match: m.id
-            })
-
-            return;
-        }
-
-        if (!statusNameValues.includes(m.statusName)) {
-            m.statusName = "STATUS_UNKNOWN"
-        }
-
-        const matchSummary = await gateway.getMatchSummary(m.id);
-
-        m.events = matchSummary
-
-        logger.info(`Processando partida`, {
-            match: m.id
-        });
-
-        await insertTeamIfNotExists(m.homeCompetitor.team)
-        await insertTeamIfNotExists(m.awayCompetitor.team)
-        await upsertMatch(m)
-
-        if (matchStarted(m)) {
-            const fiveMinutesLater = new Date();
-            fiveMinutesLater.setSeconds(0)
-            fiveMinutesLater.setMilliseconds(0)
-            fiveMinutesLater.setMinutes(fiveMinutesLater.getMinutes() + 5);
-            scheduleNextProcessing(fiveMinutesLater, league, gateway);
-            return;
-        }
-
-        const matchDate = new Date(m.date);
-        matchDate.setMilliseconds(0);
-        matchDate.setSeconds(0);
-
-        if (matchDate > new Date()) {
-            matchDate.setMinutes(matchDate.getMinutes() + 10)
-            scheduleNextProcessing(matchDate, league, gateway);
+        if (daySchedule.length === 0) {
+            scheduleProcessNextDay(league, gateway);
 
             return
         }
 
-        if (!m.completed) {
-            const date = new Date();
-            date.setMinutes(date.getMinutes() + 5);
-            date.setSeconds(0);
-            date.setMilliseconds(0);
-            scheduleNextProcessing(date, league, gateway);
+        for (const m of daySchedule) {
+            if (!(await isAnyMandatory([m.homeCompetitor.team, m.awayCompetitor.team]))) {
+                logger.info(`Nenhum time mandátorio, pulando`, {
+                    match: m.id,
+                    homeTeam: m.homeCompetitor.team.name,
+                    awayTeam: m.awayCompetitor.team.name
+                });
 
-            return;
+                continue;
+            }
+
+            if (!statusNameValues.includes(m.statusName)) {
+                logger.warn(`Status desconhecido encontrado, substituindo por STATUS_UNKNOWN`, {
+                    match: m.id,
+                    originalStatus: m.statusName
+                });
+
+                m.statusName = "STATUS_UNKNOWN"
+            }
+
+            const matchSummary = await gateway.getMatchSummary(m.id);
+
+            m.events = matchSummary
+
+            logger.info(`Processando partida`, {
+                match: m.id
+            });
+
+            await insertTeamIfNotExists(m.homeCompetitor.team)
+            await insertTeamIfNotExists(m.awayCompetitor.team)
+            await upsertMatch(m)
+
+            if (matchStarted(m)) {
+                const fiveMinutesLater = new Date();
+                fiveMinutesLater.setSeconds(0)
+                fiveMinutesLater.setMilliseconds(0)
+                fiveMinutesLater.setMinutes(fiveMinutesLater.getMinutes() + 5);
+                scheduleNextProcessing(fiveMinutesLater, league, gateway);
+                continue;
+            }
+
+            const matchDate = new Date(m.date);
+            matchDate.setMilliseconds(0);
+            matchDate.setSeconds(0);
+
+            if (matchDate > new Date()) {
+                matchDate.setMinutes(matchDate.getMinutes() + 10)
+                scheduleNextProcessing(matchDate, league, gateway);
+
+                continue
+            }
+
+            if (!m.completed) {
+                const date = new Date();
+                date.setMinutes(date.getMinutes() + 5);
+                date.setSeconds(0);
+                date.setMilliseconds(0);
+                scheduleNextProcessing(date, league, gateway);
+
+                continue;
+            }
+
+            scheduleProcessNextDay(league, gateway)
         }
 
-        scheduleProcessNextDay(league, gateway)
+        logger.info("Schedule Processada", {
+            league: league.espn_id,
+            duration: (performance.now() - start).toFixed(2)
+        })
+    } catch (err) {
+        logger.error("Erro ao processar schedule", {
+            league: league.espn_id
+        })
     }
 }
 
@@ -150,10 +172,12 @@ export async function upsertMatch(match: Match) {
         logger.info("Partida inserida ou atualizada", {
             match: match.id
         })
-    } catch (err) {
-        logger.error(`erro ao inserir partida`, {
+    } catch (error) {
+        const err = error as Error
+        logger.error(`Erro ao inserir ou atualizar partida`, {
             match: match.id,
-            err
+            errorMessage: err.message,
+            stack: err.stack
         });
     }
 }
