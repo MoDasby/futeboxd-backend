@@ -4,7 +4,7 @@ const output = dotenv.config()
 
 if (output.error) throw new Error(output.error.message);
 
-//require('module-alias/register');
+import 'module-alias/register';
 import database from "@/db"
 import { listLeagues } from "./models/league"
 import { processDaySchedule } from "./models/match"
