@@ -31,7 +31,7 @@ func (uc *sessionUsecases) Login(ctx context.Context, input *dto.Login) (*dto.Se
 	user, err := uc.userRepo.FindOneByCredential(ctx, input.Credential)
 	if err != nil {
 		return nil, &errors.HTTPErr{
-			Msg:        "Usuário ou senha inválidos",
+			Msg:        "Email ou senha inválidos",
 			Code:       http.StatusBadRequest,
 			Context:    "SESSION:USECASE:LOGIN:USER_NOT_FOUND",
 			StackTrace: errors.CaptureStackTrace(),
@@ -43,7 +43,7 @@ func (uc *sessionUsecases) Login(ctx context.Context, input *dto.Login) (*dto.Se
 
 	if err := user.CheckPassword(ctx, input.Password); err != nil {
 		return nil, &errors.HTTPErr{
-			Msg:        "Usuário ou senha inválidos",
+			Msg:        "Email ou senha inválidos",
 			Code:       http.StatusBadRequest,
 			Context:    "SESSION:USECASE:LOGIN:WRONG_PASSWORD",
 			StackTrace: errors.CaptureStackTrace(),
