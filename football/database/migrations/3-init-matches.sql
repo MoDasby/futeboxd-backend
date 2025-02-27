@@ -1,13 +1,18 @@
-CREATE TYPE status_name_enum AS ENUM (
-    'STATUS_FINAL_PEN',
-    'STATUS_SCHEDULED',
-    'STATUS_FULL_TIME',
-    'STATUS_SECOND_HALF',
-    'STATUS_HALF_TIME',
-    'STATUS_FIRST_HALF',
-    'STATUS_UNKNOWN',
-    'STATUS_POSTPONED'
-);
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'status_name_enum') THEN
+        CREATE TYPE status_name_enum AS ENUM (
+            'STATUS_FINAL_PEN',
+            'STATUS_SCHEDULED',
+            'STATUS_FULL_TIME',
+            'STATUS_SECOND_HALF',
+            'STATUS_HALF_TIME',
+            'STATUS_FIRST_HALF',
+            'STATUS_UNKNOWN',
+            'STATUS_POSTPONED'
+        );
+    END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS matches(
     id BIGINT PRIMARY KEY,
@@ -23,6 +28,8 @@ CREATE TABLE IF NOT EXISTS matches(
     league_id INT NOT NULL,
     events JSONB NULL,
     FOREIGN KEY(home_team_id) REFERENCES teams(id),
-    FOREIGN KEY(away_team_id) REFERENCES teams(id)
+    FOREIGN KEY(away_team_id) REFERENCES teams(id),
     FOREIGN KEY(league_id) REFERENCES leagues(id)
 );
+
+CREATE INDEX IF NOT EXISTS idx_matches_match_date ON matches(match_date DESC);

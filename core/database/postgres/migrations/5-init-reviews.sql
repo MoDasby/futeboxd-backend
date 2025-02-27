@@ -12,6 +12,10 @@ CREATE TABLE IF NOT EXISTS reviews(
     CONSTRAINT unique_user_match UNIQUE (user_id, match_id)
 );
 
+CREATE INDEX IF NOT EXISTS idx_reviews_home_team_id ON reviews(home_team_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_away_team_id ON reviews(away_team_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_match_id ON reviews(match_id);
+
 CREATE OR REPLACE FUNCTION update_reviews_search_vector() RETURNS trigger AS $$
 BEGIN
   NEW.search_vector := to_tsvector('portuguese', unaccent(NEW.description));

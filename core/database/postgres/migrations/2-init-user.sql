@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS users(
     favorite_team BIGINT
 );
 
+CREATE INDEX IF NOT EXISTS idx_users_favorite_team ON users(favorite_team);
+
 CREATE OR REPLACE FUNCTION update_user_search_vector() RETURNS trigger AS $$
 BEGIN
   NEW.search_vector := to_tsvector('portuguese', unaccent(NEW.username));
