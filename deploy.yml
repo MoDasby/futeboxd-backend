@@ -1,0 +1,141 @@
+services:
+  core_db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD_FILE: /run/secrets/core_db_password
+      POSTGRES_DB: "futeboxd-core"
+    secrets:
+      - core_db_password
+    volumes:
+      - ./core-db-data:/var/lib/postgresql/data
+    networks:
+      - futeboxd-network
+  
+  core_db_migrations:
+    image: postgres:alpine
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD_FILE: /run/secrets/core_db_password
+      POSTGRES_DB: "futeboxd-core"
+      DB_HOST: core_db
+    command: ["sh", "-c", "export PGPASSWORD=$$(cat $$POSTGRES_PASSWORD_FILE) && for file in /migrations/*.sql; do psql -U $$POSTGRES_USER -h $$DB_HOST -d $$POSTGRES_DB -f $$file; done"]
+    depends_on:
+      - core-db
+    volumes:
+      - ./core/database/postgres/migrations:/migrations
+    networks:
+      - futeboxd-network
+    secrets:
+      - core_db_password
+    deploy:
+      replicas: 0
+    restart: "no"
+
+  football_service:
+    image: futeboxd-football:latest
+    env_file:
+      - ./football/.env.docker
+    environment:
+      ENV: prod
+      DB_PASSWORD_FILE: /run/secrets/football_db_password
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 2s
+    networks:
+      - futeboxd-network
+    depends_on:
+      - football_db
+    secrets:
+      - football_db_password
+
+  core_service:
+    image: futeboxd-core:latest
+    environment:
+      ENV: prod
+      DB_PASSWORD_FILE: /run/secrets/core_db_password
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 2s
+    networks:
+      - futeboxd-network
+    depends_on:
+      - core-db
+    secrets:
+      - core_db_password
+
+  football_db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD_FILE: /run/secrets/football_db_password
+      POSTGRES_DB: "futeboxd-football"
+    secrets:
+      - football_db_password
+    volumes:
+      - ./football-db-data:/var/lib/postgresql/data
+    networks:
+      - futeboxd-network
+  
+  football_db_migrations:
+    image: postgres:alpine
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD_FILE: /run/secrets/football_db_password
+      POSTGRES_DB: "futeboxd-football"
+      DB_HOST: football_db
+    command: ["sh", "-c", "export PGPASSWORD=$$(cat $$POSTGRES_PASSWORD_FILE) && export PGOPTIONS='--client-min-messages=warning' && for file in /migrations/*.sql; do psql -U $$POSTGRES_USER -p 5433 -h $$DB_HOST -d $$POSTGRES_DB -f $$file || exit 1; done && exit 0;"]
+    depends_on:
+      - core-db
+    volumes:
+      - ./football/database/migrations:/migrations
+    networks:
+      - futeboxd-network
+    secrets:
+      - football_db_password
+    deploy:
+      replicas: 0
+      restart_policy:
+        condition: none
+  
+  football_data_updater:
+    image: futeboxd-football-data-updater:latest
+    env_file: ./football-data-updater/.env.docker
+    environment:
+      NODE_ENV: production
+      DB_PASSWORD_FILE: /run/secrets/football_db_password
+    secrets:
+      - football_db_password
+    networks:
+      - futeboxd-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  nginx:
+    image: nginx:1.26.3
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - futeboxd-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "80:80"
+
+networks:
+  futeboxd-network:
+    driver: overlay
+
+secrets:
+  core_db_password:
+    external: true
+  football_db_password:
+    external: true
