@@ -135,7 +135,7 @@ func (repo *reviewRepository) ListFeed(ctx context.Context, requesterID string, 
 			INNER JOIN followers f ON f.following_id = r.user_id
 			LEFT JOIN likes l ON l.review_id = r.id
 			CROSS JOIN requester req
-			WHERE f.follower_id = req.id
+			WHERE f.follower_id = req.id OR req.favorite_team = r.home_team_id OR req.favorite_team = r.away_team_id
 			GROUP BY
 				r.id
 			LIMIT 500
