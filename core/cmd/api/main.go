@@ -45,6 +45,12 @@ import (
 )
 
 func main() {
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Error("Panico na rave", "originalError", r)
+		}
+	}()
+
 	ctx := context.Background()
 
 	cfg, err := config.LoadConfig()
