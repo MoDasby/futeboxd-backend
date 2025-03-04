@@ -15,6 +15,6 @@ FROM alpine:latest AS runner
 WORKDIR /root/
 
 COPY --from=builder /app/api ./api
-COPY --from=builder /app/config ./config
+COPY --from=builder /app/config/config.yml ./config.yml
 
 CMD ["sh", "-c", "./api"]
