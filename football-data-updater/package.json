@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "ts-node-dev -r tsconfig-paths/register src/main.ts",
     "build": "tsc",
-    "start": "node -r module-alias/register build/main.js"
+    "start": "node -r module-alias/register build/main.js", 
+    "docker:build": "docker build -t futeboxd-football-data-updater:latest ."
   },
   "keywords": [],
   "author": "",
