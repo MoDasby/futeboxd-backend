@@ -1,8 +1,6 @@
-import dotenv from "dotenv"
+import loadEnvs from './config/load-envs';
 
-const output = dotenv.config()
-
-if (output.error) throw new Error(output.error.message);
+loadEnvs()
 
 import 'module-alias/register';
 import database from "@/db"
@@ -14,6 +12,7 @@ import { scheduleJob } from "node-schedule"
 import { espnMatchUpdater } from "./service/match-updater/espn-match-updater"
 
 async function main() {
+
     await database.waitForDbReady()
 
     const leagues = await listLeagues()
