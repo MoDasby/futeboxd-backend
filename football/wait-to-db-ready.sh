@@ -2,6 +2,10 @@ check_db() {
   PGPASSWORD=$POSTGRES_PASSWORD psql -h $DB_HOST -p $PGPORT -U $DB_USER -d $POSTGRES_DB -c "\q" >/dev/null 2>&1
 }
 
+if [[ "$ENV" == "prod" ]]; then
+  POSTGRES_PASSWORD=$(cat "$DB_PASSWORD_FILE")
+fi
+
 # Número de tentativas
 max_attempts=5
 attempt=1
