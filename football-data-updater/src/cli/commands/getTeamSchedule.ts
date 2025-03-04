@@ -1,3 +1,7 @@
+import loadEnvs from "@/config/load-envs";
+
+loadEnvs()
+
 import db from "@/db";
 import { League, listLeagues } from "@/models/league";
 import { upsertMatch } from "@/models/match";
