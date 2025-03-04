@@ -112,7 +112,7 @@ func (r *userRepository) FindOneByIdOrUsername(ctx context.Context, identificato
 		&bio,
 	); err != nil {
 		if errors.Is(sql.ErrNoRows, err) {
-			httpErr := errorsTypes.HTTPErr{
+			httpErr := &errorsTypes.HTTPErr{
 				Msg:        "Usuário não encontrado",
 				Code:       http.StatusNotFound,
 				StackTrace: errorsTypes.CaptureStackTrace(),
@@ -159,7 +159,7 @@ func (r *userRepository) FindOneByCredential(ctx context.Context, credential str
 		&user.ProfilePicture,
 	); err != nil {
 		if errors.Is(sql.ErrNoRows, err) {
-			httpErr := errorsTypes.HTTPErr{
+			httpErr := &errorsTypes.HTTPErr{
 				Msg:        "Usuário não encontrado",
 				Code:       http.StatusNotFound,
 				StackTrace: errorsTypes.CaptureStackTrace(),
@@ -240,7 +240,7 @@ func (repo *userRepository) CheckRecoverToken(ctx context.Context, token string)
 
 	if err := row.Scan(&recover.UserID, &recover.Token, &recover.ExpiresAt); err != nil {
 		if err == sql.ErrNoRows {
-			httpErr := errorsTypes.HTTPErr{
+			httpErr := &errorsTypes.HTTPErr{
 				Msg:        "O token de recuperação informado está expirado ou não existe. Solicite uma nova recuperação de senha.",
 				Code:       http.StatusNotFound,
 				StackTrace: errorsTypes.CaptureStackTrace(),

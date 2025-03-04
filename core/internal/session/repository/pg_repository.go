@@ -34,7 +34,7 @@ func (repo *sessionRepository) FindOneByToken(ctx context.Context, token string)
 
 	if err := row.Scan(&ID, &sessionToken, &userID, &expiresAt, &createdAt); err != nil {
 		if errors.Is(sql.ErrNoRows, err) {
-			return nil, errorsTypes.HTTPErr{
+			return nil, &errorsTypes.HTTPErr{
 				Msg:        "Sessão inválida",
 				Code:       http.StatusUnauthorized,
 				Context:    "SESSION:REPOSITORY:FIND_ONE_BY_TOKEN:NOT_FOUND",
