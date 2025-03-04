@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os"
 	"time"
 
 	"github.com/axiomhq/axiom-go/axiom"
@@ -88,20 +89,35 @@ func (ah *AxiomHandler) WithGroup(name string) slog.Handler {
 
 func InitLogger(cfg config.Axiom) error {
 
-	/* handler, err := adapter.New(
-		adapter.SetClientOptions(
-			axiom.SetAPITokenConfig(cfg.ApiKey),
-		),
-		adapter.SetDataset("futeboxd-logs"),
-	)
-	if err != nil {
-		return err
-	} */
+	var handler slog.Handler
 
-	handler, err := NewAxiomHandler(cfg)
+	if config.IsProduction() {
+		/*var err error
+
+		handler, err = adapter.New(
+			adapter.SetClientOptions(
+				axiom.SetAPITokenConfig(cfg.ApiKey),
+			),
+			adapter.SetDataset("futeboxd-logs"),
+		)
+		if err != nil {
+			return err
+		}*/
+
+		var err error
+
+		handler, err = NewAxiomHandler(cfg)
+		if err != nil {
+			return err
+		}
+	} else {
+		handler = slog.NewTextHandler(os.Stdout, nil)
+	}
+
+	/*handler, err := NewAxiomHandler(cfg)
 	if err != nil {
 		return err
-	}
+	}*/
 
 	logger := slog.New(handler)
 
