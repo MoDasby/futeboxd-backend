@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -63,23 +64,36 @@ type AWS struct {
 	Region             string
 }
 
-func getConfigFilename(environment string) string {
-	if environment == "prod" {
-		return "./config/config"
+func getConfigFilename() string {
+	if IsProduction() {
+		return "./config"
 	}
 
 	return "./config/config-dev"
 }
 
+func IsProduction() bool {
+	return os.Getenv("ENV") == "prod"
+}
+
 func LoadConfig() (*Config, error) {
 	v := viper.New()
 
-	v.SetConfigName(getConfigFilename(os.Getenv("env")))
+	v.SetConfigName(getConfigFilename())
 	v.AddConfigPath(".")
 	v.SetConfigType("yml")
 	v.AutomaticEnv()
 	if err := v.ReadInConfig(); err != nil {
 		return nil, err
+	}
+
+	if IsProduction() {
+		secretPassword, err := os.ReadFile(os.Getenv("DB_PASSWORD_FILE"))
+		if err != nil {
+			return nil, err
+		}
+
+		viper.SetDefault("postgres.password", strings.TrimSpace(string(secretPassword)))
 	}
 
 	return parseConfig(v)
