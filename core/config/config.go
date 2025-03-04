@@ -87,16 +87,18 @@ func LoadConfig() (*Config, error) {
 		return nil, err
 	}
 
+	config, err := parseConfig(v)
+
 	if IsProduction() {
 		secretPassword, err := os.ReadFile(os.Getenv("DB_PASSWORD_FILE"))
 		if err != nil {
 			return nil, err
 		}
 
-		viper.SetDefault("postgres.password", strings.TrimSpace(string(secretPassword)))
+		config.Postgres.Password = strings.TrimSpace(string(secretPassword))
 	}
 
-	return parseConfig(v)
+	return config, err
 }
 
 func parseConfig(v *viper.Viper) (*Config, error) {
