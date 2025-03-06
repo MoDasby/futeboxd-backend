@@ -67,7 +67,7 @@ func buildWhereClause(options ListMatchOptions) (string, []any) {
 		appendCondition(
 			fmt.Sprintf("status_name = $%d", counter),
 			"OR",
-			"STATUS_HALF_TIME",
+			"STATUS_HALFTIME",
 		)
 	}
 
