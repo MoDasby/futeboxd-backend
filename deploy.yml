@@ -8,10 +8,10 @@ services:
     secrets:
       - core_db_password
     volumes:
-      - ./core-db-data:/var/lib/postgresql/data
+      - /mnt/docker-databases/core-db:/var/lib/postgresql/data
     networks:
       - futeboxd-network
-  
+
   core_db_migrations:
     image: postgres:alpine
     environment:
@@ -19,7 +19,12 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/core_db_password
       POSTGRES_DB: "futeboxd-core"
       DB_HOST: core_db
-    command: ["sh", "-c", "export PGPASSWORD=$$(cat $$POSTGRES_PASSWORD_FILE) && for file in /migrations/*.sql; do psql -U $$POSTGRES_USER -h $$DB_HOST -d $$POSTGRES_DB -f $$file; done"]
+    command:
+      [
+        "sh",
+        "-c",
+        "export PGPASSWORD=$$(cat $$POSTGRES_PASSWORD_FILE) && for file in /migrations/*.sql; do psql -U $$POSTGRES_USER -h $$DB_HOST -d $$POSTGRES_DB -f $$file; done",
+      ]
     depends_on:
       - core-db
     volumes:
@@ -77,10 +82,10 @@ services:
     secrets:
       - football_db_password
     volumes:
-      - ./football-db-data:/var/lib/postgresql/data
+      - /mnt/docker-databases/football-db:/var/lib/postgresql/data
     networks:
       - futeboxd-network
-  
+
   football_db_migrations:
     image: postgres:alpine
     environment:
@@ -88,7 +93,12 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/football_db_password
       POSTGRES_DB: "futeboxd-football"
       DB_HOST: football_db
-    command: ["sh", "-c", "export PGPASSWORD=$$(cat $$POSTGRES_PASSWORD_FILE) && export PGOPTIONS='--client-min-messages=warning' && for file in /migrations/*.sql; do psql -U $$POSTGRES_USER -p 5433 -h $$DB_HOST -d $$POSTGRES_DB -f $$file || exit 1; done && exit 0;"]
+    command:
+      [
+        "sh",
+        "-c",
+        "export PGPASSWORD=$$(cat $$POSTGRES_PASSWORD_FILE) && export PGOPTIONS='--client-min-messages=warning' && for file in /migrations/*.sql; do psql -U $$POSTGRES_USER -p 5432 -h $$DB_HOST -d $$POSTGRES_DB -f $$file || exit 1; done && exit 0;",
+      ]
     depends_on:
       - core-db
     volumes:
@@ -101,7 +111,7 @@ services:
       replicas: 0
       restart_policy:
         condition: none
-  
+
   football_data_updater:
     image: futeboxd-football-data-updater:latest
     env_file: ./football-data-updater/.env.docker
