@@ -6,7 +6,7 @@ BEGIN
             'STATUS_SCHEDULED',
             'STATUS_FULL_TIME',
             'STATUS_SECOND_HALF',
-            'STATUS_HALF_TIME',
+            'STATUS_HALFTIME',
             'STATUS_FIRST_HALF',
             'STATUS_UNKNOWN',
             'STATUS_POSTPONED'
