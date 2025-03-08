@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	BUCKET_NAME string = "futeboxd-profile-pictures"
+	BUCKET_NAME string = "futeboxd-assets"
 )
 
 type UploadRepository struct {
@@ -39,12 +39,12 @@ func (repo *UploadRepository) Put(ctx context.Context, input *upload.File) (stri
 		Key:         aws.String(input.Name),
 		Body:        input.Content,
 		ContentType: aws.String(input.ContentType),
-		//ACL:         types.ObjectCannedACLPublicRead,
+		ACL:         types.ObjectCannedACLPublicRead,
 	}); err != nil {
 		return "", err
 	}
 
-	url := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", BUCKET_NAME, repo.cfg.Region, input.Name)
+	url := fmt.Sprintf("https://%s.%s.cdn.digitaloceanspaces.com/%s", BUCKET_NAME, repo.cfg.Region, input.Name)
 
 	return url, nil
 }
