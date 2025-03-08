@@ -2,7 +2,6 @@ import loadEnvs from './config/load-envs';
 
 loadEnvs()
 
-import 'module-alias/register';
 import database from "@/db"
 import { listLeagues } from "./models/league"
 import { processDaySchedule } from "./models/match"
