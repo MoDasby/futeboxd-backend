@@ -36,4 +36,4 @@ RUN apk update && apk add --no-cache dumb-init
 USER node
 
 # Comando para rodar a aplicação
-CMD ["dumb-init", "node", "build/main.js"]
+CMD ["dumb-init", "npm", "start"]
