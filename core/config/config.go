@@ -30,6 +30,7 @@ type Cookies struct {
 	Secure   bool
 	SameSite string
 	Path     string
+	Domain string
 }
 
 type Resend struct {

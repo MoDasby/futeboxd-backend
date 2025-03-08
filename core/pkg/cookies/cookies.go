@@ -34,6 +34,7 @@ func CreateSessionCookie(cfg *config.Cookies, token string, expTime time.Time) *
 		SameSite: stringToSameSite(cfg.SameSite),
 		Path:     cfg.Path,
 		MaxAge:   int(exp.Seconds()),
+		Domain:   cfg.Domain,
 	}
 }
 
@@ -43,5 +44,6 @@ func DeleteSessionCookie(cfg *config.Cookies) *http.Cookie {
 		Value:  "",
 		Path:   "/",
 		MaxAge: -1,
+		Domain: cfg.Domain,
 	}
 }
