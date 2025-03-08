@@ -22,6 +22,8 @@ FROM node:22.12-alpine AS production
 # Definir o diretório de trabalho
 WORKDIR /usr/src/app
 
+COPY tsconfig.json /usr/src/app/
+
 # Copiar somente as dependências de produção da etapa anterior
 COPY --from=build /usr/src/app/package*.json ./
 RUN npm install --only=production
