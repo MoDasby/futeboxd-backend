@@ -41,10 +41,13 @@ export type MatchEvent = {
 }
 
 export async function processDaySchedule(league: League, gateway: MatchDataUpdater): Promise<void> {
+    let processedAnyMatch = false;
+
     try {
         logger.info("Processando schedule", {
             league: league.espn_id
         })
+
         const start = performance.now()
         const daySchedule = await gateway.getDaySchedule(league);
 
@@ -92,6 +95,7 @@ export async function processDaySchedule(league: League, gateway: MatchDataUpdat
                 fiveMinutesLater.setMilliseconds(0)
                 fiveMinutesLater.setMinutes(fiveMinutesLater.getMinutes() + 5);
                 scheduleNextProcessing(fiveMinutesLater, league, gateway);
+                processedAnyMatch = true;
                 continue;
             }
 
@@ -102,6 +106,7 @@ export async function processDaySchedule(league: League, gateway: MatchDataUpdat
             if (matchDate > new Date()) {
                 matchDate.setMinutes(matchDate.getMinutes() + 10)
                 scheduleNextProcessing(matchDate, league, gateway);
+                processedAnyMatch = true;
 
                 continue
             }
@@ -112,11 +117,10 @@ export async function processDaySchedule(league: League, gateway: MatchDataUpdat
                 date.setSeconds(0);
                 date.setMilliseconds(0);
                 scheduleNextProcessing(date, league, gateway);
+                processedAnyMatch = true;
 
                 continue;
             }
-
-            scheduleProcessNextDay(league, gateway)
         }
 
         logger.info("Schedule Processada", {
@@ -127,6 +131,10 @@ export async function processDaySchedule(league: League, gateway: MatchDataUpdat
         logger.error("Erro ao processar schedule", {
             league: league.espn_id
         })
+    } finally {
+        if (!processedAnyMatch) {
+            scheduleProcessNextDay(league, gateway)
+        }
     }
 }
 
