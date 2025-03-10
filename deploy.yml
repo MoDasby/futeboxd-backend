@@ -11,6 +11,12 @@ services:
       - /mnt/docker-databases/core-db:/var/lib/postgresql/data
     networks:
       - futeboxd-network
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "2GB"
 
   core_db_migrations:
     image: postgres:alpine
@@ -45,6 +51,10 @@ services:
       ENV: prod
       DB_PASSWORD_FILE: /run/secrets/football_db_password
     deploy:
+      resources:
+        limits:
+          cpus: "0.4"
+          memory: "1.5GB"
       replicas: 1
       restart_policy:
         condition: on-failure
@@ -62,6 +72,10 @@ services:
       ENV: prod
       DB_PASSWORD_FILE: /run/secrets/core_db_password
     deploy:
+      resources:
+        limits:
+          cpus: "0.4"
+          memory: "1.5GB"
       replicas: 1
       restart_policy:
         condition: on-failure
@@ -85,6 +99,12 @@ services:
       - /mnt/docker-databases/football-db:/var/lib/postgresql/data
     networks:
       - futeboxd-network
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "2GB"
 
   football_db_migrations:
     image: postgres:alpine
@@ -123,6 +143,10 @@ services:
     networks:
       - futeboxd-network
     deploy:
+      resources:
+        limits:
+          cpus: "0.15"
+          memory: "512MB"
       replicas: 1
       restart_policy:
         condition: on-failure
@@ -138,6 +162,10 @@ services:
     networks:
       - futeboxd-network
     deploy:
+      resources:
+        limits:
+          cpus: "0.3"
+          memory: "512MB"
       replicas: 1
       restart_policy:
         condition: on-failure
