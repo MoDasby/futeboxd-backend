@@ -5,11 +5,22 @@ import MatchDataUpdater from "@/service/match-updater";
 import logger from "@/util/logger";
 import db from "@/db";
 
-const statusNameValues = [
-    "STATUS_FINAL_PEN", "STATUS_SCHEDULED", "STATUS_FULL_TIME",
-    "STATUS_SECOND_HALF", "STATUS_HALFTIME", "STATUS_FIRST_HALF",
-    "STATUS_UNKNOWN", "STATUS_POSTPONED"
-]
+export enum StatusName {
+    STATUS_FINAL_PEN = "STATUS_FINAL_PEN",
+    STATUS_SCHEDULED = "STATUS_SCHEDULED",
+    STATUS_FULL_TIME = "STATUS_FULL_TIME",
+    STATUS_SECOND_HALF = "STATUS_SECOND_HALF",
+    STATUS_HALFTIME = "STATUS_HALFTIME",
+    STATUS_FIRST_HALF = "STATUS_FIRST_HALF",
+    STATUS_UNKNOWN = "STATUS_UNKNOWN",
+    STATUS_POSTPONED = "STATUS_POSTPONED",
+    STATUS_OVERTIME = "STATUS_OVERTIME",
+    STATUS_SHOOTOUT = "STATUS_SHOOTOUT"
+}
+
+export function isValidStatus(status: string): boolean {
+    return Object.values(StatusName).includes(status as StatusName);
+}
 
 export type Competitor = {
     winner: boolean;
@@ -23,7 +34,7 @@ export type Match = {
     date: string;
     note: string;
     completed: boolean;
-    statusName: string;
+    statusName: StatusName;
     league: League;
     homeCompetitor: Competitor;
     awayCompetitor: Competitor;
@@ -66,15 +77,6 @@ export async function processDaySchedule(league: League, gateway: MatchDataUpdat
                 });
 
                 continue;
-            }
-
-            if (!statusNameValues.includes(m.statusName)) {
-                logger.warn(`Status desconhecido encontrado, substituindo por STATUS_UNKNOWN`, {
-                    match: m.id,
-                    originalStatus: m.statusName
-                });
-
-                m.statusName = "STATUS_UNKNOWN"
             }
 
             const matchSummary = await gateway.getMatchSummary(m.id);

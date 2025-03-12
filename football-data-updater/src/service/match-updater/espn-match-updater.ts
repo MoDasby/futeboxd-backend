@@ -1,7 +1,8 @@
 import { League } from "@/models/league";
-import { Competitor, Match, MatchEvent } from "@/models/match";
+import { Competitor, isValidStatus, Match, MatchEvent, StatusName } from "@/models/match";
 import { Team } from "@/models/team";
 import MatchDataUpdater from ".";
+import logger from "@/util/logger";
 
 const BASE_URL = "https://site.api.espn.com/apis/site/v2";
 
@@ -141,7 +142,7 @@ async function getTeamSchedule(teamId: number, season: number, leagues: League[]
                 homeCompetitor: homeCompetitor,
                 awayCompetitor: awayCompetitor,
                 completed: espnMatch.competitions[0].status.type.completed,
-                statusName: espnMatch.competitions[0].status.type.name,
+                statusName: normalizeStatusName(espnMatch.id, espnMatch.competitions[0].status.type.name),
                 events: matchEvents,
                 league: league,
             };
@@ -153,9 +154,29 @@ async function getTeamSchedule(teamId: number, season: number, leagues: League[]
     return output
 }
 
+function normalizeStatusName(matchId: string, statusName: string): StatusName {
+    const endMatchStatusNames = ["STATUS_END_OF_EXTRATIME", "STATUS_FINAL_PEN", "STATUS_FINAL_AET"]
+    
+    if (endMatchStatusNames.includes(statusName)) {
+        return StatusName.STATUS_FULL_TIME
+    }
+
+    if (isValidStatus(statusName)) {
+        return statusName as StatusName
+    }
+
+    logger.warn(`Status desconhecido encontrado, substituindo por STATUS_UNKNOWN`, {
+        match: matchId,
+        originalStatus: statusName
+    });
+
+    return StatusName.STATUS_UNKNOWN
+}
+
 export const espnMatchUpdater: MatchDataUpdater = {
     getDaySchedule,
     getMatch: () => (new Promise(() => ({} as Match))),
     getMatchSummary,
     getTeamSchedule,
+    normalizeStatusName
 }

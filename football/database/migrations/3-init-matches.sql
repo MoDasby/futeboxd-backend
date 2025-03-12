@@ -12,6 +12,14 @@ BEGIN
             'STATUS_POSTPONED'
         );
     END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = 'STATUS_OVERTIME' AND enumtypid = 'status_name_enum'::regtype) THEN
+        ALTER TYPE status_name_enum ADD VALUE 'STATUS_OVERTIME';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = 'STATUS_SHOOTOUT' AND enumtypid = 'status_name_enum'::regtype) THEN
+        ALTER TYPE status_name_enum ADD VALUE 'STATUS_SHOOTOUT';
+    END IF;
 END $$;
 
 CREATE TABLE IF NOT EXISTS matches(
