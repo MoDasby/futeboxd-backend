@@ -53,21 +53,21 @@ func buildWhereClause(options ListMatchOptions) (string, []any) {
 
 	if options.Status == "live" {
 		appendCondition(
-			fmt.Sprintf("status_name = $%d", counter),
+			fmt.Sprintf("completed = $%d", counter),
 			"AND",
-			"STATUS_FIRST_HALF",
+			"FALSE",
 		)
 
 		appendCondition(
-			fmt.Sprintf("status_name = $%d", counter),
-			"OR",
-			"STATUS_SECOND_HALF",
+			fmt.Sprintf("status_name <> $%d", counter),
+			"AND",
+			"STATUS_SCHEDULED",
 		)
 
 		appendCondition(
-			fmt.Sprintf("status_name = $%d", counter),
-			"OR",
-			"STATUS_HALFTIME",
+			fmt.Sprintf("status_name <> $%d", counter),
+			"AND",
+			"STATUS_POSTPONED",
 		)
 	}
 
