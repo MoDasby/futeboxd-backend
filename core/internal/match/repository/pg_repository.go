@@ -19,16 +19,24 @@ func NewMatchRepository(db *sql.DB) match.Repository {
 
 func (repo *matchRepository) ListPopularMatches(ctx context.Context, page *pagination.Page) ([]int64, error) {
 	query := `
-		SELECT 
-		    r.match_id
-		FROM reviews r
-		WHERE r.created_at >= NOW() - INTERVAL '30 days'
-		GROUP BY r.match_id
-		ORDER BY (
-    		LEAST(COUNT(r.match_id), 100)
-		) * (
-			ROUND(AVG(r.rate), 1)
-		) DESC
+		WITH global_avg AS (
+			SELECT avg(rate) AS m from reviews
+		),
+		match_reviews AS (
+			SELECT
+				r.match_id,
+				COUNT(r.match_id) AS n,
+				SUM(r.rate) AS sum_r,
+				(SELECT m FROM global_avg) AS m
+			FROM reviews r
+			WHERE r.created_at >= NOW() - INTERVAL '30 days'
+			GROUP BY r.match_id
+		)
+
+		SELECT
+			match_id
+		FROM match_reviews
+		ORDER BY (20 * m + sum_r) / (20 + n) DESC
 		LIMIT $1
 		OFFSET ($2 - 1) * $1
 	`
