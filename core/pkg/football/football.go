@@ -48,7 +48,15 @@ func (fs *footballClient) GetMatches(ctx context.Context, matchIDs []int64) ([]M
 
 	res, err := http.Post(fmt.Sprintf("%s/matches/batch", fs.baseUrl), "application/json", bytes.NewBuffer(body))
 	if err != nil {
-		return nil, err
+		return nil, &errors.HTTPErr{
+			Msg:        "Sistema indisponível, tente novamente mais tarde",
+			Code:       503,
+			Context:    "FOOTBALL:CLIENT:GET_MATCHES",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+			Original:   err,
+		}
 	}
 	defer res.Body.Close()
 
@@ -82,7 +90,15 @@ func (fs *footballClient) GetMatches(ctx context.Context, matchIDs []int64) ([]M
 func (fs *footballClient) GetMatch(ctx context.Context, matchID int64) (*Match, error) {
 	res, err := http.Get(fmt.Sprintf("%s/matches/%d", fs.baseUrl, matchID))
 	if err != nil {
-		return nil, err
+		return nil, &errors.HTTPErr{
+			Msg:        "Sistema indisponível, tente novamente mais tarde",
+			Code:       503,
+			Context:    "FOOTBALL:CLIENT:GET_MATCH",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+			Original:   err,
+		}
 	}
 	defer res.Body.Close()
 
@@ -115,7 +131,15 @@ func (fs *footballClient) GetMatch(ctx context.Context, matchID int64) (*Match, 
 func (fs *footballClient) GetTeam(ctx context.Context, teamID int64) (*Team, error) {
 	res, err := http.Get(fmt.Sprintf("%s/teams/%d", fs.baseUrl, teamID))
 	if err != nil {
-		return nil, err
+		return nil, &errors.HTTPErr{
+			Msg:        "Sistema indisponível, tente novamente mais tarde",
+			Code:       503,
+			Context:    "FOOTBALL:CLIENT:GET_TEAM",
+			StackTrace: errors.CaptureStackTrace(),
+			ErrorCode:  utils.GetTraceIDFromCtx(ctx),
+			Timestamp:  time.Now().UTC(),
+			Original:   err,
+		}
 	}
 	defer res.Body.Close()
 
