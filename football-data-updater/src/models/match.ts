@@ -130,9 +130,19 @@ export async function processDaySchedule(league: League, gateway: MatchDataUpdat
             duration: (performance.now() - start).toFixed(2)
         })
     } catch (err) {
+        const error = err as Error
+
         logger.error("Erro ao processar schedule", {
-            league: league.espn_id
+            league: league.espn_id,
+            originalError: error.message,
+            stackTrace: error.stack
         })
+
+        const date = new Date();
+        date.setMinutes(date.getMinutes() + 10);
+        date.setSeconds(0);
+        date.setMilliseconds(0);
+        scheduleNextProcessing(date, league, gateway);
     } finally {
         if (!processedAnyMatch) {
             scheduleProcessNextDay(league, gateway)
@@ -186,8 +196,8 @@ export async function upsertMatch(match: Match) {
         const err = error as Error
         logger.error(`Erro ao inserir ou atualizar partida`, {
             match: match.id,
-            errorMessage: err.message,
-            stack: err.stack
+            originalError: err.message,
+            stackTrace: err.stack
         });
     }
 }

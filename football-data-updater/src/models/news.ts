@@ -32,9 +32,12 @@ export async function deleteOldNews(): Promise<void> {
 
     try {
         await db.query(query)
-    } catch (err) {
+    } catch (error) {
+        const err = error as Error
+
         logger.error(`Erro ao deletar noticias antigas`, {
-            err: (err as Error).message
+            originalError: err.message,
+            stackTrace: err.stack
         })
     }
 }
@@ -48,9 +51,12 @@ async function insertIfNotExists(news: News) {
 
     try {
         await db.query(query, [news.title, news.description, news.link, news.imageLink]);
-    } catch (err) {
+    } catch (error) {
+        const err = error as Error
+
         logger.error(`ocorreu um erro ao inserir notícia`, {
-            err: (err as Error).message
+            originalError: err.message,
+            stackTrace: err.stack
         })
     }
 }

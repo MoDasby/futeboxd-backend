@@ -19,10 +19,13 @@ export function schedule(executionDate: Date, league: League, func: Function): v
     });
     try {
       await func();
-    } catch (err) {
+    } catch (error) {
+      const err = error as Error;
+
       logger.error(`Erro ao atualizar partidas para a liga`, {
         espn_id: league.espn_id,
-        err
+        originalError: err.message,
+        stackTrace: err.stack
       });
     }
   });
