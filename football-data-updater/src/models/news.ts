@@ -16,9 +16,12 @@ export async function processNews(scrapper: NewsScrapper) {
         const news = await scrapper.getNews()
 
         await Promise.all(news.map(n => insertIfNotExists(n)))
-    } catch (err) {
-        logger.info("Erro ao processar notícias", {
-            err: (err as Error).message
+    } catch (error) {
+        const err = error as Error
+
+        logger.error("Erro ao processar notícias", {
+            originalError: err.message,
+            stackTrace: err.stack
         })
     }
 }

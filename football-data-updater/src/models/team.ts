@@ -1,4 +1,5 @@
 import db from "@/db";
+import logger from "@/util/logger";
 
 export type Team = {
     id: string;
@@ -17,8 +18,13 @@ export async function insertTeamIfNotExists(team: Team) { // TODO precisa baixar
 
     try {
         await db.query(query, [team.id, team.name, team.logo, team.abbreviation, team.color]);
-    } catch (err) {
-        console.log(`erro ao inserir time: ${err}`);
+    } catch (error) {
+        const err = error as Error
+
+        logger.error("Erro ao inserir time", {
+            originalError: err.message,
+            stackTrace: err.stack
+        });
     }
 }
 
@@ -33,8 +39,13 @@ export async function isAnyMandatory(teams: Team[]): Promise<boolean> {
         const result = await db.query<{ has_mandatory: boolean }>(query, teams.map(t => t.id));
 
         return result.rows[0].has_mandatory
-    } catch (err) {
-        console.log(`erro ao inserir time: ${err}`);
+    } catch (error) {
+        const err = error as Error
+
+        logger.error("Erro ao verificar se um time é mandatório", {
+            originalError: err.message,
+            stackTrace: err.stack
+        });
     }
 
     return false;
@@ -49,9 +60,15 @@ export async function getMandatoryTeams(): Promise<Team[]> {
 
     try {
         const result = await db.query<Team>(query);
-        return result.rows; // Retorna os times mandatórios encontrados
-    } catch (err) {
-        console.log(`Erro ao buscar times mandatórios: ${err}`);
-        return []; // Retorna um array vazio em caso de erro
+        return result.rows;
+    } catch (error) {
+        const err = error as Error
+        
+        logger.error(`Erro ao buscar times mandatórios`, {
+            originalError: err.message,
+            stackTrace: err.stack
+        });
+
+        return [];
     }
 }
