@@ -22,6 +22,17 @@ export function isValidStatus(status: string): boolean {
     return Object.values(StatusName).includes(status as StatusName);
 }
 
+const activeStatuses = new Set([
+    StatusName.STATUS_FIRST_HALF,
+    StatusName.STATUS_HALFTIME,
+    StatusName.STATUS_SECOND_HALF
+]);
+
+function matchStarted(match: Match): boolean {
+    return activeStatuses.has(match.statusName)
+}
+
+
 export type Competitor = {
     winner: boolean;
     score: number;
@@ -200,9 +211,4 @@ export async function upsertMatch(match: Match) {
             stackTrace: err.stack
         });
     }
-}
-
-function matchStarted(match: Match): boolean {
-    const activeStatuses = new Set(["STATUS_FIRST_HALF", "STATUS_HALFTIME", "STATUS_SECOND_HALF"]);
-    return activeStatuses.has(match.statusName)
 }
