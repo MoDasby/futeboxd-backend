@@ -1,5 +1,5 @@
 import { News } from "@/models/news";
-import cheerio from "cheerio";
+import * as cheerio from "cheerio";
 import NewsScrapper from ".";
 
 async function loadHTML(): Promise<cheerio.Root> {

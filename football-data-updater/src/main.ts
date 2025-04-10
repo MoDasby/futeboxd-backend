@@ -20,6 +20,8 @@ async function main() {
         await processDaySchedule(league, espnMatchUpdater)
     })
 
+    await processNews(geScrapper);
+
     scheduleJob("0 10,15 * * *", async () => {
         await deleteOldNews()
         await processNews(geScrapper)

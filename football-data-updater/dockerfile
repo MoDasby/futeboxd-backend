@@ -33,6 +33,7 @@ COPY --from=build /usr/src/app/build /usr/src/app/build
 
 # Instalar o dumb-init (novamente, caso seja necessário para produção)
 RUN apk update && apk add --no-cache dumb-init
+RUN apk add --no-cache curl
 
 # Definir o usuário para rodar o app (opcional, mas recomendado)
 USER node
