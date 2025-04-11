@@ -69,6 +69,12 @@ func buildWhereClause(options ListMatchOptions) (string, []any) {
 			"AND",
 			"STATUS_POSTPONED",
 		)
+
+		appendCondition(
+			fmt.Sprintf("status_name <> $%d", counter),
+			"AND",
+			"STATUS_ABANDONED",
+		)
 	}
 
 	if isFirstCondition {
