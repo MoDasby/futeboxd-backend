@@ -64,18 +64,16 @@ export type MatchEvent = {
 }
 
 export async function processDaySchedule(league: League, gateway: MatchDataUpdater): Promise<void> {
-    let processedAnyMatch = false;
+    const start = performance.now()
+
+    logger.info("Processando schedule", {
+        league: league.espn_id
+    })
 
     try {
-        logger.info("Processando schedule", {
-            league: league.espn_id
-        })
-
-        const start = performance.now()
         const daySchedule = await gateway.getDaySchedule(league);
 
         if (daySchedule.length === 0) {
-            scheduleProcessNextDay(league, gateway);
 
             return
         }
@@ -109,7 +107,6 @@ export async function processDaySchedule(league: League, gateway: MatchDataUpdat
                 fiveMinutesLater.setMilliseconds(0)
                 fiveMinutesLater.setMinutes(fiveMinutesLater.getMinutes() + 5);
                 scheduleNextProcessing(fiveMinutesLater, league, gateway);
-                processedAnyMatch = true;
                 continue;
             }
 
@@ -118,29 +115,31 @@ export async function processDaySchedule(league: League, gateway: MatchDataUpdat
             matchDate.setSeconds(0);
 
             if (matchDate > new Date()) {
-                matchDate.setMinutes(matchDate.getMinutes() + 10)
                 scheduleNextProcessing(matchDate, league, gateway);
-                processedAnyMatch = true;
 
                 continue
             }
 
-            if (!m.completed) {
+            if (matchStarted(m)) {
                 const date = new Date();
                 date.setMinutes(date.getMinutes() + 5);
                 date.setSeconds(0);
                 date.setMilliseconds(0);
                 scheduleNextProcessing(date, league, gateway);
-                processedAnyMatch = true;
+
+                continue;
+            }
+
+            if (m.statusName === StatusName.STATUS_SCHEDULED && matchDate < new Date()) {
+                const date = new Date();
+                date.setMinutes(date.getMinutes() + 5);
+                date.setSeconds(0);
+                date.setMilliseconds(0);
+                scheduleNextProcessing(date, league, gateway);
 
                 continue;
             }
         }
-
-        logger.info("Schedule Processada", {
-            league: league.espn_id,
-            duration: (performance.now() - start).toFixed(2)
-        })
     } catch (err) {
         const error = err as Error
 
@@ -156,18 +155,19 @@ export async function processDaySchedule(league: League, gateway: MatchDataUpdat
         date.setMilliseconds(0);
         scheduleNextProcessing(date, league, gateway);
     } finally {
-        if (!processedAnyMatch) {
-            scheduleProcessNextDay(league, gateway)
-        }
+        logger.info("Schedule Processada", {
+            league: league.espn_id,
+            duration: (performance.now() - start).toFixed(2)
+        })
     }
 }
 
-function scheduleProcessNextDay(league: League, gateway: MatchDataUpdater) {
+/* function scheduleProcessNextDay(league: League, gateway: MatchDataUpdater) {
     const nextDayAt10AM = new Date();
-    nextDayAt10AM.setHours(10, 0, 0, 0);
+    nextDayAt10AM.setHours(13, 0, 0, 0); // 13 utc hours in brazil is 10 hours
     nextDayAt10AM.setDate(nextDayAt10AM.getDate() + 1);
     scheduleNextProcessing(nextDayAt10AM, league, gateway);
-}
+} */
 
 function scheduleNextProcessing(time: Date, league: League, gateway: MatchDataUpdater) {
     schedule(time, league, () => processDaySchedule(league, gateway));
