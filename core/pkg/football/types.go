@@ -1,5 +1,7 @@
 package football
 
+import "time"
+
 type Team struct {
 	ID           int64  `json:"id"`
 	Name         string `json:"name"`
@@ -24,7 +26,7 @@ type League struct {
 type Match struct {
 	ID             int64      `json:"id"`
 	Venue          string     `json:"venue"`
-	Date           string     `json:"date"`
+	Datetime       time.Time  `json:"datetime"`
 	Note           string     `json:"note"`
 	Completed      bool       `json:"completed"`
 	StatusName     string     `json:"status_name"`

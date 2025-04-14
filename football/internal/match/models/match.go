@@ -1,6 +1,10 @@
 package models
 
-import "github.com/modasby/futeboxd-api/services/football/internal/team"
+import (
+	"time"
+
+	"github.com/modasby/futeboxd-api/services/football/internal/team"
+)
 
 type Competitor struct {
 	HomeAway string    `json:"homeAway"`
@@ -12,7 +16,7 @@ type Competitor struct {
 type Match struct {
 	ID             int64      `json:"id"`
 	Venue          string     `json:"venue"`
-	Date           string     `json:"date"`
+	Datetime       time.Time  `json:"datetime"`
 	Note           string     `json:"note"`
 	Completed      bool       `json:"completed"`
 	StatusName     string     `json:"status_name"`
@@ -24,7 +28,7 @@ type Match struct {
 func NewMatch(
 	ID int64,
 	venue string,
-	date string,
+	datetime time.Time,
 	note string,
 	homeCompetitor Competitor,
 	awayCompetitor Competitor,
@@ -37,7 +41,7 @@ func NewMatch(
 	return &Match{
 		ID:             ID,
 		Venue:          venue,
-		Date:           date,
+		Datetime:       datetime,
 		Note:           note,
 		HomeCompetitor: homeCompetitor,
 		AwayCompetitor: awayCompetitor,

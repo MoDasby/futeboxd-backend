@@ -42,7 +42,7 @@ func (repo *matchRepository) FindOneByID(matchID int64) (*models.Match, error) {
 	var note sql.NullString
 
 	if err := rows.Scan(
-		&match.ID, &match.Date, &match.Venue, &match.HomeCompetitor.Score,
+		&match.ID, &match.Datetime, &match.Venue, &match.HomeCompetitor.Score,
 		&match.HomeCompetitor.Team.ID, &match.HomeCompetitor.Team.Name, &match.HomeCompetitor.Team.Abbreviation,
 		&match.HomeCompetitor.Team.Color, &match.HomeCompetitor.Team.Logo,
 		&match.AwayCompetitor.Score, &match.AwayCompetitor.Team.ID, &match.AwayCompetitor.Team.Name,
@@ -104,7 +104,7 @@ func (repo *matchRepository) FindBatchByID(ids []int64) ([]models.Match, error) 
 		var note sql.NullString
 
 		if err := rows.Scan(
-			&match.ID, &match.Date, &match.Venue, &match.HomeCompetitor.Score,
+			&match.ID, &match.Datetime, &match.Venue, &match.HomeCompetitor.Score,
 			&match.HomeCompetitor.Team.ID, &match.HomeCompetitor.Team.Name, &match.HomeCompetitor.Team.Abbreviation,
 			&match.HomeCompetitor.Team.Color, &match.HomeCompetitor.Team.Logo,
 			&match.AwayCompetitor.Score, &match.AwayCompetitor.Team.ID, &match.AwayCompetitor.Team.Name,
@@ -163,7 +163,7 @@ func (repo *matchRepository) GetMatchSummary(matchID int64) (*models.MatchSummar
 func (repo *matchRepository) List(where string, params []any, pageSize, pageIndex int) ([]models.Match, error) {
 	query := fmt.Sprintf(`
 		SELECT 
-			m.id, TO_CHAR(m.match_date, 'YYYY-MM-DD') AS match_date, venue, 
+			m.id, m.match_date AS match_date, venue, 
 			home_team_score, home_team_id, ht.name AS home_team_name, 
 			ht.abbreviation AS home_team_abbreviation, ht.color AS home_team_color, ht.logo AS home_team_logo,
 			away_team_score, away_team_id, at.name AS away_team_name, 
@@ -193,7 +193,7 @@ func (repo *matchRepository) List(where string, params []any, pageSize, pageInde
 		var note sql.NullString
 
 		if err := rows.Scan(
-			&match.ID, &match.Date, &match.Venue, &match.HomeCompetitor.Score,
+			&match.ID, &match.Datetime, &match.Venue, &match.HomeCompetitor.Score,
 			&match.HomeCompetitor.Team.ID, &match.HomeCompetitor.Team.Name, &match.HomeCompetitor.Team.Abbreviation,
 			&match.HomeCompetitor.Team.Color, &match.HomeCompetitor.Team.Logo,
 			&match.AwayCompetitor.Score, &match.AwayCompetitor.Team.ID, &match.AwayCompetitor.Team.Name,
