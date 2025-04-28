@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -50,8 +49,6 @@ func main() {
 			slog.Error("Panico na rave", "originalError", r)
 		}
 	}()
-
-	ctx := context.Background()
 
 	cfg, err := config.LoadConfig()
 	if err != nil {
@@ -112,9 +109,9 @@ func main() {
 	matchHandler.RegisterRoutes(router)
 	uploadHandler.RegisterRoutes(router, injectUser)
 
-	slog.DebugContext(ctx, fmt.Sprintf("Iniciando servidor na porta: %d", cfg.Server.Port))
+	slog.Debug(fmt.Sprintf("Iniciando servidor na porta: %d", cfg.Server.Port))
 
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.Server.Port), middleware.LoggerMiddleware(ctx, router.ServeHTTP)); err != nil {
-		slog.ErrorContext(ctx, err.Error())
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.Server.Port), middleware.LoggerMiddleware(router.ServeHTTP)); err != nil {
+		slog.Error(err.Error())
 	}
 }
