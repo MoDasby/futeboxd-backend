@@ -155,13 +155,25 @@ async function getTeamSchedule(teamId: number, season: number, leagues: League[]
 }
 
 function normalizeStatusName(matchId: string, statusName: string): StatusName {
+    logger.debug("Iniciando normalização do status", {
+        match: matchId,
+        statusName
+    })
     const endMatchStatusNames = ["STATUS_END_OF_EXTRATIME", "STATUS_FINAL_PEN", "STATUS_FINAL_AET"]
     
     if (endMatchStatusNames.includes(statusName)) {
+        logger.debug("Partida fim detectada", {
+            match: matchId,
+            statusName
+        })
         return StatusName.STATUS_FULL_TIME
     }
 
     if (isValidStatus(statusName)) {
+        logger.debug("Status é válido", {
+            match: matchId,
+            statusName
+        })
         return statusName as StatusName
     }
 
