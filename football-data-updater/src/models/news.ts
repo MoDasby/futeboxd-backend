@@ -28,7 +28,7 @@ export async function processNews(scrapper: NewsScrapper) {
 
 export async function deleteOldNews(): Promise<void> {
     const query = `
-        DELETE FROM news WHERE created_at >= NOW() - INTERVAL '3 day'
+        DELETE FROM news WHERE created_at < NOW() - INTERVAL '5 day'
     `
 
     logger.info("Deletando notícias antigas")
