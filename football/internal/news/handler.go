@@ -3,6 +3,7 @@ package news
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/modasby/futeboxd-api/services/football/pkg/errors"
 	"github.com/modasby/futeboxd-api/services/football/pkg/pagination"
@@ -24,7 +25,9 @@ func (h *NewsHandler) RegisterRoutes(r *http.ServeMux) {
 			return
 		}
 
-		output, err := h.repo.GetRecentNews(r.Context(), page.Size, page.Index)
+		keywords := strings.Split(r.URL.Query().Get("keywords"), ",")
+
+		output, err := h.repo.GetRecentNews(r.Context(), page.Size, page.Index, keywords)
 		if err != nil {
 			errors.HandleHttpError(w, err)
 
