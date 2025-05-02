@@ -31,7 +31,7 @@ func (repo *newsRepo) GetRecentNews(ctx context.Context, pageSize, pageIndex int
 		return nil, err
 	}
 
-	var output []News
+	output := make([]News, 0)
 
 	for rows.Next() {
 		var news News
