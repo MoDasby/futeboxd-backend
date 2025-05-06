@@ -79,6 +79,12 @@ func buildWhereClause(options ListMatchOptions) (string, []any) {
 			"AND",
 			"STATUS_SHOOTOUT",
 		)
+
+		appendCondition(
+			fmt.Sprintf("status_name <> $%d", counter),
+			"AND",
+			"STATUS_POSTPONED",
+		)
 	}
 
 	if options.Status == "live" {
