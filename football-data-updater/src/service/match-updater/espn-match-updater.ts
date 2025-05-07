@@ -53,7 +53,7 @@ export async function getDaySchedule(league: League): Promise<Match[]> {
             homeCompetitor: homeCompetitor,
             awayCompetitor: awayCompetitor,
             completed: espnMatch.competitions[0].status.type.completed,
-            statusName: espnMatch.competitions[0].status.type.name,
+            statusName: normalizeStatusName(espnMatch.id, espnMatch.competitions[0].status.type.name),
             events: matchEvents,
             league: league,
         };
@@ -159,14 +159,24 @@ function normalizeStatusName(matchId: string, statusName: string): StatusName {
         match: matchId,
         statusName
     })
-    const endMatchStatusNames = ["STATUS_END_OF_EXTRATIME", "STATUS_FINAL_PEN", "STATUS_FINAL_AET"]
-    
-    if (endMatchStatusNames.includes(statusName)) {
-        logger.debug("Partida fim detectada", {
+
+    const statusConversionTable: Record<string, StatusName> = {
+        "STATUS_END_OF_REGULATION": StatusName.STATUS_OVERTIME,
+        "STATUS_HALFTIME_ET": StatusName.STATUS_HALFTIME,
+        "STATUS_END_OF_EXTRATIME": StatusName.STATUS_FULL_TIME,
+        "STATUS_FINAL_PEN": StatusName.STATUS_FULL_TIME,
+        "STATUS_FINAL_AET": StatusName.STATUS_FULL_TIME
+    }
+
+    const convertedStatusName = statusConversionTable[statusName]
+
+    if (convertedStatusName) {
+        logger.debug("Status foi convertido", {
             match: matchId,
             statusName
         })
-        return StatusName.STATUS_FULL_TIME
+
+        return convertedStatusName
     }
 
     if (isValidStatus(statusName)) {
