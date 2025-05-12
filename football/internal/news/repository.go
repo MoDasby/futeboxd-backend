@@ -34,7 +34,7 @@ func (repo *newsRepo) GetRecentNews(ctx context.Context, pageSize, pageIndex int
 				query += " OR "
 			}
 
-			query += fmt.Sprintf("title ILIKE '%%' || $%d || '%%'", argIndex)
+			query += fmt.Sprintf("unaccent(title) ILIKE '%%' || unaccent($%d) || '%%'", argIndex)
 			args = append(args, keyword)
 			argIndex++
 		}
