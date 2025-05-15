@@ -9,6 +9,7 @@ type ListMatchOptions struct {
 	Team   int64
 	Year   int
 	Status string
+	League int
 }
 
 func buildWhereClause(options ListMatchOptions) (string, []any) {
@@ -25,6 +26,14 @@ func buildWhereClause(options ListMatchOptions) (string, []any) {
 		params = append(params, param)
 		isFirstCondition = false
 		counter++
+	}
+
+	if options.League > 0 {
+		appendCondition(
+			fmt.Sprintf("league_id = $%d", counter),
+			"AND",
+			options.League,
+		)
 	}
 
 	if options.Team > 0 {

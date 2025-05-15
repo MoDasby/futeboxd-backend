@@ -120,9 +120,14 @@ func (h *Handler) ListMatches(w http.ResponseWriter, r *http.Request) {
 		year = 0
 	}
 
+	league, err := strconv.Atoi(r.URL.Query().Get("league"))
+	if err != nil {
+		league = 0
+	}
+
 	status := r.URL.Query().Get("status")
 
-	matches, err := h.usecase.List(ListMatchOptions{Team: team, Year: year, Status: status}, page.Size, page.Index)
+	matches, err := h.usecase.List(ListMatchOptions{Team: team, Year: year, Status: status, League: league}, page.Size, page.Index)
 	if err != nil {
 		errors.HandleHttpError(w, err)
 
