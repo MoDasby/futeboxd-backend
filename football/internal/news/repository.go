@@ -3,7 +3,8 @@ package news
 import (
 	"context"
 	"database/sql"
-	"fmt"
+
+	"github.com/modasby/futeboxd-api/services/football/pkg/sq"
 )
 
 type NewsRepo interface {
@@ -19,31 +20,22 @@ func NewNewsRepo(db *sql.DB) NewsRepo {
 }
 
 func (repo *newsRepo) GetRecentNews(ctx context.Context, pageSize, pageIndex int, keywords []string) ([]News, error) {
-	query := `
-		SELECT id, title, description, image_link, created_at, link
-		FROM news
-    `
-
-	args := make([]any, 0)
-	argIndex := 1
+	query := sq.Query.
+		Select("id, title, description, image_link, created_at, link").
+		From("news")
 
 	if len(keywords) > 0 {
-		query += "WHERE "
-		for i, keyword := range keywords {
-			if i > 0 {
-				query += " OR "
-			}
-
-			query += fmt.Sprintf("unaccent(title) ILIKE '%%' || unaccent($%d) || '%%' OR unaccent(description) ILIKE '%%' || unaccent($%d) || '%%'", argIndex, argIndex)
-			args = append(args, keyword)
-			argIndex++
+		for _, keyword := range keywords {
+			query = query.Where(
+				"unaccent(title) ILIKE '%%' || unaccent(?) || '%%' OR unaccent(description) ILIKE '%%' || unaccent(?) || '%%'",
+				keyword, keyword,
+			)
 		}
 	}
 
-	query += fmt.Sprintf(" ORDER BY created_at DESC LIMIT $%d OFFSET $%d", argIndex, argIndex+1)
-	args = append(args, pageSize, (pageIndex-1)*pageSize)
+	query = query.OrderBy("created_at DESC").Limit(uint64(pageSize)).Offset(uint64(pageIndex) - 1)
 
-	rows, err := repo.db.QueryContext(ctx, query, args...)
+	rows, err := query.RunWith(repo.db).QueryContext(ctx)
 	if err != nil {
 		return nil, err
 	}

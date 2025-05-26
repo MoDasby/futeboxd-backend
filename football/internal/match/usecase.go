@@ -45,7 +45,5 @@ func (uc *usecase) GetMatchSummary(matchID int64) (*models.MatchSummary, error) 
 }
 
 func (uc *usecase) List(opts ListMatchOptions, pageSize, pageIndex int) ([]models.Match, error) {
-	where, params := buildWhereClause(opts)
-
-	return uc.matchRepo.List(where, params, pageSize, pageIndex)
+	return uc.matchRepo.List(opts, pageSize, pageIndex)
 }

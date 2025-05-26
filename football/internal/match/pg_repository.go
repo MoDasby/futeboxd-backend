@@ -8,6 +8,7 @@ import (
 
 	"github.com/modasby/futeboxd-api/services/football/internal/match/models"
 	"github.com/modasby/futeboxd-api/services/football/pkg/errors"
+	"github.com/modasby/futeboxd-api/services/football/pkg/sq"
 )
 
 type matchRepository struct {
@@ -160,9 +161,8 @@ func (repo *matchRepository) GetMatchSummary(matchID int64) (*models.MatchSummar
 	return &summary, nil
 }
 
-func (repo *matchRepository) List(where string, params []any, pageSize, pageIndex int) ([]models.Match, error) {
-	query := fmt.Sprintf(`
-		SELECT 
+func (repo *matchRepository) List(filters ListMatchOptions, pageSize, pageIndex int) ([]models.Match, error) {
+	query := sq.Query.Select(`
 			m.id, m.match_date AS match_date, venue, 
 			home_team_score, home_team_id, ht.name AS home_team_name, 
 			ht.abbreviation AS home_team_abbreviation, ht.color AS home_team_color, ht.logo AS home_team_logo,
@@ -171,17 +171,49 @@ func (repo *matchRepository) List(where string, params []any, pageSize, pageInde
 			note, completed, status_name, l.id, l.name, l.logo,
 			(home_team_score > away_team_score) AS home_team_winner,
 			(away_team_score > home_team_score) AS away_team_winner
-		FROM matches m
-		LEFT JOIN teams ht ON ht.id = m.home_team_id
-		LEFT JOIN teams at ON at.id = m.away_team_id
-		LEFT JOIN leagues l ON l.id = m.league_id
-		%s
-		ORDER BY m.match_date DESC
-		LIMIT $%d
-		OFFSET ($%d - 1) * $%d
-	`, where, len(params)+1, len(params)+2, len(params)+1)
+		`).
+		From(`matches m`).
+		LeftJoin(`teams ht ON ht.id = m.home_team_id`).
+		LeftJoin(`teams at ON at.id = m.away_team_id`).
+		LeftJoin(`leagues l ON l.id = m.league_id`)
 
-	rows, err := repo.db.Query(query, append(params, pageSize, pageIndex)...)
+	if filters.League > 0 {
+		query = query.Where("league_id = ?", filters.League)
+	}
+
+	if filters.Team > 0 {
+		query = query.Where("(home_team_id = ? OR away_team_id = ?)", filters.Team, filters.Team)
+	}
+
+	if filters.Year > 0 {
+		query = query.Where("EXTRACT(YEAR FROM m.match_date) = ?", filters.Year)
+	}
+
+	if filters.Status == "completed" {
+		query = query.
+			Where(sq.NotEq{"m.status_name": "STATUS_FIRST_HALF"}).
+			Where(sq.NotEq{"m.status_name": "STATUS_SCHEDULED"}).
+			Where(sq.NotEq{"m.status_name": "STATUS_SECOND_HALF"}).
+			Where(sq.NotEq{"m.status_name": "STATUS_HALFTIME"}).
+			Where(sq.NotEq{"m.status_name": "STATUS_OVERTIME"}).
+			Where(sq.NotEq{"m.status_name": "STATUS_SHOOTOUT"}).
+			Where(sq.NotEq{"m.status_name": "STATUS_POSTPONED"})
+	}
+
+	if filters.Status == "live" {
+		query = query.
+			Where(sq.Eq{"completed": false}).
+			Where(sq.NotEq{"m.status_name": "STATUS_SCHEDULED"}).
+			Where(sq.NotEq{"m.status_name": "STATUS_POSTPONED"}).
+			Where(sq.NotEq{"m.status_name": "STATUS_ABANDONED"})
+	}
+
+	query = query.
+		Limit(uint64(pageSize)).
+		Offset(uint64(pageIndex - 1)).
+		OrderBy("m.match_date DESC")
+
+	rows, err := query.RunWith(repo.db).Query()
 	if err != nil {
 		return nil, err
 	}
