@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/modasby/futeboxd-api/services/football/database"
+	"github.com/modasby/futeboxd-api/services/football/internal/league"
 	"github.com/modasby/futeboxd-api/services/football/internal/match"
 	"github.com/modasby/futeboxd-api/services/football/internal/news"
 	"github.com/modasby/futeboxd-api/services/football/internal/team"
@@ -30,18 +31,21 @@ func main() {
 	teamRepository := team.NewTeamRepository(db)
 	matchRepository := match.NewMatchRepository(db)
 	newsRepository := news.NewNewsRepo(db)
+	leaguesRepository := league.NewLeagueRepository(db)
 
 	matchUC := match.NewMatchUsecases(matchRepository)
 
 	matchHandler := match.NewHandler(matchUC)
 	teamHandler := team.NewHandler(teamRepository)
 	newsHandler := news.NewNewsHandler(newsRepository)
+	leaguesHandler := league.NewHandler(leaguesRepository)
 
 	r := http.NewServeMux()
 
 	matchHandler.RegisterRoutes(r)
 	teamHandler.RegisterRoutes(r)
 	newsHandler.RegisterRoutes(r)
+	leaguesHandler.RegisterRoutes(r)
 
 	port := os.Getenv("PORT")
 
