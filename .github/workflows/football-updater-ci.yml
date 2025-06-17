@@ -23,7 +23,7 @@ jobs:
           uses: actions/checkout@v4
         - name: "Build Docker Image"
           run: |
-            docker build -t modasby/futeboxd-football-data-updater:latest .
+            docker build -t modasby/futeboxd-football-data-updater:latest football-data-updater/
         - name: "Push Docker Image"
           run: |
             docker push modasby/futeboxd-football-data-updater:latest
