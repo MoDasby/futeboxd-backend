@@ -14,4 +14,7 @@ build:
 	@go build -o bin/api cmd/api/main.go
 
 docker\:build:
-	docker build -t futeboxd-core:latest .
+	docker build -t modasby/futeboxd-core:latest .
+
+docker\:push:
+	docker push modasby/futeboxd-core:latest
