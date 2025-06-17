@@ -16,4 +16,7 @@ build:
 	@go build -o bin/api cmd/api/main.go
 
 docker\:build:
-	docker build -t futeboxd-football:latest .
+	docker build -t modasby/futeboxd-football:latest .
+
+docker\:push:
+	docker push modasby/futeboxd-football:latest

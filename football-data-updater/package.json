@@ -6,7 +6,8 @@
     "dev": "ts-node-dev -r tsconfig-paths/register src/main.ts",
     "build": "tsc",
     "start": "TS_NODE_BASEURL=./build node -r tsconfig-paths/register build/main.js", 
-    "docker:build": "docker build -t futeboxd-football-data-updater:latest ."
+    "docker:build": "docker build -t modasby/futeboxd-football-data-updater:latest .",
+    "docker:push": "docker push modasby/futeboxd-football-data-updater:latest"
   },
   "keywords": [],
   "author": "",
