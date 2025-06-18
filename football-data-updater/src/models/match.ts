@@ -79,7 +79,7 @@ export async function processDaySchedule(league: League, gateway: MatchDataUpdat
         }
 
         for (const m of daySchedule) {
-            if (!(await isAnyMandatory([m.homeCompetitor.team, m.awayCompetitor.team]))) {
+            /* if (!(await isAnyMandatory([m.homeCompetitor.team, m.awayCompetitor.team]))) {
                 logger.info(`Nenhum time mandátorio, pulando`, {
                     match: m.id,
                     homeTeam: m.homeCompetitor.team.name,
@@ -87,7 +87,7 @@ export async function processDaySchedule(league: League, gateway: MatchDataUpdat
                 });
 
                 continue;
-            }
+            } */
 
             const matchSummary = await gateway.getMatchSummary(m.id);
 
