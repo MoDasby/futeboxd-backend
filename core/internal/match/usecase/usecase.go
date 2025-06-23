@@ -24,13 +24,40 @@ func NewMatchUsecases(
 	}
 }
 
-func (uc *matchUsecases) ListPopularMatches(ctx context.Context, page *pagination.Page) ([]football.Match, error) {
+func (uc *matchUsecases) ListPopularMatches(ctx context.Context, page *pagination.Page) ([]dto.MatchStats, error) {
 	popularMatchesIds, err := uc.matchRepo.ListPopularMatches(ctx, page)
 	if err != nil {
 		return nil, err
 	}
 
-	return uc.footballClient.GetMatches(ctx, popularMatchesIds)
+	result := make([]dto.MatchStats, len(popularMatchesIds))
+	matchesIds := make([]int64, len(popularMatchesIds))
+	for i, ms := range popularMatchesIds {
+		matchesIds[i] = ms.MatchID
+	}
+
+	matchesMap, err := uc.footballClient.GetMatchesMap(ctx, matchesIds)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, ms := range popularMatchesIds {
+		match := matchesMap[ms.MatchID]
+
+		result[i] = dto.MatchStats{
+			Match:   &match,
+			AvgRate: ms.AvgRate,
+			ReviewsSummary: dto.ReviewsSummary{
+				Count1: ms.Rate1,
+				Count2: ms.Rate2,
+				Count3: ms.Rate3,
+				Count4: ms.Rate4,
+				Count5: ms.Rate5,
+			},
+		}
+	}
+
+	return result, nil
 }
 
 func (uc *matchUsecases) GetMatchStats(ctx context.Context, matchID int64) (*dto.MatchStats, error) {

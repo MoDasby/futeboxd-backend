@@ -8,6 +8,6 @@ import (
 )
 
 type Repository interface {
-	ListPopularMatches(ctx context.Context, page *pagination.Page) ([]int64, error)
+	ListPopularMatches(ctx context.Context, page *pagination.Page) ([]entity.MatchStats, error)
 	GetMatchStats(ctx context.Context, matchID int64) (*entity.MatchStats, error)
 }
