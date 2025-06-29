@@ -129,15 +129,16 @@ func (repo *reviewRepository) ListFeed(ctx context.Context, requesterID string, 
 				r.home_team_id,
 				r.away_team_id,
 				(SELECT COUNT(*) FROM comments c WHERE c.review_id = r.id) as comments_count,
-				COUNT(l.review_id) as like_count,
-				COUNT(CASE WHEN l.like_owner_id = $1 THEN 1 END) > 0 AS is_liked
+				(SELECT COUNT(*) FROM likes l WHERE l.review_id = r.id) as like_count,
+				EXISTS((SELECT 1 FROM likes l WHERE l.review_id = r.id AND l.like_owner_id = $1)) AS is_liked,
+				EXISTS(SELECT 1 FROM followers f WHERE f.follower_id = $1 AND f.following_id = r.user_id) AS is_following
 			FROM reviews r
-			INNER JOIN followers f ON f.following_id = r.user_id
-			LEFT JOIN likes l ON l.review_id = r.id
-			CROSS JOIN requester req
-			WHERE f.follower_id = req.id OR req.favorite_team = r.home_team_id OR req.favorite_team = r.away_team_id
-			GROUP BY
-				r.id
+			JOIN requester req ON true
+			WHERE 
+				EXISTS (
+					SELECT 1 FROM followers f WHERE f.follower_id = $1 AND f.following_id = r.user_id
+				)
+				OR req.favorite_team IN (r.home_team_id, r.away_team_id)
 			LIMIT 500
 		)
 		SELECT 
@@ -152,11 +153,11 @@ func (repo *reviewRepository) ListFeed(ctx context.Context, requesterID string, 
 			rr.is_liked
 		FROM recent_reviews rr
 		JOIN users u ON u.id = rr.user_id
-		LEFT JOIN requester req ON true
+		JOIN requester req ON true
 		GROUP BY 
 			rr.reviewID, rr.rate, rr.description, rr.match_id, rr.created_at, 
 			u.id, u.username, u.favorite_team, req.favorite_team,
-			rr.home_team_id, rr.away_team_id, rr.comments_count, rr.like_count, rr.is_liked
+			rr.home_team_id, rr.away_team_id, rr.comments_count, rr.like_count, rr.is_liked, rr.is_following
 		ORDER BY
 			(CASE
 				WHEN rr.home_team_id = req.favorite_team THEN 1.1
@@ -168,13 +169,21 @@ func (repo *reviewRepository) ListFeed(ctx context.Context, requesterID string, 
 				WHEN rr.comments_count > 100 THEN 1.5
 				WHEN rr.comments_count > 1000 THEN 1.8
 				WHEN rr.comments_count > 10000 THEN 2
+				ELSE 1
 			END) * (CASE
 				WHEN rr.like_count > 0 THEN 1.2
 				WHEN rr.like_count > 10 THEN 1.4
 				WHEN rr.like_count > 100 THEN 1.5
 				WHEN rr.like_count > 1000 THEN 1.8
 				WHEN rr.like_count > 10000 THEN 2
-			END), rr.created_at DESC
+				ELSE 1
+			END) * (CASE 
+				WHEN rr.is_following THEN 1.2
+				WHEN rr.is_following IS NULL THEN 0.9
+				ELSE 1
+			END) * (
+				POWER(0.9, EXTRACT(EPOCH FROM NOW() - rr.created_at) / 86400)
+			) DESC, rr.created_at DESC
 		LIMIT $2
 		OFFSET ($3 - 1) * $2
 	`
