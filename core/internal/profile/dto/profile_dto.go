@@ -6,11 +6,13 @@ import (
 )
 
 type ProfileStats struct {
-	FollowersCount int  `json:"followers_count"`
-	FollowingCount int  `json:"following_count"`
-	Following      bool `json:"following"`
-	ReviewsCount   int  `json:"reviews_count"`
-	Self           bool `json:"self"`
+	FollowersCount   int            `json:"followers_count"`
+	FollowingCount   int            `json:"following_count"`
+	Following        bool           `json:"following"`
+	ReviewsCount     int            `json:"reviews_count"`
+	MostReviewedTeam *football.Team `json:"most_reviewed_team"`
+	AvgRating        float64        `json:"avg_rating"`
+	Self             bool           `json:"self"`
 }
 
 type Profile struct {

@@ -132,14 +132,25 @@ func (uc *profileUsecases) ListPopularProfiles(ctx context.Context, page *pagina
 }
 
 func (uc *profileUsecases) toDto(ctx context.Context, profile *profile.Profile, requesterID string) (*dto.Profile, error) {
-	var team *football.Team
-	var err error
+	var mostReviewedTeam *football.Team
+	var favoriteTeam *football.Team
 
-	if profile.FavoriteTeam > 0 {
-		team, err = uc.footballClient.GetTeam(ctx, profile.FavoriteTeam)
+	if profile.MostReviewedTeam > 0 {
+		team, err := uc.footballClient.GetTeam(ctx, profile.MostReviewedTeam)
 		if err != nil {
 			return nil, err
 		}
+
+		mostReviewedTeam = team
+	}
+
+	if profile.FavoriteTeam > 0 {
+		team, err := uc.footballClient.GetTeam(ctx, profile.FavoriteTeam)
+		if err != nil {
+			return nil, err
+		}
+
+		favoriteTeam = team
 	}
 
 	profileDto := dto.Profile{
@@ -148,13 +159,15 @@ func (uc *profileUsecases) toDto(ctx context.Context, profile *profile.Profile, 
 		Bio:            null.String(profile.Bio),
 		ProfilePicture: profile.ProfilePicture,
 		Username:       profile.Username,
-		FavoriteTeam:   team,
+		FavoriteTeam:   favoriteTeam,
 		Stats: &dto.ProfileStats{
-			FollowersCount: profile.FollowersCount,
-			FollowingCount: profile.FollowingCount,
-			Following:      profile.IsFollowing,
-			ReviewsCount:   profile.ReviewsCount,
-			Self:           profile.UserID == requesterID,
+			FollowersCount:   profile.FollowersCount,
+			FollowingCount:   profile.FollowingCount,
+			Following:        profile.IsFollowing,
+			ReviewsCount:     profile.ReviewsCount,
+			Self:             profile.UserID == requesterID,
+			MostReviewedTeam: mostReviewedTeam,
+			AvgRating:        profile.AvgRating,
 		},
 	}
 
