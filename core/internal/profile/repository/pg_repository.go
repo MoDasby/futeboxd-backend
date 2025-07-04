@@ -31,8 +31,8 @@ func (repo *ProfileRepository) FindOneByUsername(ctx context.Context, username, 
             (SELECT COUNT(*) FROM followers WHERE follower_id = u.id) AS following_count,
 			COUNT(r.id) as review_count,
             EXISTS(SELECT 1 FROM followers WHERE follower_id = $2 AND following_id = u.id) AS is_following,
-			ROUND(AVG(r.rate), 2) AS avg_rating,
-			most_reviewed.team_id AS most_reviewed_team
+			COALESCE(ROUND(AVG(r.rate), 2), 0) AS avg_rating,
+			COALESCE(most_reviewed.team_id, 0) AS most_reviewed_team
 		FROM users u 
 		LEFT JOIN reviews r ON r.user_id = u.id
 		LEFT JOIN LATERAL (
@@ -106,8 +106,8 @@ func (repo *ProfileRepository) Search(ctx context.Context, requesterID, term str
             (SELECT COUNT(*) FROM followers WHERE follower_id = u.id) AS following_count,
 			COUNT(r.id) as review_count,
 			EXISTS(SELECT 1 FROM followers WHERE follower_id = $2 AND following_id = u.id) AS is_following,
-			ROUND(AVG(r.rate), 2) AS avg_rating,
-			most_reviewed.team_id AS most_reviewed_team
+			COALESCE(ROUND(AVG(r.rate), 2), 0) AS avg_rating,
+			COALESCE(most_reviewed.team_id, 0) AS most_reviewed_team
 		FROM users u
 		LEFT JOIN reviews r ON r.user_id = u.id
 		LEFT JOIN LATERAL (
@@ -233,9 +233,9 @@ func (repo *ProfileRepository) ListFollowers(ctx context.Context, requesterID, u
 			(SELECT COUNT(*) FROM followers WHERE following_id = u.id) AS followers_count,
             (SELECT COUNT(*) FROM followers WHERE follower_id = u.id) AS following_count,
             CASE WHEN f.following_id = $1 THEN TRUE ELSE FALSE END AS is_following,
-			ROUND(AVG(r.rate), 2) AS avg_rating,
-			COUNT(r.id) as reviews_count,
-			most_reviewed.team_id AS most_reviewed_team
+			COALESCE(ROUND(AVG(r.rate), 2), 0) AS avg_rating,
+			COALESCE(most_reviewed.team_id, 0) AS most_reviewed_team,
+			COUNT(r.id) as reviews_count
 		FROM followers f
 		LEFT JOIN users u ON u.id = f.follower_id
 		LEFT JOIN reviews r ON r.user_id = u.id
@@ -279,8 +279,8 @@ func (repo *ProfileRepository) ListFollowers(ctx context.Context, requesterID, u
 			&profile.FollowingCount,
 			&profile.IsFollowing,
 			&profile.AvgRating,
-			&profile.ReviewsCount,
 			&profile.MostReviewedTeam,
+			&profile.ReviewsCount,
 		); err != nil {
 			if err == sql.ErrNoRows {
 				return nil, &errors.HTTPErr{
@@ -320,9 +320,9 @@ func (repo *ProfileRepository) ListFollowing(ctx context.Context, requesterID, u
 			(SELECT COUNT(*) FROM followers WHERE following_id = u.id) AS followers_count,
             (SELECT COUNT(*) FROM followers WHERE follower_id = u.id) AS following_count,
             CASE WHEN following_id = $1 THEN TRUE ELSE FALSE END AS is_following,
-			ROUND(AVG(r.rate), 2) AS avg_rating,
-			COUNT(r.id) as reviews_count,
-			most_reviewed.team_id AS most_reviewed_team
+			COALESCE(ROUND(AVG(r.rate), 2), 0) AS avg_rating,
+			COALESCE(most_reviewed.team_id, 0) AS most_reviewed_team,
+			COUNT(r.id) as reviews_count
 		FROM followers f
 		LEFT JOIN users u ON u.id = f.following_id
 		LEFT JOIN reviews r ON r.user_id = u.id
@@ -366,8 +366,8 @@ func (repo *ProfileRepository) ListFollowing(ctx context.Context, requesterID, u
 			&profile.FollowingCount,
 			&profile.IsFollowing,
 			&profile.AvgRating,
-			&profile.ReviewsCount,
 			&profile.MostReviewedTeam,
+			&profile.ReviewsCount,
 		); err != nil {
 			if err == sql.ErrNoRows {
 				return nil, &errors.HTTPErr{
@@ -407,9 +407,9 @@ func (repo *ProfileRepository) ListPopularProfiles(ctx context.Context, requeste
 			(SELECT COUNT(*) FROM followers WHERE following_id = u.id) AS followers_count,
             (SELECT COUNT(*) FROM followers WHERE follower_id = u.id) AS following_count,
             CASE WHEN following_id = $1 THEN TRUE ELSE FALSE END AS is_following,
-			ROUND(AVG(r.rate), 2) AS avg_rating,
-			COUNT(r.id) as reviews_count,
-			most_reviewed.team_id AS most_reviewed_team
+			COALESCE(ROUND(AVG(r.rate), 2), 0) AS avg_rating,
+			COALESCE(most_reviewed.team_id, 0) AS most_reviewed_team,
+			COUNT(r.id) as reviews_count
 		FROM followers f
 		LEFT JOIN users u ON u.id = f.following_id
 		LEFT JOIN reviews r ON r.user_id = u.id
@@ -454,8 +454,8 @@ func (repo *ProfileRepository) ListPopularProfiles(ctx context.Context, requeste
 			&profile.FollowingCount,
 			&profile.IsFollowing,
 			&profile.AvgRating,
-			&profile.ReviewsCount,
 			&profile.MostReviewedTeam,
+			&profile.ReviewsCount,
 		); err != nil {
 			return nil, err
 		}
