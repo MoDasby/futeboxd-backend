@@ -142,13 +142,40 @@ func (repo *reviewRepository) ListFeed(ctx context.Context, requesterID string, 
 						SELECT 1 FROM followers f WHERE f.follower_id = $1 AND f.following_id = r.user_id
 					)
 					OR req.favorite_team IN (r.home_team_id, r.away_team_id)
-					OR (
-						(SELECT COUNT(*) FROM likes l WHERE l.review_id = r.id) >= 5
-						OR (SELECT COUNT(*) FROM comments c WHERE c.review_id = r.id) >= 3
-					)
 				)
 			ORDER BY r.created_at DESC
 			LIMIT 500
+		),
+		popular_reviews AS (
+			SELECT 
+				r.id as reviewID, 
+				r.rate, 
+				r.description, 
+				r.match_id, 
+				r.created_at,
+				r.user_id,
+				r.home_team_id,
+				r.away_team_id,
+				(SELECT COUNT(*) FROM comments c WHERE c.review_id = r.id) as comments_count,
+				(SELECT COUNT(*) FROM likes l WHERE l.review_id = r.id) as like_count,
+				EXISTS((SELECT 1 FROM likes l WHERE l.review_id = r.id AND l.like_owner_id = $1)) AS is_liked,
+				FALSE AS is_following,
+				GREATEST(EXTRACT(EPOCH FROM NOW() - r.created_at) / 3600, 1) AS age_hours
+			FROM reviews r
+			WHERE 
+				r.user_id != $1
+				AND r.id NOT IN (SELECT reviewID FROM candidate_reviews)
+				AND (
+					(SELECT COUNT(*) FROM likes l WHERE l.review_id = r.id) >= 5
+					OR (SELECT COUNT(*) FROM comments c WHERE c.review_id = r.id) >= 3
+				)
+			ORDER BY r.created_at DESC
+			LIMIT 100
+		),
+		all_candidates AS (
+			SELECT * FROM candidate_reviews
+			UNION ALL
+			SELECT * FROM popular_reviews
 		)
 		SELECT 
 			cr.reviewID, 
@@ -160,7 +187,7 @@ func (repo *reviewRepository) ListFeed(ctx context.Context, requesterID string, 
 			cr.comments_count,
 			cr.like_count,
 			cr.is_liked
-		FROM candidate_reviews cr
+		FROM all_candidates cr
 		JOIN users u ON u.id = cr.user_id
 		JOIN requester req ON true
 		ORDER BY
@@ -211,8 +238,8 @@ func (repo *reviewRepository) ListFeed(ctx context.Context, requesterID string, 
 			-- Gentle time decay (much less aggressive than before)
 			* POWER(0.95, EXTRACT(EPOCH FROM NOW() - cr.created_at) / 86400)
 
-			-- Small random factor for content discovery
-			+ RANDOM() * 0.1
+			-- Deterministic pseudo-random factor for content discovery (stable across pagination)
+			+ (MOD(cr.reviewID * 7919, 10000)::float / 100000)
 
 			DESC
 		LIMIT $2
