@@ -13,6 +13,7 @@ import (
 	"github.com/modasby/futeboxd-backend/core/pkg/errors"
 	"github.com/modasby/futeboxd-backend/core/pkg/football"
 	"github.com/modasby/futeboxd-backend/core/pkg/middleware"
+	"github.com/modasby/futeboxd-backend/core/pkg/pagination"
 	"github.com/stretchr/testify/assert"
 
 	reviewMock "github.com/modasby/futeboxd-backend/core/internal/review/mock"
@@ -93,6 +94,77 @@ func TestDeleteReview_Success(t *testing.T) {
 
 	err := uc.Delete(ctx, 1)
 	assert.NoError(t, err)
+}
+
+func TestListFeed_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockReviewRepo := reviewMock.NewMockRepository(ctrl)
+	mockFootballClient := footballClientMock.NewMockClient(ctrl)
+	mockUserRepo := userMock.NewMockRepository(ctrl)
+
+	uc := NewReviewUsecases(mockReviewRepo, mockFootballClient, mockUserRepo)
+
+	session := &session.Session{UserID: uuid.NewString()}
+	ctx := context.WithValue(context.TODO(), middleware.SessionKey, session)
+	page := &pagination.Page{Size: 20, Index: 1}
+
+	reviews := []review.Review{
+		{
+			ID:            1,
+			Author:        &user.User{ID: "author1", Username: "user1"},
+			Rate:          5,
+			Description:   "Great match!",
+			MatchID:       100,
+			Likes:         10,
+			CommentsCount: 3,
+			IsLiked:       true,
+		},
+		{
+			ID:            2,
+			Author:        &user.User{ID: "author2", Username: "user2"},
+			Rate:          3,
+			MatchID:       200,
+			Likes:         0,
+			CommentsCount: 0,
+			IsLiked:       false,
+		},
+	}
+
+	mockReviewRepo.EXPECT().ListFeed(ctx, session.UserID, page).Return(reviews, nil)
+
+	matchesMap := map[int64]football.Match{
+		100: {ID: 100, HomeCompetitor: football.Competitor{Team: football.Team{ID: 1}}, AwayCompetitor: football.Competitor{Team: football.Team{ID: 2}}},
+		200: {ID: 200, HomeCompetitor: football.Competitor{Team: football.Team{ID: 3}}, AwayCompetitor: football.Competitor{Team: football.Team{ID: 4}}},
+	}
+	mockFootballClient.EXPECT().GetMatchesMap(ctx, gomock.Any()).Return(matchesMap, nil)
+
+	result, err := uc.ListFeed(ctx, page)
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+	assert.Equal(t, 1, result[0].ID)
+	assert.Equal(t, 2, result[1].ID)
+	assert.Equal(t, 10, result[0].Likes)
+	assert.Equal(t, true, result[0].IsLiked)
+}
+
+func TestListFeed_FailureInvalidSession(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockReviewRepo := reviewMock.NewMockRepository(ctrl)
+	mockFootballClient := footballClientMock.NewMockClient(ctrl)
+	mockUserRepo := userMock.NewMockRepository(ctrl)
+
+	uc := NewReviewUsecases(mockReviewRepo, mockFootballClient, mockUserRepo)
+
+	ctx := context.Background()
+	page := &pagination.Page{Size: 20, Index: 1}
+
+	result, err := uc.ListFeed(ctx, page)
+	assert.Error(t, err)
+	assert.Nil(t, result)
 }
 
 func TestDeleteReview_Forbidden(t *testing.T) {

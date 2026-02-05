@@ -118,7 +118,7 @@ func (repo *reviewRepository) ListFeed(ctx context.Context, requesterID string, 
 		WITH requester AS (
 			SELECT id, favorite_team FROM users WHERE id = $1
 		),
-		recent_reviews AS (
+		candidate_reviews AS (
 			SELECT 
 				r.id as reviewID, 
 				r.rate, 
@@ -131,59 +131,90 @@ func (repo *reviewRepository) ListFeed(ctx context.Context, requesterID string, 
 				(SELECT COUNT(*) FROM comments c WHERE c.review_id = r.id) as comments_count,
 				(SELECT COUNT(*) FROM likes l WHERE l.review_id = r.id) as like_count,
 				EXISTS((SELECT 1 FROM likes l WHERE l.review_id = r.id AND l.like_owner_id = $1)) AS is_liked,
-				EXISTS(SELECT 1 FROM followers f WHERE f.follower_id = $1 AND f.following_id = r.user_id) AS is_following
+				EXISTS(SELECT 1 FROM followers f WHERE f.follower_id = $1 AND f.following_id = r.user_id) AS is_following,
+				GREATEST(EXTRACT(EPOCH FROM NOW() - r.created_at) / 3600, 1) AS age_hours
 			FROM reviews r
 			JOIN requester req ON true
 			WHERE 
-				EXISTS (
-					SELECT 1 FROM followers f WHERE f.follower_id = $1 AND f.following_id = r.user_id
+				r.user_id != $1
+				AND (
+					EXISTS (
+						SELECT 1 FROM followers f WHERE f.follower_id = $1 AND f.following_id = r.user_id
+					)
+					OR req.favorite_team IN (r.home_team_id, r.away_team_id)
+					OR (
+						(SELECT COUNT(*) FROM likes l WHERE l.review_id = r.id) >= 5
+						OR (SELECT COUNT(*) FROM comments c WHERE c.review_id = r.id) >= 3
+					)
 				)
-				OR req.favorite_team IN (r.home_team_id, r.away_team_id)
+			ORDER BY r.created_at DESC
 			LIMIT 500
 		)
 		SELECT 
-			rr.reviewID, 
-			rr.rate, 
-			rr.description, 
-			rr.match_id, 
-			rr.created_at,
+			cr.reviewID, 
+			cr.rate, 
+			cr.description, 
+			cr.match_id, 
+			cr.created_at,
 			u.id as user_id, u.name, u.username, u.favorite_team, u.profile_picture,
-			rr.comments_count,
-			rr.like_count,
-			rr.is_liked
-		FROM recent_reviews rr
-		JOIN users u ON u.id = rr.user_id
+			cr.comments_count,
+			cr.like_count,
+			cr.is_liked
+		FROM candidate_reviews cr
+		JOIN users u ON u.id = cr.user_id
 		JOIN requester req ON true
-		GROUP BY 
-			rr.reviewID, rr.rate, rr.description, rr.match_id, rr.created_at, 
-			u.id, u.username, u.favorite_team, req.favorite_team,
-			rr.home_team_id, rr.away_team_id, rr.comments_count, rr.like_count, rr.is_liked, rr.is_following
 		ORDER BY
-			(CASE
-				WHEN rr.home_team_id = req.favorite_team THEN 1.1
-				WHEN rr.away_team_id = req.favorite_team THEN 1
-				ELSE 0
-			END) * (CASE
-				WHEN rr.comments_count > 0 THEN 1.2
-				WHEN rr.comments_count > 10 THEN 1.4
-				WHEN rr.comments_count > 100 THEN 1.5
-				WHEN rr.comments_count > 1000 THEN 1.8
-				WHEN rr.comments_count > 10000 THEN 2
+			(
+				-- Engagement velocity: likes+comments per hour (Twitter-like trending signal)
+				LOG(2, GREATEST(cr.like_count + cr.comments_count * 2, 1) + 1)
+				/ POWER(cr.age_hours, 0.3)
+			)
+
+			-- Team relevance boost
+			* (CASE
+				WHEN cr.home_team_id = req.favorite_team THEN 1.3
+				WHEN cr.away_team_id = req.favorite_team THEN 1.2
 				ELSE 1
-			END) * (CASE
-				WHEN rr.like_count > 0 THEN 1.2
-				WHEN rr.like_count > 10 THEN 1.4
-				WHEN rr.like_count > 100 THEN 1.5
-				WHEN rr.like_count > 1000 THEN 1.8
-				WHEN rr.like_count > 10000 THEN 2
+			END)
+
+			-- Social graph boost (following)
+			* (CASE 
+				WHEN cr.is_following THEN 1.5
+				ELSE 0.8
+			END)
+
+			-- Engagement tier bonus (fixed ordering: highest thresholds first)
+			* (CASE
+				WHEN cr.like_count >= 100 THEN 1.8
+				WHEN cr.like_count >= 50 THEN 1.5
+				WHEN cr.like_count >= 10 THEN 1.3
+				WHEN cr.like_count >= 3 THEN 1.1
 				ELSE 1
-			END) * (CASE 
-				WHEN rr.is_following THEN 1.2
-				WHEN rr.is_following IS NULL THEN 0.9
+			END)
+
+			-- Comment engagement tier bonus
+			* (CASE
+				WHEN cr.comments_count >= 50 THEN 1.6
+				WHEN cr.comments_count >= 20 THEN 1.4
+				WHEN cr.comments_count >= 5 THEN 1.2
+				WHEN cr.comments_count >= 1 THEN 1.1
 				ELSE 1
-			END) * (
-				POWER(0.9, EXTRACT(EPOCH FROM NOW() - rr.created_at) / 86400)
-			) DESC, rr.created_at DESC
+			END)
+
+			-- Content quality: reviews with descriptions are more valuable
+			* (CASE
+				WHEN cr.description IS NOT NULL AND LENGTH(cr.description) > 100 THEN 1.3
+				WHEN cr.description IS NOT NULL AND LENGTH(cr.description) > 0 THEN 1.1
+				ELSE 1
+			END)
+
+			-- Gentle time decay (much less aggressive than before)
+			* POWER(0.95, EXTRACT(EPOCH FROM NOW() - cr.created_at) / 86400)
+
+			-- Small random factor for content discovery
+			+ RANDOM() * 0.1
+
+			DESC
 		LIMIT $2
 		OFFSET ($3 - 1) * $2
 	`
